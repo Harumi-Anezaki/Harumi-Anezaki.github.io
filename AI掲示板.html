@@ -407,9 +407,8 @@
             let selectedPersonality;
             aiStatus.textContent = "AI: 人格を決定中...";
             if (Math.random() < 0.5 || aiPersonalities.length === 0) {
-                const personaGenerationPrompt = `あなたは、日本のオンライン掲示板投稿者のペルソナを作成するAIアシスタントです。
-                                                ユーザー名(カオス系から真面目なものまで多種多様な選択肢を踏まえて生成｡例： 煽り神, †終末の使徒†, 佐藤, 猫)と、性格(カオス系から真面目なものまで多種多様な選択肢を踏まえて生成｡例：頭おかしい,  絶対論破したい, 知識よく溢れる女子大生, 大学教授)を生成してください。
-                                                応答は、'userName'（文字列）と 'personalityDescription'（文字列）の2つのキーを持つJSONオブジェクト「のみ」で返してください。
+                const personaGenerationPrompt = `ユーザー名(オンライン掲示板で存在しそうな全くランダムな名前)と、性格(全くランダム性格｡10文字程度｡)を生成して。
+                                                応答は、'userName'（文字列）と 'personalityDescription'（文字列）の2つのキーを持つJSONオブジェクト「のみ」で返して。
                                                 例：
                                                 {
                                                   "userName": "社畜ちゃん(Lv.5)",
@@ -427,7 +426,7 @@
                         if (parsedPersona.userName && parsedPersona.personalityDescription) {
                             const newUsername = parsedPersona.userName;
                             const personalityDescription = parsedPersona.personalityDescription;
-                            const commentingSystemPrompt = `あなたは「${newUsername}」という名前の日本のオンライン掲示板の投稿者です。あなたの特徴的な性格・口調は「${personalityDescription}」です。この設定になりきって1～3文程度でコメントや返信をしてください。`;
+                            const commentingSystemPrompt = `ユーザ名は「${newUsername}」､性格は「${personalityDescription}」です。この設定になりきり､1～3文程度でコメントや返信をしてください。名前の表示は不要です｡`;
                             const firstChar = newUsername.trim().charAt(0);
                             const avatarSeed = firstChar.match(/[a-zA-Z0-9\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/) ? firstChar.toUpperCase() : 'P';
 
@@ -450,7 +449,7 @@
                     const noun = ["一般人", "名無しさん", "通行人X", "その他大勢の一人"];
                     const personalityTrait = `${adj[Math.floor(Math.random() * adj.length)]} ${noun[Math.floor(Math.random() * noun.length)]}`;
                     const newUsername = `${personalityTrait.replace(/\s/g,'')}${Math.floor(Math.random() * 100)}`;
-                    const commentingSystemPrompt = `あなたは「${newUsername}」です。あなたの性格は「${personalityTrait}」です。コメントは常に短く、1～3文程度にしてください。`;
+                    const commentingSystemPrompt = `あなたは「${newUsername}」。あなたの性格は「${personalityTrait}」。1～3文程度でコメントや返信をして。名前の表示は不要｡`;
                     const avatarSeed = newUsername.replace(/AI/g,'').charAt(0).toUpperCase() || 'F';
                     selectedPersonality = savePersonality(newUsername, personalityTrait, commentingSystemPrompt, avatarSeed);
                     aiStatus.textContent = `AI: フォールバック人格「${selectedPersonality.username}」を使用。`;
@@ -495,13 +494,13 @@
                         break;
                     }
                 }
-                promptForAIComment = `${basePrompt}${replyContext}\nあなたの返信内容だけを、あなたのキャラクターとして生成してください。`;
+                promptForAIComment = `${basePrompt}${replyContext}\nあなたの返信内容だけを、あなたのキャラクターとして生成して。名前の表示は不要｡`;
             } else { 
                 aiStatus.textContent = `AI (${selectedPersonality.username}): 新しいコメントを準備中...`;
-                let newCommentContext = "\n\n最近のコメントや動画内容全体を考慮して、新しいコメントをしてください。\n";
+                let newCommentContext = "\n\n最近のコメントを考慮して、新しいコメントをして。\n";
                 const recentComments = allCommentElements.slice(0, 3); 
                 if (recentComments.length > 0) {
-                    newCommentContext += "最近のコメントの例:\n";
+                    newCommentContext += "最近のコメント:\n";
                     recentComments.forEach(el => {
                         const text = el.querySelector('.comment-text').textContent;
                         const author = el.querySelector('.font-semibold').textContent;
@@ -510,7 +509,7 @@
                 } else {
                     newCommentContext += "まだコメントはありません。最初のコメントをどうぞ。\n";
                 }
-                promptForAIComment = `${basePrompt}${newCommentContext}\nあなたの新しいコメント内容だけを、あなたのキャラクターとして生成してください。`;
+                promptForAIComment = `${basePrompt}${newCommentContext}\nあなたの新しいコメント内容だけを、あなたのキャラクターとして生成して。名前の表示は不要｡`;
             }
 
             const aiCommentText = await callGeminiAPI(promptForAIComment, apiKey, modelName);
