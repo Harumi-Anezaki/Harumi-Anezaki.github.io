@@ -113,20 +113,20 @@
 
         <!-- AI 設定セクション -->
         <div class="mb-6 p-4 border border-gray-300 rounded-md">
-            <h3 class="text-lg font-semibold mb-2">AI設定</h3>
+            <h3 class="text-lg font-semibold mb-2">設定</h3>
             <div class="mb-2">
                 <label for="api-key-input" class="block text-sm font-medium text-gray-700">Gemini APIキー:</label>
                 <input type="password" id="api-key-input" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="APIキーを入力">
             </div>
             <div class="mb-2">
                 <label for="model-name-input" class="block text-sm font-medium text-gray-700">モデル名:</label>
-                <input type="text" id="model-name-input" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="例: gemini-1.5-flash (デフォルト: gemini-2.0-flash)">
+                <input type="text" id="model-name-input" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" value="gemini-2.0-flash">
             </div>
             <div class="flex space-x-2 mt-3">
-                <button id="start-ai-button" class="submit-button text-sm px-3 py-1">AIコメント開始</button>
-                <button id="stop-ai-button" class="cancel-button text-sm px-3 py-1" disabled>AIコメント停止</button>
+                <button id="start-ai-button" class="submit-button text-sm px-3 py-1">開始</button>
+                <button id="stop-ai-button" class="cancel-button text-sm px-3 py-1" disabled>停止</button>
             </div>
-            <p id="ai-status" class="text-xs text-gray-500 mt-1">AIは停止中です。</p>
+            <p id="ai-status" class="text-xs text-gray-500 mt-1">停止中...</p>
         </div>
 
         <!-- メインコメント入力欄 -->
@@ -468,7 +468,7 @@
                 console.log("Loaded personalities from Firestore:", aiPersonalities.length, "found.");
             } catch (error) {
                 console.error("Error loading personalities from Firestore:", error);
-                aiStatus.textContent = "AI人格の読み込みに失敗しました。";
+                aiStatus.textContent = "人格の読み込みに失敗しました。";
             }
         }
 
@@ -495,7 +495,7 @@
                 return newPersonality;
             } catch (error) {
                 console.error("Error saving personality to Firestore:", error);
-                aiStatus.textContent = "AI人格の保存に失敗しました。";
+                aiStatus.textContent = "人格の保存に失敗しました。";
                 newPersonality.id = `local-fallback-${Date.now()}`;
                 aiPersonalities.push(newPersonality);
                 console.log("Saved personality locally as fallback:", newPersonality);
@@ -511,7 +511,7 @@
                 return null;
             }
             
-            aiStatus.textContent = `AI: ${modelToUse} で生成処理中...`; // より具体的に
+            aiStatus.textContent = ` 生成処理中...`; // より具体的に
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelToUse}:generateContent?key=${currentApiKey}`;
             const payload = {
                 contents: [{ role: "user", parts: [{ text: prompt }] }],
@@ -666,9 +666,9 @@
                 if (!targetParentId) { 
                     updateTopLevelCommentCount();
                 }
-                aiStatus.textContent = `AI (${selectedPersonality.username}): コメント完了。次回処理待機中...`;
+                aiStatus.textContent = `(${selectedPersonality.username}): コメント完了。次回処理待機中...`;
             } else {
-                aiStatus.textContent = `AI (${selectedPersonality.username}): コメント生成失敗。次回処理待機中...`;
+                aiStatus.textContent = `(${selectedPersonality.username}): コメント生成失敗。次回処理待機中...`;
             }
         }
 
