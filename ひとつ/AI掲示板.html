@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube風コメント欄</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f9f9f9;
+        }
+        .comment-avatar, .reply-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        .reply-avatar { /* 返信コメント用のアバターは少し小さくする例 */
+            width: 28px;
+            height: 28px;
+        }
+        .comment-input-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        .comment-textarea, .reply-textarea {
+            border: none;
+            border-bottom: 1px solid #ccc;
+            resize: none;
+            outline: none;
+            transition: border-bottom-color 0.3s;
+        }
+        .comment-textarea:focus, .reply-textarea:focus {
+            border-bottom: 2px solid #065fd4;
+        }
+        .action-button { /* 返信ボタンなどの汎用ボタンスタイル */
+            background-color: transparent;
+            border: none;
+            color: #606060;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 4px; /* 少し角丸に */
+            transition: background-color 0.2s;
+            font-size: 0.875rem; /* 14px */
+            font-weight: 500;
+        }
+        .action-button:hover {
+            background-color: #e0e0e0;
+        }
+        .submit-button {
+            background-color: #065fd4;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 18px;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+        .submit-button:hover {
+            background-color: #054bb8;
+        }
+        .submit-button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .cancel-button {
+            background-color: transparent;
+            color: #606060;
+            padding: 8px 16px;
+            border-radius: 18px;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+        .cancel-button:hover {
+            background-color: #e9e9e9;
+        }
+        .comment-input-buttons, .reply-input-buttons {
+            display: none; /* Initially hidden */
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        .comment-item, .reply-item { /* コメントと返信アイテムの共通スタイル */
+            position: relative; /* data-comment-idを格納するため */
+        }
+        .replies-container { /* replies-listの親のスタイル調整 */
+            margin-left: 0; /* replies-list側でインデント制御 */
+            padding-left: 0;
+            border-left: none;
+            margin-top: 0.75rem; /* 12px */
+        }
+        .replies-list { /* 返信リスト自体のインデント */
+            margin-left: 48px; /* アバター幅 + space */
+            padding-left: 16px;
+            border-left: 2px solid #e0e0e0;
+            space-y: 0.75rem; /* replies-list直下の子要素のスペース */
+        }
+        .reply-input-area {
+            margin-top: 8px;
+            margin-left: 48px; /* 親コメントのアバター分インデント */
+        }
+
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="max-w-3xl mx-auto bg-white p-4 md:p-6 rounded-lg shadow">
+        <h2 class="text-xl font-semibold mb-4">コメント <span id="comment-count">3</span>件</h2>
+
+        <div class="mb-6 p-4 border border-gray-300 rounded-md">
+            <h3 class="text-lg font-semibold mb-2">AI設定</h3>
+            <div class="mb-2">
+                <label for="api-key-input" class="block text-sm font-medium text-gray-700">Gemini APIキー:</label>
+                <input type="password" id="api-key-input" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="APIキーを入力">
+            </div>
+            <div class="mb-2">
+                <label for="model-name-input" class="block text-sm font-medium text-gray-700">モデル名:</label>
+                <input type="text" id="model-name-input" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="例: gemini-1.5-flash (デフォルト: gemini-2.0-flash)">
+            </div>
+            <div class="flex space-x-2 mt-3">
+                <button id="start-ai-button" class="submit-button text-sm px-3 py-1">AIコメント開始</button>
+                <button id="stop-ai-button" class="cancel-button text-sm px-3 py-1" disabled>AIコメント停止</button>
+            </div>
+            <p id="ai-status" class="text-xs text-gray-500 mt-1">AIは停止中です。</p>
+        </div>
+
+        <div class="flex items-start space-x-3 mb-6">
+            <img src="https://placehold.co/32x32/7B68EE/FFFFFF?text=U" alt="あなたのプロフィール画像" class="comment-input-avatar">
+            <div class="flex-1">
+                <textarea id="new-comment-text" class="w-full p-2 comment-textarea" placeholder="コメントを追加..." rows="1"></textarea>
+                <div id="comment-input-buttons-container" class="comment-input-buttons">
+                    <button id="cancel-comment-button" class="cancel-button">キャンセル</button>
+                    <button id="submit-comment-button" class="submit-button" disabled>コメント</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="comments-list" class="space-y-6">
+            <div class="flex items-start space-x-3 comment-item" data-comment-id="comment-0">
+                <img src="https://placehold.co/40x40/2196F3/FFFFFF?text=D" alt="ユーザーDのプロフィール画像" class="comment-avatar">
+                <div class="flex-1">
+                    <div class="flex items-center space-x-1">
+                        <p class="font-semibold text-sm">ユーザーD</p>
+                        <p class="text-xs text-gray-500" data-timestamp="${new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString()}">3 日前</p>
+                    </div>
+                    <p class="text-sm mt-1 comment-text">シンプルで分かりやすい！</p>
+                    <div class="flex items-center space-x-2 mt-2 text-xs">
+                        <button class="action-button reply-button">返信</button>
+                    </div>
+                    <div class="reply-input-container mt-2"></div>
+                    <div class="replies-container">
+                        <div class="replies-list space-y-3"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex items-start space-x-3 comment-item" data-comment-id="comment-1">
+                <img src="https://placehold.co/40x40/4CAF50/FFFFFF?text=B" alt="ユーザーBのプロフィール画像" class="comment-avatar">
+                <div class="flex-1">
+                    <div class="flex items-center space-x-1">
+                        <p class="font-semibold text-sm">ユーザーB</p>
+                        <p class="text-xs text-gray-500" data-timestamp="${new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString()}">5 時間前</p>
+                    </div>
+                    <p class="text-sm mt-1 comment-text">うーん、私はあまり同意できません。別の視点もあると思います。</p>
+                    <div class="flex items-center space-x-2 mt-2 text-xs">
+                        <button class="action-button reply-button">返信</button>
+                    </div>
+                    <div class="reply-input-container mt-2"></div>
+                    <div class="replies-container">
+                        <div class="replies-list space-y-3">
+                        <div class="flex items-start space-x-3 reply-item" data-comment-id="comment-1-reply-0">
+                             <img src="https://placehold.co/28x28/E91E63/FFFFFF?text=C" alt="ユーザーCのプロフィール画像" class="reply-avatar">
+                             <div class="flex-1">
+                                 <div class="flex items-center space-x-1">
+                                     <p class="font-semibold text-xs">ユーザーC</p>
+                                     <p class="text-xs text-gray-500" data-timestamp="${new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString()}">1 時間前</p>
+                                 </div>
+                                 <p class="text-xs mt-1 comment-text">@ユーザーB なるほど、そういう考え方もありますね。</p>
+                                 <div class="flex items-center space-x-2 mt-1 text-xs">
+                                      <button class="action-button reply-button">返信</button>
+                                 </div>
+                                 <div class="reply-input-container mt-2"></div>
+                                 <div class="replies-container">
+                                     <div class="replies-list space-y-3"></div>
+                                 </div>
+                             </div>
+                         </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-start space-x-3 comment-item" data-comment-id="comment-2">
+                <img src="https://placehold.co/40x40/FFC107/000000?text=A" alt="ユーザーAのプロフィール画像" class="comment-avatar">
+                <div class="flex-1">
+                    <div class="flex items-center space-x-1">
+                        <p class="font-semibold text-sm">ユーザーA</p>
+                        <p class="text-xs text-gray-500" data-timestamp="${new Date().toISOString()}">ついさっき</p>
+                    </div>
+                    <p class="text-sm mt-1 comment-text">これは素晴らしい動画ですね！とても参考になりました。特に最後の部分が良かったです。</p>
+                    <div class="flex items-center space-x-2 mt-2 text-xs">
+                        <button class="action-button reply-button">返信</button>
+                    </div>
+                    <div class="reply-input-container mt-2"></div>
+                    <div class="replies-container">
+                        <div class="replies-list space-y-3"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Firebase SDKのインポート
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, addDoc, getDoc, getDocs, collection, query, where, onSnapshot, serverTimestamp, orderBy, limit } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js"; // orderBy, limit を追加
+        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const newCommentText = document.getElementById('new-comment-text');
+        const submitCommentButton = document.getElementById('submit-comment-button');
+        const cancelCommentButton = document.getElementById('cancel-comment-button');
+        const commentInputButtonsContainer = document.getElementById('comment-input-buttons-container');
+        const commentsList = document.getElementById('comments-list');
+        const commentCountSpan = document.getElementById('comment-count');
+
+        const apiKeyInput = document.getElementById('api-key-input');
+        const modelNameInput = document.getElementById('model-name-input');
+        const startAiButton = document.getElementById('start-ai-button');
+        const stopAiButton = document.getElementById('stop-ai-button');
+        const aiStatus = document.getElementById('ai-status');
+
+        let nextCommentIdCounter = 3; 
+        let aiIntervalId = null;
+        let aiPersonalities = []; // { id?: string, username: string, personalityTrait: string, personalityPrompt: string, avatarSeed: string }
+
+        // --- Firebase関連 ---
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'youtube-comments-ai-dev';
+        const firebaseConfigStr = typeof __firebase_config !== 'undefined' ? __firebase_config : null;
+        let db, auth, userId;
+        let firebaseInitialized = false;
+
+        if (firebaseConfigStr) {
+            try {
+                const firebaseConfig = JSON.parse(firebaseConfigStr);
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                setLogLevel('debug'); 
+                firebaseInitialized = true;
+                console.log("Firebase initialized successfully.");
+
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        console.log("User is signed in with UID:", userId);
+                        await loadPersonalities(); 
+                    } else {
+                        console.log("User is signed out. Attempting sign-in...");
+                        try {
+                            const token = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+                            if (token) {
+                                await signInWithCustomToken(auth, token);
+                                console.log("Signed in with custom token.");
+                            } else {
+                                await signInAnonymously(auth);
+                                console.log("Signed in anonymously.");
+                            }
+                        } catch (error) {
+                            console.error("Error during sign-in:", error);
+                            aiStatus.textContent = "認証エラーが発生しました。";
+                        }
+                    }
+                });
+            } catch (e) {
+                console.error("Firebase initialization failed:", e);
+                aiStatus.textContent = "Firebaseの初期化に失敗しました。AI人格はローカルに保存されます。";
+                firebaseInitialized = false;
+            }
+        } else {
+            console.warn("Firebase config not found. AI personalities will be in-memory only.");
+            aiStatus.textContent = "Firebase設定が見つかりません。AI人格はローカルに保存されます。";
+            firebaseInitialized = false;
+        }
+        // --- ここまでFirebase関連 ---
+
+        // メインコメント入力欄の制御
+        newCommentText.addEventListener('focus', () => {
+            newCommentText.rows = 3;
+            commentInputButtonsContainer.style.display = 'flex';
+        });
+        newCommentText.addEventListener('input', () => {
+            submitCommentButton.disabled = newCommentText.value.trim() === '';
+        });
+        cancelCommentButton.addEventListener('click', () => {
+            newCommentText.value = '';
+            newCommentText.rows = 1;
+            submitCommentButton.disabled = true;
+            commentInputButtonsContainer.style.display = 'none';
+            newCommentText.blur();
+        });
+
+        // メインコメント投稿処理
+        submitCommentButton.addEventListener('click', () => {
+            const commentText = newCommentText.value.trim();
+            if (commentText === '') return;
+            addCommentToDOM(commentText, "あなた", `https://placehold.co/40x40/7B68EE/FFFFFF?text=U`, null);
+            
+            newCommentText.value = '';
+            newCommentText.rows = 1;
+            submitCommentButton.disabled = true;
+            commentInputButtonsContainer.style.display = 'none';
+            newCommentText.blur();
+            updateTopLevelCommentCount();
+        });
+
+        // コメントや返信をDOMに追加する汎用関数
+        function addCommentToDOM(text, author, avatarSrc, parentCommentId = null, personalityInfo = null, commentId = null) {
+            const newCommentId = commentId || `comment-${nextCommentIdCounter++}-${Date.now()}`; // IDのユニーク性を高める
+            const isReply = parentCommentId !== null;
+            const timestamp = new Date().toISOString();
+
+            const commentElement = document.createElement('div');
+            commentElement.classList.add(isReply ? 'reply-item' : 'comment-item', 'flex', 'items-start', 'space-x-3');
+            commentElement.dataset.commentId = newCommentId;
+            if (personalityInfo) { 
+                commentElement.dataset.aiPersonality = personalityInfo.username;
+            }
+
+            commentElement.innerHTML = `
+                <img src="${avatarSrc}" alt="${author}のプロフィール画像" class="${isReply ? 'reply-avatar' : 'comment-avatar'}">
+                <div class="flex-1">
+                    <div class="flex items-center space-x-1">
+                        <p class="font-semibold ${isReply ? 'text-xs' : 'text-sm'}">${escapeHTML(author)}</p>
+                        <p class="text-xs text-gray-500" data-timestamp="${timestamp}">${formatTimeAgo(timestamp)}</p>
+                    </div>
+                    <p class="${isReply ? 'text-xs' : 'text-sm'} mt-1 comment-text">${escapeHTML(text)}</p>
+                    <div class="flex items-center space-x-2 mt-${isReply ? '1' : '2'} text-xs">
+                        <button class="action-button reply-button">返信</button>
+                    </div>
+                    <div class="reply-input-container mt-2"></div>
+                    <div class="replies-container"> <div class="replies-list ${isReply ? 'space-y-2' : 'space-y-3'}"></div> </div>
+                </div>
+            `;
+
+            const targetList = isReply 
+                ? document.querySelector(`[data-comment-id="${parentCommentId}"] .replies-list`)
+                : commentsList;
+
+            if (targetList) {
+                targetList.insertBefore(commentElement, targetList.firstChild);
+            } else {
+                if (isReply) console.error("Parent comment's replies list not found for ID:", parentCommentId);
+                else console.error("Main comments list not found.");
+                return; 
+            }
+            // commentElement.querySelector('.reply-button').addEventListener('click', handleReplyButtonClick); // イベント委任のため不要
+            return newCommentId;
+        }
+        
+        commentsList.addEventListener('click', function(event) {
+            if (event.target.classList.contains('reply-button')) {
+                handleReplyButtonClick(event);
+            }
+        });
+        
+        function handleReplyButtonClick(event) {
+            const button = event.target;
+            const parentCommentItem = button.closest('.comment-item, .reply-item');
+            const parentCommentId = parentCommentItem.dataset.commentId;
+            const replyInputContainer = parentCommentItem.querySelector('.reply-input-container');
+
+            const existingReplyForm = document.getElementById('dynamic-reply-form');
+            if (existingReplyForm) existingReplyForm.remove();
+
+            const replyForm = document.createElement('div');
+            replyForm.id = 'dynamic-reply-form';
+            replyForm.classList.add('flex', 'items-start', 'space-x-2', 'mt-2', 'p-2', 'bg-gray-50', 'rounded-md');
+            // 返信フォームのアバターは小さくする
+            replyForm.innerHTML = `
+                <img src="https://placehold.co/28x28/7B68EE/FFFFFF?text=U" alt="あなたのプロフィール画像" class="reply-avatar">
+                <div class="flex-1">
+                    <textarea class="w-full p-1 reply-textarea text-xs" placeholder="返信を追加..." rows="2"></textarea>
+                    <div class="reply-input-buttons flex justify-end gap-2 mt-1" style="display: flex;">
+                        <button class="cancel-reply-button cancel-button text-xs px-2 py-1">キャンセル</button>
+                        <button class="submit-reply-button submit-button text-xs px-2 py-1" disabled>返信</button>
+                    </div>
+                </div>
+            `;
+            replyInputContainer.appendChild(replyForm);
+            const replyTextarea = replyForm.querySelector('.reply-textarea');
+            const submitReplyBtn = replyForm.querySelector('.submit-reply-button');
+            const cancelReplyBtn = replyForm.querySelector('.cancel-reply-button');
+
+            replyTextarea.focus();
+            replyTextarea.addEventListener('input', () => {
+                submitReplyBtn.disabled = replyTextarea.value.trim() === '';
+            });
+            cancelReplyBtn.addEventListener('click', () => replyForm.remove());
+            submitReplyBtn.addEventListener('click', () => {
+                const replyText = replyTextarea.value.trim();
+                if (replyText === '') return;
+                const replyingToUsername = parentCommentItem.querySelector('.font-semibold').textContent;
+                const fullReplyText = `@${replyingToUsername} ${replyText}`;
+                addCommentToDOM(fullReplyText, "あなた", `https://placehold.co/28x28/7B68EE/FFFFFF?text=U`, parentCommentId);
+                replyForm.remove();
+            });
+        }
+
+        function escapeHTML(str) {
+            const p = document.createElement('p');
+            p.textContent = str;
+            return p.innerHTML;
+        }
+        
+        function updateTopLevelCommentCount() {
+            const topLevelCommentItems = commentsList.querySelectorAll(':scope > .comment-item');
+            commentCountSpan.textContent = topLevelCommentItems.length;
+        }
+
+        function formatTimeAgo(isoTimestamp) {
+            const date = new Date(isoTimestamp);
+            const now = new Date();
+            const seconds = Math.round((now - date) / 1000);
+            if (seconds < 5) return "たった今";
+            if (seconds < 60) return `${seconds}秒前`;
+            const minutes = Math.round(seconds / 60);
+            if (minutes < 60) return `${minutes}分前`;
+            const hours = Math.round(minutes / 60);
+            if (hours < 24) return `${hours}時間前`;
+            const days = Math.round(hours / 24);
+            return `${days}日前`;
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.comment-item, .reply-item').forEach(item => {
+                const timeElement = item.querySelector('.text-xs.text-gray-500');
+                if (timeElement && timeElement.dataset.timestamp) {
+                    timeElement.textContent = formatTimeAgo(timeElement.dataset.timestamp);
+                }
+            });
+            updateTopLevelCommentCount();
+        });
+
+        // --- AI関連のロジック ---
+        async function loadPersonalities() {
+            if (!firebaseInitialized || !db) {
+                console.log("Firebase not ready, skipping personality load from DB.");
+                return;
+            }
+            const personalitiesColPath = `artifacts/${appId}/public/data/ai-personalities`;
+            const personalitiesCol = collection(db, personalitiesColPath);
+            try {
+                const snapshot = await getDocs(query(personalitiesCol, orderBy("createdAt", "desc"), limit(50))); // 最新50件など
+                aiPersonalities = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                console.log("Loaded personalities from Firestore:", aiPersonalities.length, "found.");
+            } catch (error) {
+                console.error("Error loading personalities from Firestore:", error);
+                aiStatus.textContent = "AI人格の読み込みに失敗しました。";
+            }
+        }
+
+        async function savePersonality(username, personalityTrait, personalityPrompt, avatarSeed) {
+            const newPersonality = { username, personalityTrait, personalityPrompt, avatarSeed, createdAt: new Date().toISOString() };
+            if (!firebaseInitialized || !db) {
+                newPersonality.id = `local-${Date.now()}`;
+                aiPersonalities.push(newPersonality);
+                console.log("Saved personality locally:", newPersonality);
+                return newPersonality;
+            }
+            try {
+                const personalitiesColPath = `artifacts/${appId}/public/data/ai-personalities`;
+                const newDocRef = await addDoc(collection(db, personalitiesColPath), {
+                    username,
+                    personalityTrait,
+                    personalityPrompt,
+                    avatarSeed,
+                    createdAt: serverTimestamp() 
+                });
+                newPersonality.id = newDocRef.id;
+                aiPersonalities.push(newPersonality); // ローカルにも追加
+                console.log("Personality saved to Firestore with ID:", newDocRef.id);
+                return newPersonality;
+            } catch (error) {
+                console.error("Error saving personality to Firestore:", error);
+                aiStatus.textContent = "AI人格の保存に失敗しました。";
+                // フォールバックとしてローカルに保存
+                newPersonality.id = `local-fallback-${Date.now()}`;
+                aiPersonalities.push(newPersonality);
+                console.log("Saved personality locally as fallback:", newPersonality);
+                return newPersonality;
+            }
+        }
+        
+        async function callGeminiAPI(prompt, currentApiKey, currentModelName) {
+            const modelToUse = currentModelName || 'gemini-2.0-flash';
+            if (!currentApiKey) {
+                aiStatus.textContent = "APIキーが設定されていません。";
+                console.error("API Key is missing.");
+                return null;
+            }
+            
+            aiStatus.textContent = `${modelToUse} でコメント生成中...`;
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelToUse}:generateContent?key=${currentApiKey}`;
+            const payload = {
+                contents: [{ role: "user", parts: [{ text: prompt }] }],
+                generationConfig: { temperature: 0.7, maxOutputTokens: 150 }
+            };
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+                if (result.candidates && result.candidates[0]?.content?.parts[0]?.text) {
+                    aiStatus.textContent = "AIコメント生成成功。";
+                    return result.candidates[0].content.parts[0].text.trim();
+                } else {
+                    console.error("Gemini API response error or no content:", result);
+                    const errorMessage = result.error?.message || JSON.stringify(result.error) || '不明なAPIエラー';
+                    aiStatus.textContent = `APIエラー: ${errorMessage.substring(0, 100)}`;
+                    return null;
+                }
+            } catch (error) {
+                console.error("Error calling Gemini API:", error);
+                aiStatus.textContent = `API呼び出し失敗: ${error.message.substring(0,100)}`;
+                return null;
+            }
+        }
+
+        async function aiActionLoop() {
+            const apiKey = apiKeyInput.value;
+            const modelName = modelNameInput.value;
+
+            if (!apiKey) {
+                aiStatus.textContent = "AI処理停止: APIキーを入力してください。";
+                stopAiCommenting();
+                return;
+            }
+
+            let selectedPersonality;
+            // 1. 人格の決定
+            aiStatus.textContent = "AI: 人格を決定中...";
+            if (Math.random() < 0.5 || aiPersonalities.length === 0) {
+                const adj = ["面白い", "皮肉屋な", "親切な", "知的な", "好奇心旺盛な", "批判的な", "楽観的な", "冷静な", "情熱的な", "博識な"];
+                const noun = ["猫好き", "ゲーマー", "旅人", "哲学者", "エンジニア", "アーティスト", "科学者", "歴史家"];
+                const personalityTrait = `${adj[Math.floor(Math.random() * adj.length)]} ${noun[Math.floor(Math.random() * noun.length)]}`;
+                const newUsername = `AI ${personalityTrait.replace(/\s/g,'')}${Math.floor(Math.random() * 100)}`;
+                const personalityPrompt = `あなたはYouTubeのコメンテーター「${newUsername}」です。あなたの性格は「${personalityTrait}」です。この性格になりきって、他のコメントや動画内容に対してコメントや返信をしてください。コメントは常に短く、1～3文程度にしてください。`;
+                const avatarSeed = newUsername.replace(/AI/g,'').charAt(0).toUpperCase() || 'A';
+                
+                selectedPersonality = await savePersonality(newUsername, personalityTrait, personalityPrompt, avatarSeed);
+                aiStatus.textContent = `AI: 新人格「${selectedPersonality.username}」(${selectedPersonality.personalityTrait})を作成。`;
+            } else {
+                selectedPersonality = aiPersonalities[Math.floor(Math.random() * aiPersonalities.length)];
+                aiStatus.textContent = `AI: 人格「${selectedPersonality.username}」(${selectedPersonality.personalityTrait})を選択。`;
+            }
+            
+            const avatarColor = Math.floor(Math.random()*127 + 128).toString(16) + Math.floor(Math.random()*127 + 128).toString(16) + Math.floor(Math.random()*127 + 128).toString(16); // 明るめの色
+            const avatarUrl = `https://placehold.co/40x40/${avatarColor}/FFFFFF?text=${selectedPersonality.avatarSeed}`;
+
+            // 2. 行動の決定 (返信 or 新規コメント)
+            const allCommentElements = Array.from(commentsList.querySelectorAll('.comment-item, .reply-item'));
+            const shouldReply = Math.random() < 0.5 && allCommentElements.length > 0;
+            let promptForAI;
+            let targetParentId = null; // 返信先コメントのID
+
+            if (shouldReply) { // A. 既存のコメントに返信
+                const targetCommentElement = allCommentElements[Math.floor(Math.random() * allCommentElements.length)];
+                targetParentId = targetCommentElement.dataset.commentId;
+                const targetCommentText = targetCommentElement.querySelector('.comment-text').textContent;
+                const targetAuthor = targetCommentElement.querySelector('.font-semibold').textContent;
+                aiStatus.textContent = `AI: 「${targetAuthor}」のコメント「${targetCommentText.substring(0,15)}...」に返信準備中...`;
+
+                let context = `あなたは「${selectedPersonality.username}」です。あなたの性格は「${selectedPersonality.personalityTrait}」です。\n以下のコメントに、あなたの性格で返信してください。返信は1～3文で簡潔にお願いします。\n\n`;
+                context += `返信対象のコメント (投稿者 ${targetAuthor}): "${targetCommentText}"\n\n`;
+                
+                // 返信の連鎖を2レベル遡る
+                let currentElement = targetCommentElement;
+                for (let i = 0; i < 2; i++) {
+                    const parentWrapper = currentElement.parentElement.closest('.replies-list'); // 親のreplies-listを探す
+                    if (!parentWrapper) break; // replies-listがなければ、それはトップレベルコメントの直接の子ではないか、DOM構造が異なる
+                    const grandParentItem = parentWrapper.parentElement.closest('.comment-item, .reply-item'); // replies-listの親の親がコメントアイテム
+                    
+                    if (grandParentItem) {
+                        const parentText = grandParentItem.querySelector('.comment-text').textContent;
+                        const parentAuthor = grandParentItem.querySelector('.font-semibold').textContent;
+                        context += `その会話の文脈となる親コメント (投稿者 ${parentAuthor}): "${parentText}"\n`;
+                        currentElement = grandParentItem;
+                    } else {
+                        break;
+                    }
+                }
+                promptForAI = `${context}\nあなたの返信内容だけを生成してください。`;
+            } else { // B. 新しくコメントする
+                aiStatus.textContent = `AI: 新しいコメントを準備中...`;
+                let context = `あなたは「${selectedPersonality.username}」です。あなたの性格は「${selectedPersonality.personalityTrait}」です。\n`;
+                const recentComments = allCommentElements.slice(0, 3); // 直近3つのコメントを参照
+                if (recentComments.length > 0) {
+                    context += "最近のいくつかのコメントを参考に、動画全体や他のコメントに対する新しいコメントをしてください。コメントは1～3文で簡潔にお願いします。\n\n最近のコメントの例:\n";
+                    recentComments.forEach(el => {
+                        const text = el.querySelector('.comment-text').textContent;
+                        const author = el.querySelector('.font-semibold').textContent;
+                        context += `- ${author}: "${text.substring(0, 50)}..."\n`;
+                    });
+                } else {
+                    context += "まだコメントはありません。動画に対する最初のコメントを、あなたの性格で1～3文で簡潔にどうぞ。\n";
+                }
+                promptForAI = `${context}\nあなたの新しいコメント内容だけを生成してください。`;
+            }
+
+            // 3. Gemini APIでコメント生成
+            const aiCommentText = await callGeminiAPI(promptForAI, apiKey, modelName);
+
+            if (aiCommentText) {
+                addCommentToDOM(aiCommentText, selectedPersonality.username, avatarUrl, targetParentId, selectedPersonality);
+                if (!targetParentId) { 
+                    updateTopLevelCommentCount();
+                }
+                aiStatus.textContent = `AI: 「${selectedPersonality.username}」がコメントしました。次の処理まで待機中...`;
+            } else {
+                aiStatus.textContent = `AI: コメント生成失敗。次の処理まで待機中...`;
+            }
+        }
+
+        startAiButton.addEventListener('click', async () => {
+            if (!apiKeyInput.value) {
+                // alert()は使用できないので、ステータス表示で代替
+                aiStatus.textContent = "APIキーを入力してください。";
+                return;
+            }
+            if (aiIntervalId) return; 
+            
+            if (firebaseInitialized && !userId) { // Firebase初期化済みだが認証がまだの場合
+                 aiStatus.textContent = "ユーザー認証待機中...完了後に再試行してください。";
+                 return;
+            }
+            if (firebaseInitialized && aiPersonalities.length === 0) { // 念のため、DBからの読み込みを待つ
+                await loadPersonalities();
+            }
+
+
+            aiStatus.textContent = "AIコメント生成を開始します...";
+            aiActionLoop(); 
+            aiIntervalId = setInterval(aiActionLoop, 5000); // 5秒ごとに変更
+            startAiButton.disabled = true;
+            stopAiButton.disabled = false;
+            apiKeyInput.disabled = true;
+            modelNameInput.disabled = true;
+        });
+
+        function stopAiCommenting() {
+            if (aiIntervalId) {
+                clearInterval(aiIntervalId);
+                aiIntervalId = null;
+                aiStatus.textContent = "AIコメント生成を停止しました。";
+                startAiButton.disabled = false;
+                stopAiButton.disabled = true;
+                apiKeyInput.disabled = false;
+                modelNameInput.disabled = false;
+            }
+        }
+        stopAiButton.addEventListener('click', stopAiCommenting);
+
+    </script>
+</body>
+</html>
