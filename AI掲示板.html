@@ -408,13 +408,13 @@
             aiStatus.textContent = "AI: 人格を決定中...";
             if (Math.random() < 0.5 || aiPersonalities.length === 0) {
                 const personaGenerationPrompt = `あなたは、日本のオンライン掲示板投稿者のペルソナを作成するAIアシスタントです。
-ユーザー名(ネットスラング、奇抜な単語の組み合わせ、自虐ネタ、中二病的な響き、意味不明な記号列、アニメやゲームのキャラもじり、煽り文句など、一度見たら忘れられないような、強烈なインパクトを持つ名前。例： \`煽り神\`, \`†終末の使徒†\`, \`全レス乞食\`, \`壁のシミ\`, \`ゲスの極み乙\`)と、性格(煽り、自虐、電波系、ネタ発言、強いこだわり、斜に構えた態度、極端な思想、レスバトラー気質、謎の上から目線、過度な専門用語の乱用、意味不明なポエム、特定ジャンルへの異常な愛憎など、そのキャラクターの「ヤバさ」や「面白さ」が一言で伝わるようなもの。例： \`異論は認めん。ソースは俺。\`, \`今日も一日がんばるぞい！（白目）\`, \`宇宙の真理に気づいてしまった…\`, \`レスバトなら任せろ。かかってこい。\`, \`また髪の話してる…\`, \`すべては運命石の扉の選択だ。\`)を生成してください。
-応答は、'userName'（文字列）と 'personalityDescription'（文字列）の2つのキーを持つJSONオブジェクト「のみ」で返してください。
-例：
-{
-  "userName": "社畜ちゃん(Lv.5)",
-  "personalityDescription": "推しが尊すぎて今日も墓建設中。"
-}`;
+                                                ユーザー名(カオス系から真面目なものまで多種多様な選択肢を踏まえて生成｡例： 煽り神, †終末の使徒†, 佐藤, 猫)と、性格(カオス系から真面目なものまで多種多様な選択肢を踏まえて生成｡例：頭おかしい,  絶対論破したい, 知識よく溢れる女子大生, 大学教授)を生成してください。
+                                                応答は、'userName'（文字列）と 'personalityDescription'（文字列）の2つのキーを持つJSONオブジェクト「のみ」で返してください。
+                                                例：
+                                                {
+                                                  "userName": "社畜ちゃん(Lv.5)",
+                                                  "personalityDescription": "推しが尊すぎて今日も墓建設中。"
+                                                }`;
                 aiStatus.textContent = `AI: 新しい掲示板ペルソナを生成中...`;
                 const personaJsonString = await callGeminiAPI(personaGenerationPrompt, apiKey, modelName);
 
@@ -427,7 +427,7 @@
                         if (parsedPersona.userName && parsedPersona.personalityDescription) {
                             const newUsername = parsedPersona.userName;
                             const personalityDescription = parsedPersona.personalityDescription;
-                            const commentingSystemPrompt = `あなたは「${newUsername}」という名前の日本のオンライン掲示板の投稿者です。あなたの特徴的な性格・口調は「${personalityDescription}」です。この設定になりきってください。他のコメントや動画内容に対して、その性格でコメントや返信をしてください。コメントは常に短く、1～3文程度で、非常に個性的かつ掲示板らしいスタイルでお願いします。`;
+                            const commentingSystemPrompt = `あなたは「${newUsername}」という名前の日本のオンライン掲示板の投稿者です。あなたの特徴的な性格・口調は「${personalityDescription}」です。この設定になりきって1～3文程度でコメントや返信をしてください。`;
                             const firstChar = newUsername.trim().charAt(0);
                             const avatarSeed = firstChar.match(/[a-zA-Z0-9\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/) ? firstChar.toUpperCase() : 'P';
 
@@ -520,9 +520,9 @@
                 if (!targetParentId) { 
                     updateTopLevelCommentCount();
                 }
-                aiStatus.textContent = `(${selectedPersonality.username}): コメント完了。次回処理待機中...`;
+                aiStatus.textContent = `${selectedPersonality.username}: コメント完了。`;
             } else {
-                aiStatus.textContent = `(${selectedPersonality.username}): コメント生成失敗。次回処理待機中...`;
+                aiStatus.textContent = `${selectedPersonality.username}: コメント生成失敗。`;
             }
         }
 
@@ -535,7 +535,7 @@
             
             loadPersonalities(); 
 
-            aiStatus.textContent = "AIコメント生成を開始します...";
+            aiStatus.textContent = "コメント生成を開始します...";
             aiActionLoop(); 
             aiIntervalId = setInterval(aiActionLoop, 5000); 
             startAiButton.disabled = true;
