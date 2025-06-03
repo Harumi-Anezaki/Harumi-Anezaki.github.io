@@ -6,7 +6,6 @@
     <title>YouTube風コメント欄</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Font Awesomeのリンクは不要なため削除しました -->
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -94,7 +93,7 @@
             margin-top: 0.75rem; 
         }
         .replies-list { 
-            margin-left: 48px; 
+            margin-left: 0px; 
             padding-left: 16px;
             border-left: 2px solid #e0e0e0;
             space-y: 0.75rem; 
@@ -143,91 +142,10 @@
 
         <!-- コメントリスト -->
         <div id="comments-list" class="space-y-6">
-            <!-- コメント1 (例) -->
-            <div class="flex items-start space-x-3 comment-item" data-comment-id="comment-0">
-                <img src="https://placehold.co/40x40/2196F3/FFFFFF?text=D" alt="ユーザーDのプロフィール画像" class="comment-avatar">
-                <div class="flex-1">
-                    <div class="flex items-center space-x-1">
-                        <p class="font-semibold text-sm">ユーザーD</p>
-                        <p class="text-xs text-gray-500" data-timestamp="${new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString()}">3 日前</p>
-                    </div>
-                    <p class="text-sm mt-1 comment-text">シンプルで分かりやすい！</p>
-                    <div class="flex items-center space-x-2 mt-2 text-xs">
-                        <button class="action-button reply-button">返信</button>
-                    </div>
-                    <div class="reply-input-container mt-2"></div>
-                    <div class="replies-container">
-                        <div class="replies-list space-y-3"></div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- コメント2 (例) -->
-            <div class="flex items-start space-x-3 comment-item" data-comment-id="comment-1">
-                <img src="https://placehold.co/40x40/4CAF50/FFFFFF?text=B" alt="ユーザーBのプロフィール画像" class="comment-avatar">
-                <div class="flex-1">
-                    <div class="flex items-center space-x-1">
-                        <p class="font-semibold text-sm">ユーザーB</p>
-                        <p class="text-xs text-gray-500" data-timestamp="${new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString()}">5 時間前</p>
-                    </div>
-                    <p class="text-sm mt-1 comment-text">うーん、私はあまり同意できません。別の視点もあると思います。</p>
-                    <div class="flex items-center space-x-2 mt-2 text-xs">
-                        <button class="action-button reply-button">返信</button>
-                    </div>
-                    <div class="reply-input-container mt-2"></div>
-                    <div class="replies-container">
-                        <div class="replies-list space-y-3">
-                        <!-- 返信コメントの例 -->
-                        <div class="flex items-start space-x-3 reply-item" data-comment-id="comment-1-reply-0">
-                             <img src="https://placehold.co/28x28/E91E63/FFFFFF?text=C" alt="ユーザーCのプロフィール画像" class="reply-avatar">
-                             <div class="flex-1">
-                                 <div class="flex items-center space-x-1">
-                                     <p class="font-semibold text-xs">ユーザーC</p>
-                                     <p class="text-xs text-gray-500" data-timestamp="${new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString()}">1 時間前</p>
-                                 </div>
-                                 <p class="text-xs mt-1 comment-text">@ユーザーB なるほど、そういう考え方もありますね。</p>
-                                 <div class="flex items-center space-x-2 mt-1 text-xs">
-                                      <button class="action-button reply-button">返信</button>
-                                 </div>
-                                 <div class="reply-input-container mt-2"></div>
-                                 <div class="replies-container">
-                                     <div class="replies-list space-y-3"></div>
-                                 </div>
-                             </div>
-                         </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- コメント3 (例) -->
-            <div class="flex items-start space-x-3 comment-item" data-comment-id="comment-2">
-                <img src="https://placehold.co/40x40/FFC107/000000?text=A" alt="ユーザーAのプロフィール画像" class="comment-avatar">
-                <div class="flex-1">
-                    <div class="flex items-center space-x-1">
-                        <p class="font-semibold text-sm">ユーザーA</p>
-                        <p class="text-xs text-gray-500" data-timestamp="${new Date().toISOString()}">ついさっき</p>
-                    </div>
-                    <p class="text-sm mt-1 comment-text">これは素晴らしい動画ですね！とても参考になりました。特に最後の部分が良かったです。</p>
-                    <div class="flex items-center space-x-2 mt-2 text-xs">
-                        <button class="action-button reply-button">返信</button>
-                    </div>
-                    <div class="reply-input-container mt-2"></div>
-                    <div class="replies-container">
-                        <div class="replies-list space-y-3"></div>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
 
     <script type="module">
-        // Firebase SDKのインポート
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, addDoc, getDoc, getDocs, collection, query, where, onSnapshot, serverTimestamp, orderBy, limit } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
         const newCommentText = document.getElementById('new-comment-text');
         const submitCommentButton = document.getElementById('submit-comment-button');
         const cancelCommentButton = document.getElementById('cancel-comment-button');
@@ -245,57 +163,8 @@
         let aiIntervalId = null;
         let aiPersonalities = []; 
 
-        // --- Firebase関連 ---
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'youtube-comments-ai-dev';
-        const firebaseConfigStr = typeof __firebase_config !== 'undefined' ? __firebase_config : null;
-        let db, auth, userId;
-        let firebaseInitialized = false;
+        const LOCAL_STORAGE_KEY_PERSONALITIES = 'aiPersonalities';
 
-        if (firebaseConfigStr) {
-            try {
-                const firebaseConfig = JSON.parse(firebaseConfigStr);
-                const app = initializeApp(firebaseConfig);
-                db = getFirestore(app);
-                auth = getAuth(app);
-                setLogLevel('debug'); 
-                firebaseInitialized = true;
-                console.log("Firebase initialized successfully.");
-
-                onAuthStateChanged(auth, async (user) => {
-                    if (user) {
-                        userId = user.uid;
-                        console.log("User is signed in with UID:", userId);
-                        await loadPersonalities(); 
-                    } else {
-                        console.log("User is signed out. Attempting sign-in...");
-                        try {
-                            const token = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-                            if (token) {
-                                await signInWithCustomToken(auth, token);
-                                console.log("Signed in with custom token.");
-                            } else {
-                                await signInAnonymously(auth);
-                                console.log("Signed in anonymously.");
-                            }
-                        } catch (error) {
-                            console.error("Error during sign-in:", error);
-                            aiStatus.textContent = "認証エラーが発生しました。";
-                        }
-                    }
-                });
-            } catch (e) {
-                console.error("Firebase initialization failed:", e);
-                aiStatus.textContent = "Firebaseの初期化に失敗しました。AI人格はローカルに保存されます。";
-                firebaseInitialized = false;
-            }
-        } else {
-            console.warn("Firebase config not found. AI personalities will be in-memory only.");
-            aiStatus.textContent = "Firebase設定が見つかりません。AI人格はローカルに保存されます。";
-            firebaseInitialized = false;
-        }
-        // --- ここまでFirebase関連 ---
-
-        // メインコメント入力欄の制御
         newCommentText.addEventListener('focus', () => {
             newCommentText.rows = 3;
             commentInputButtonsContainer.style.display = 'flex';
@@ -311,7 +180,6 @@
             newCommentText.blur();
         });
 
-        // メインコメント投稿処理
         submitCommentButton.addEventListener('click', () => {
             const commentText = newCommentText.value.trim();
             if (commentText === '') return;
@@ -325,7 +193,6 @@
             updateTopLevelCommentCount();
         });
 
-        // コメントや返信をDOMに追加する汎用関数
         function addCommentToDOM(text, author, avatarSrc, parentCommentId = null, personalityInfo = null, commentId = null) {
             const newCommentId = commentId || `comment-${nextCommentIdCounter++}-${Date.now()}`;
             const isReply = parentCommentId !== null;
@@ -368,7 +235,6 @@
             return newCommentId;
         }
         
-        // 「返信」ボタンのイベント委任
         commentsList.addEventListener('click', function(event) {
             if (event.target.classList.contains('reply-button')) {
                 handleReplyButtonClick(event);
@@ -442,8 +308,8 @@
             return `${days}日前`;
         }
         
-        // DOMContentLoadedで初期処理
         document.addEventListener('DOMContentLoaded', () => {
+            loadPersonalities(); 
             document.querySelectorAll('.comment-item, .reply-item').forEach(item => {
                 const timeElement = item.querySelector('.text-xs.text-gray-500');
                 if (timeElement && timeElement.dataset.timestamp) {
@@ -451,56 +317,44 @@
                 }
             });
             updateTopLevelCommentCount();
-            // イベント委任に切り替えたため、個別の返信ボタンへのリスナーアタッチは不要
         });
 
-        // --- AI関連のロジック ---
-        async function loadPersonalities() {
-            if (!firebaseInitialized || !db) {
-                console.log("Firebase not ready, skipping personality load from DB.");
-                return;
-            }
-            const personalitiesColPath = `artifacts/${appId}/public/data/ai-personalities`;
-            const personalitiesCol = collection(db, personalitiesColPath);
+        function loadPersonalities() {
             try {
-                const snapshot = await getDocs(query(personalitiesCol, orderBy("createdAt", "desc"), limit(50))); 
-                aiPersonalities = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                console.log("Loaded personalities from Firestore:", aiPersonalities.length, "found.");
+                const storedPersonalities = localStorage.getItem(LOCAL_STORAGE_KEY_PERSONALITIES);
+                if (storedPersonalities) {
+                    aiPersonalities = JSON.parse(storedPersonalities);
+                    console.log("Loaded personalities from localStorage:", aiPersonalities.length, "found.");
+                } else {
+                    console.log("No personalities found in localStorage.");
+                    aiPersonalities = [];
+                }
             } catch (error) {
-                console.error("Error loading personalities from Firestore:", error);
-                aiStatus.textContent = "人格の読み込みに失敗しました。";
+                console.error("Error loading personalities from localStorage:", error);
+                aiPersonalities = []; 
             }
         }
 
-        async function savePersonality(username, personalityTrait, personalityPrompt, avatarSeed) {
-            const newPersonality = { username, personalityTrait, personalityPrompt, avatarSeed, createdAt: new Date().toISOString() };
-            if (!firebaseInitialized || !db) {
-                newPersonality.id = `local-${Date.now()}`;
-                aiPersonalities.push(newPersonality);
-                console.log("Saved personality locally:", newPersonality);
-                return newPersonality;
-            }
+        function savePersonality(username, personalityTrait, personalityPrompt, avatarSeed) {
+            const newPersonality = { 
+                id: `local-${Date.now()}`, 
+                username, 
+                personalityTrait, 
+                personalityPrompt, 
+                avatarSeed, 
+                createdAt: new Date().toISOString() 
+            };
+            
+            aiPersonalities.push(newPersonality); 
+            
             try {
-                const personalitiesColPath = `artifacts/${appId}/public/data/ai-personalities`;
-                const newDocRef = await addDoc(collection(db, personalitiesColPath), {
-                    username,
-                    personalityTrait, 
-                    personalityPrompt, 
-                    avatarSeed,
-                    createdAt: serverTimestamp() 
-                });
-                newPersonality.id = newDocRef.id;
-                aiPersonalities.push(newPersonality); 
-                console.log("Personality saved to Firestore with ID:", newDocRef.id);
-                return newPersonality;
+                localStorage.setItem(LOCAL_STORAGE_KEY_PERSONALITIES, JSON.stringify(aiPersonalities));
+                console.log("Saved personalities to localStorage.");
             } catch (error) {
-                console.error("Error saving personality to Firestore:", error);
-                aiStatus.textContent = "人格の保存に失敗しました。";
-                newPersonality.id = `local-fallback-${Date.now()}`;
-                aiPersonalities.push(newPersonality);
-                console.log("Saved personality locally as fallback:", newPersonality);
-                return newPersonality;
+                console.error("Error saving personalities to localStorage:", error);
+                aiStatus.textContent = "人格のローカル保存に失敗しました。";
             }
+            return newPersonality; 
         }
         
         async function callGeminiAPI(prompt, currentApiKey, currentModelName) {
@@ -511,7 +365,7 @@
                 return null;
             }
             
-            aiStatus.textContent = ` 生成処理中...`; // より具体的に
+            aiStatus.textContent = `生成処理中...`; 
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelToUse}:generateContent?key=${currentApiKey}`;
             const payload = {
                 contents: [{ role: "user", parts: [{ text: prompt }] }],
@@ -567,7 +421,6 @@
                 let successfullyCreatedPersona = false;
                 if (personaJsonString) {
                     try {
-                        // APIからの応答がマークダウンのコードブロック形式で返ってくる場合を考慮
                         const cleanedJsonString = personaJsonString.replace(/^```json\s*|```\s*$/g, '');
                         const parsedPersona = JSON.parse(cleanedJsonString);
 
@@ -578,7 +431,7 @@
                             const firstChar = newUsername.trim().charAt(0);
                             const avatarSeed = firstChar.match(/[a-zA-Z0-9\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/) ? firstChar.toUpperCase() : 'P';
 
-                            selectedPersonality = await savePersonality(newUsername, personalityDescription, commentingSystemPrompt, avatarSeed);
+                            selectedPersonality = savePersonality(newUsername, personalityDescription, commentingSystemPrompt, avatarSeed);
                             aiStatus.textContent = `AI: 新人格「${selectedPersonality.username}」（性格: ${selectedPersonality.personalityTrait.substring(0,20)}...）を作成。`;
                             successfullyCreatedPersona = true;
                         } else {
@@ -596,10 +449,10 @@
                     const adj = ["ありふれた", "普通の", "平凡な", "どこにでもいる"];
                     const noun = ["一般人", "名無しさん", "通行人X", "その他大勢の一人"];
                     const personalityTrait = `${adj[Math.floor(Math.random() * adj.length)]} ${noun[Math.floor(Math.random() * noun.length)]}`;
-                    const newUsername = `AI_${personalityTrait.replace(/\s/g,'')}${Math.floor(Math.random() * 100)}`;
+                    const newUsername = `${personalityTrait.replace(/\s/g,'')}${Math.floor(Math.random() * 100)}`;
                     const commentingSystemPrompt = `あなたは「${newUsername}」です。あなたの性格は「${personalityTrait}」です。コメントは常に短く、1～3文程度にしてください。`;
                     const avatarSeed = newUsername.replace(/AI/g,'').charAt(0).toUpperCase() || 'F';
-                    selectedPersonality = await savePersonality(newUsername, personalityTrait, commentingSystemPrompt, avatarSeed);
+                    selectedPersonality = savePersonality(newUsername, personalityTrait, commentingSystemPrompt, avatarSeed);
                     aiStatus.textContent = `AI: フォールバック人格「${selectedPersonality.username}」を使用。`;
                 }
 
@@ -608,8 +461,9 @@
                 aiStatus.textContent = `AI: 既存人格「${selectedPersonality.username}」（性格: ${selectedPersonality.personalityTrait.substring(0,20)}...）を選択。`;
             }
             
-            const avatarColor = Math.floor(Math.random()*127 + 128).toString(16).padStart(2,'0') + Math.floor(Math.random()*127 + 128).toString(16).padStart(2,'0') + Math.floor(Math.random()*127 + 128).toString(16).padStart(2,'0');
-            const avatarUrl = `https://placehold.co/40x40/${avatarColor}/FFFFFF?text=${selectedPersonality.avatarSeed}`;
+            // AIアバターURLの生成をPicsum Photosに変更
+            const picsumSeed = encodeURIComponent(selectedPersonality.username); // ユーザー名をシードとして使用
+            const avatarUrl = `https://picsum.photos/seed/${picsumSeed}/40/40`; // 40x40の画像を要求
 
             const allCommentElements = Array.from(commentsList.querySelectorAll('.comment-item, .reply-item'));
             const shouldReply = Math.random() < 0.5 && allCommentElements.length > 0;
@@ -679,16 +533,7 @@
             }
             if (aiIntervalId) return; 
             
-            if (firebaseInitialized && !userId && !auth.currentUser) { 
-                 aiStatus.textContent = "ユーザー認証待機中...完了後に再試行してください。";
-                 try {
-                    if (!auth.currentUser) await signInAnonymously(auth);
-                 } catch(e) { console.error("Forced anon signin failed", e); }
-                 if (!auth.currentUser) return;
-            }
-            if (firebaseInitialized && userId && aiPersonalities.length === 0) { 
-                await loadPersonalities();
-            }
+            loadPersonalities(); 
 
             aiStatus.textContent = "AIコメント生成を開始します...";
             aiActionLoop(); 
@@ -703,7 +548,7 @@
             if (aiIntervalId) {
                 clearInterval(aiIntervalId);
                 aiIntervalId = null;
-                aiStatus.textContent = "AIコメント生成を停止しました。";
+                aiStatus.textContent = "停止中...";
                 startAiButton.disabled = false;
                 stopAiButton.disabled = true;
                 apiKeyInput.disabled = false;
