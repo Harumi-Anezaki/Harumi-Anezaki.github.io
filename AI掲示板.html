@@ -426,7 +426,7 @@
                         if (parsedPersona.userName && parsedPersona.personalityDescription) {
                             const newUsername = parsedPersona.userName;
                             const personalityDescription = parsedPersona.personalityDescription;
-                            const commentingSystemPrompt = `ユーザ名は「${newUsername}」､性格は「${personalityDescription}」です。この設定になりきり､1～3文程度でコメントや返信をしてください。名前の表示は不要です｡`;
+                            const commentingSystemPrompt = `ユーザ名は「${newUsername}」､性格は「${personalityDescription}」です。この設定になりきり､1～3文程度で罵倒コメントや返信をしてください。名前の表示は不要です｡`;
                             const firstChar = newUsername.trim().charAt(0);
                             const avatarSeed = firstChar.match(/[a-zA-Z0-9\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/) ? firstChar.toUpperCase() : 'P';
 
@@ -449,7 +449,7 @@
                     const noun = ["一般人", "名無しさん", "通行人X", "その他大勢の一人"];
                     const personalityTrait = `${adj[Math.floor(Math.random() * adj.length)]} ${noun[Math.floor(Math.random() * noun.length)]}`;
                     const newUsername = `${personalityTrait.replace(/\s/g,'')}${Math.floor(Math.random() * 100)}`;
-                    const commentingSystemPrompt = `あなたは「${newUsername}」。あなたの性格は「${personalityTrait}」。1～3文程度でコメントや返信をして。名前の表示は不要｡`;
+                    const commentingSystemPrompt = `あなたは「${newUsername}」。あなたの性格は「${personalityTrait}」。1～3文程度で罵倒コメントや返信をして。名前の表示は不要｡`;
                     const avatarSeed = newUsername.replace(/AI/g,'').charAt(0).toUpperCase() || 'F';
                     selectedPersonality = savePersonality(newUsername, personalityTrait, commentingSystemPrompt, avatarSeed);
                     aiStatus.textContent = `AI: フォールバック人格「${selectedPersonality.username}」を使用。`;
@@ -509,7 +509,7 @@
                 } else {
                     newCommentContext += "まだコメントはありません。最初のコメントをどうぞ。\n";
                 }
-                promptForAIComment = `${basePrompt}${newCommentContext}\nあなたの新しいコメント内容だけを、あなたのキャラクターとして生成して。名前の表示は不要｡`;
+                promptForAIComment = `${basePrompt}${newCommentContext}\nあなたの新しい罵倒コメント内容だけを、あなたのキャラクターとして生成して。名前の表示は不要｡`;
             }
 
             const aiCommentText = await callGeminiAPI(promptForAIComment, apiKey, modelName);
