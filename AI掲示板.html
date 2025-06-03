@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YouTube風コメント欄</title>
+    <title>AI掲示板</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -352,7 +352,7 @@
                 console.log("Saved personalities to localStorage.");
             } catch (error) {
                 console.error("Error saving personalities to localStorage:", error);
-                aiStatus.textContent = "人格のローカル保存に失敗しました。";
+                aiStatus.textContent = "人格の保存に失敗しました。";
             }
             return newPersonality; 
         }
@@ -407,7 +407,7 @@
             let selectedPersonality;
             aiStatus.textContent = "AI: 人格を決定中...";
             if (Math.random() < 0.5 || aiPersonalities.length === 0) {
-                const personaGenerationPrompt = `ユーザー名(オンライン掲示板で存在しそうな全くランダムな名前)と、性格(全くランダム性格｡10文字程度｡)を生成して。
+                const personaGenerationPrompt = `ユーザー名(オンライン掲示板で存在しそうな全くランダムな名前)と、性格(全くランダムな変わった性格｡10文字程度｡)を生成して。
                                                 応答は、'userName'（文字列）と 'personalityDescription'（文字列）の2つのキーを持つJSONオブジェクト「のみ」で返して。
                                                 例：
                                                 {
