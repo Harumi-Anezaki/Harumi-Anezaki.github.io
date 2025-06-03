@@ -6,7 +6,7 @@
     <title>YouTube風コメント欄</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Font Awesomeのリンクは不要なため削除しました -->
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -44,9 +44,9 @@
             color: #606060;
             cursor: pointer;
             padding: 8px;
-            border-radius: 4px; /* 少し角丸に */
+            border-radius: 4px; 
             transition: background-color 0.2s;
-            font-size: 0.875rem; /* 14px */
+            font-size: 0.875rem; 
             font-weight: 500;
         }
         .action-button:hover {
@@ -79,29 +79,29 @@
             background-color: #e9e9e9;
         }
         .comment-input-buttons, .reply-input-buttons {
-            display: none; /* Initially hidden */
+            display: none; 
             justify-content: flex-end;
             gap: 8px;
             margin-top: 8px;
         }
-        .comment-item, .reply-item { /* コメントと返信アイテムの共通スタイル */
-            position: relative; /* data-comment-idを格納するため */
+        .comment-item, .reply-item { 
+            position: relative; 
         }
-        .replies-container { /* replies-listの親のスタイル調整 */
-            margin-left: 0; /* replies-list側でインデント制御 */
+        .replies-container { 
+            margin-left: 0; 
             padding-left: 0;
             border-left: none;
-            margin-top: 0.75rem; /* 12px */
+            margin-top: 0.75rem; 
         }
-        .replies-list { /* 返信リスト自体のインデント */
-            margin-left: 48px; /* アバター幅 + space */
+        .replies-list { 
+            margin-left: 48px; 
             padding-left: 16px;
             border-left: 2px solid #e0e0e0;
-            space-y: 0.75rem; /* replies-list直下の子要素のスペース */
+            space-y: 0.75rem; 
         }
         .reply-input-area {
             margin-top: 8px;
-            margin-left: 48px; /* 親コメントのアバター分インデント */
+            margin-left: 48px; 
         }
 
     </style>
@@ -111,6 +111,7 @@
     <div class="max-w-3xl mx-auto bg-white p-4 md:p-6 rounded-lg shadow">
         <h2 class="text-xl font-semibold mb-4">コメント <span id="comment-count">3</span>件</h2>
 
+        <!-- AI 設定セクション -->
         <div class="mb-6 p-4 border border-gray-300 rounded-md">
             <h3 class="text-lg font-semibold mb-2">AI設定</h3>
             <div class="mb-2">
@@ -128,6 +129,7 @@
             <p id="ai-status" class="text-xs text-gray-500 mt-1">AIは停止中です。</p>
         </div>
 
+        <!-- メインコメント入力欄 -->
         <div class="flex items-start space-x-3 mb-6">
             <img src="https://placehold.co/32x32/7B68EE/FFFFFF?text=U" alt="あなたのプロフィール画像" class="comment-input-avatar">
             <div class="flex-1">
@@ -139,7 +141,9 @@
             </div>
         </div>
 
+        <!-- コメントリスト -->
         <div id="comments-list" class="space-y-6">
+            <!-- コメント1 (例) -->
             <div class="flex items-start space-x-3 comment-item" data-comment-id="comment-0">
                 <img src="https://placehold.co/40x40/2196F3/FFFFFF?text=D" alt="ユーザーDのプロフィール画像" class="comment-avatar">
                 <div class="flex-1">
@@ -158,6 +162,7 @@
                 </div>
             </div>
             
+            <!-- コメント2 (例) -->
             <div class="flex items-start space-x-3 comment-item" data-comment-id="comment-1">
                 <img src="https://placehold.co/40x40/4CAF50/FFFFFF?text=B" alt="ユーザーBのプロフィール画像" class="comment-avatar">
                 <div class="flex-1">
@@ -172,6 +177,7 @@
                     <div class="reply-input-container mt-2"></div>
                     <div class="replies-container">
                         <div class="replies-list space-y-3">
+                        <!-- 返信コメントの例 -->
                         <div class="flex items-start space-x-3 reply-item" data-comment-id="comment-1-reply-0">
                              <img src="https://placehold.co/28x28/E91E63/FFFFFF?text=C" alt="ユーザーCのプロフィール画像" class="reply-avatar">
                              <div class="flex-1">
@@ -194,6 +200,7 @@
                 </div>
             </div>
 
+            <!-- コメント3 (例) -->
             <div class="flex items-start space-x-3 comment-item" data-comment-id="comment-2">
                 <img src="https://placehold.co/40x40/FFC107/000000?text=A" alt="ユーザーAのプロフィール画像" class="comment-avatar">
                 <div class="flex-1">
@@ -218,7 +225,7 @@
         // Firebase SDKのインポート
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, addDoc, getDoc, getDocs, collection, query, where, onSnapshot, serverTimestamp, orderBy, limit } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js"; // orderBy, limit を追加
+        import { getFirestore, doc, setDoc, addDoc, getDoc, getDocs, collection, query, where, onSnapshot, serverTimestamp, orderBy, limit } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const newCommentText = document.getElementById('new-comment-text');
@@ -236,7 +243,7 @@
 
         let nextCommentIdCounter = 3; 
         let aiIntervalId = null;
-        let aiPersonalities = []; // { id?: string, username: string, personalityTrait: string, personalityPrompt: string, avatarSeed: string }
+        let aiPersonalities = []; 
 
         // --- Firebase関連 ---
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'youtube-comments-ai-dev';
@@ -320,7 +327,7 @@
 
         // コメントや返信をDOMに追加する汎用関数
         function addCommentToDOM(text, author, avatarSrc, parentCommentId = null, personalityInfo = null, commentId = null) {
-            const newCommentId = commentId || `comment-${nextCommentIdCounter++}-${Date.now()}`; // IDのユニーク性を高める
+            const newCommentId = commentId || `comment-${nextCommentIdCounter++}-${Date.now()}`;
             const isReply = parentCommentId !== null;
             const timestamp = new Date().toISOString();
 
@@ -358,10 +365,10 @@
                 else console.error("Main comments list not found.");
                 return; 
             }
-            // commentElement.querySelector('.reply-button').addEventListener('click', handleReplyButtonClick); // イベント委任のため不要
             return newCommentId;
         }
         
+        // 「返信」ボタンのイベント委任
         commentsList.addEventListener('click', function(event) {
             if (event.target.classList.contains('reply-button')) {
                 handleReplyButtonClick(event);
@@ -380,7 +387,6 @@
             const replyForm = document.createElement('div');
             replyForm.id = 'dynamic-reply-form';
             replyForm.classList.add('flex', 'items-start', 'space-x-2', 'mt-2', 'p-2', 'bg-gray-50', 'rounded-md');
-            // 返信フォームのアバターは小さくする
             replyForm.innerHTML = `
                 <img src="https://placehold.co/28x28/7B68EE/FFFFFF?text=U" alt="あなたのプロフィール画像" class="reply-avatar">
                 <div class="flex-1">
@@ -436,6 +442,7 @@
             return `${days}日前`;
         }
         
+        // DOMContentLoadedで初期処理
         document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('.comment-item, .reply-item').forEach(item => {
                 const timeElement = item.querySelector('.text-xs.text-gray-500');
@@ -444,6 +451,7 @@
                 }
             });
             updateTopLevelCommentCount();
+            // イベント委任に切り替えたため、個別の返信ボタンへのリスナーアタッチは不要
         });
 
         // --- AI関連のロジック ---
@@ -455,7 +463,7 @@
             const personalitiesColPath = `artifacts/${appId}/public/data/ai-personalities`;
             const personalitiesCol = collection(db, personalitiesColPath);
             try {
-                const snapshot = await getDocs(query(personalitiesCol, orderBy("createdAt", "desc"), limit(50))); // 最新50件など
+                const snapshot = await getDocs(query(personalitiesCol, orderBy("createdAt", "desc"), limit(50))); 
                 aiPersonalities = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 console.log("Loaded personalities from Firestore:", aiPersonalities.length, "found.");
             } catch (error) {
@@ -476,19 +484,18 @@
                 const personalitiesColPath = `artifacts/${appId}/public/data/ai-personalities`;
                 const newDocRef = await addDoc(collection(db, personalitiesColPath), {
                     username,
-                    personalityTrait,
-                    personalityPrompt,
+                    personalityTrait, 
+                    personalityPrompt, 
                     avatarSeed,
                     createdAt: serverTimestamp() 
                 });
                 newPersonality.id = newDocRef.id;
-                aiPersonalities.push(newPersonality); // ローカルにも追加
+                aiPersonalities.push(newPersonality); 
                 console.log("Personality saved to Firestore with ID:", newDocRef.id);
                 return newPersonality;
             } catch (error) {
                 console.error("Error saving personality to Firestore:", error);
                 aiStatus.textContent = "AI人格の保存に失敗しました。";
-                // フォールバックとしてローカルに保存
                 newPersonality.id = `local-fallback-${Date.now()}`;
                 aiPersonalities.push(newPersonality);
                 console.log("Saved personality locally as fallback:", newPersonality);
@@ -504,11 +511,11 @@
                 return null;
             }
             
-            aiStatus.textContent = `${modelToUse} でコメント生成中...`;
+            aiStatus.textContent = `AI: ${modelToUse} で生成処理中...`; // より具体的に
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelToUse}:generateContent?key=${currentApiKey}`;
             const payload = {
                 contents: [{ role: "user", parts: [{ text: prompt }] }],
-                generationConfig: { temperature: 0.7, maxOutputTokens: 150 }
+                generationConfig: { temperature: 0.8, maxOutputTokens: 200 } 
             };
 
             try {
@@ -519,17 +526,16 @@
                 });
                 const result = await response.json();
                 if (result.candidates && result.candidates[0]?.content?.parts[0]?.text) {
-                    aiStatus.textContent = "AIコメント生成成功。";
                     return result.candidates[0].content.parts[0].text.trim();
                 } else {
                     console.error("Gemini API response error or no content:", result);
                     const errorMessage = result.error?.message || JSON.stringify(result.error) || '不明なAPIエラー';
-                    aiStatus.textContent = `APIエラー: ${errorMessage.substring(0, 100)}`;
+                    aiStatus.textContent = `AI: APIエラー (${errorMessage.substring(0, 50)}...)`;
                     return null;
                 }
             } catch (error) {
                 console.error("Error calling Gemini API:", error);
-                aiStatus.textContent = `API呼び出し失敗: ${error.message.substring(0,100)}`;
+                aiStatus.textContent = `AI: API呼び出し失敗 (${error.message.substring(0,50)}...)`;
                 return null;
             }
         }
@@ -545,110 +551,148 @@
             }
 
             let selectedPersonality;
-            // 1. 人格の決定
             aiStatus.textContent = "AI: 人格を決定中...";
             if (Math.random() < 0.5 || aiPersonalities.length === 0) {
-                const adj = ["面白い", "皮肉屋な", "親切な", "知的な", "好奇心旺盛な", "批判的な", "楽観的な", "冷静な", "情熱的な", "博識な"];
-                const noun = ["猫好き", "ゲーマー", "旅人", "哲学者", "エンジニア", "アーティスト", "科学者", "歴史家"];
-                const personalityTrait = `${adj[Math.floor(Math.random() * adj.length)]} ${noun[Math.floor(Math.random() * noun.length)]}`;
-                const newUsername = `AI ${personalityTrait.replace(/\s/g,'')}${Math.floor(Math.random() * 100)}`;
-                const personalityPrompt = `あなたはYouTubeのコメンテーター「${newUsername}」です。あなたの性格は「${personalityTrait}」です。この性格になりきって、他のコメントや動画内容に対してコメントや返信をしてください。コメントは常に短く、1～3文程度にしてください。`;
-                const avatarSeed = newUsername.replace(/AI/g,'').charAt(0).toUpperCase() || 'A';
-                
-                selectedPersonality = await savePersonality(newUsername, personalityTrait, personalityPrompt, avatarSeed);
-                aiStatus.textContent = `AI: 新人格「${selectedPersonality.username}」(${selectedPersonality.personalityTrait})を作成。`;
-            } else {
+                const personaGenerationPrompt = `あなたは、日本のオンライン掲示板投稿者のペルソナを作成するAIアシスタントです。
+ユーザー名(ネットスラング、奇抜な単語の組み合わせ、自虐ネタ、中二病的な響き、意味不明な記号列、アニメやゲームのキャラもじり、煽り文句など、一度見たら忘れられないような、強烈なインパクトを持つ名前。例： \`煽り神\`, \`†終末の使徒†\`, \`全レス乞食\`, \`壁のシミ\`, \`ゲスの極み乙\`)と、性格(煽り、自虐、電波系、ネタ発言、強いこだわり、斜に構えた態度、極端な思想、レスバトラー気質、謎の上から目線、過度な専門用語の乱用、意味不明なポエム、特定ジャンルへの異常な愛憎など、そのキャラクターの「ヤバさ」や「面白さ」が一言で伝わるようなもの。例： \`異論は認めん。ソースは俺。\`, \`今日も一日がんばるぞい！（白目）\`, \`宇宙の真理に気づいてしまった…\`, \`レスバトなら任せろ。かかってこい。\`, \`また髪の話してる…\`, \`すべては運命石の扉の選択だ。\`)を生成してください。
+応答は、'userName'（文字列）と 'personalityDescription'（文字列）の2つのキーを持つJSONオブジェクト「のみ」で返してください。
+例：
+{
+  "userName": "社畜ちゃん(Lv.5)",
+  "personalityDescription": "推しが尊すぎて今日も墓建設中。"
+}`;
+                aiStatus.textContent = `AI: 新しい掲示板ペルソナを生成中...`;
+                const personaJsonString = await callGeminiAPI(personaGenerationPrompt, apiKey, modelName);
+
+                let successfullyCreatedPersona = false;
+                if (personaJsonString) {
+                    try {
+                        // APIからの応答がマークダウンのコードブロック形式で返ってくる場合を考慮
+                        const cleanedJsonString = personaJsonString.replace(/^```json\s*|```\s*$/g, '');
+                        const parsedPersona = JSON.parse(cleanedJsonString);
+
+                        if (parsedPersona.userName && parsedPersona.personalityDescription) {
+                            const newUsername = parsedPersona.userName;
+                            const personalityDescription = parsedPersona.personalityDescription;
+                            const commentingSystemPrompt = `あなたは「${newUsername}」という名前の日本のオンライン掲示板の投稿者です。あなたの特徴的な性格・口調は「${personalityDescription}」です。この設定になりきってください。他のコメントや動画内容に対して、その性格でコメントや返信をしてください。コメントは常に短く、1～3文程度で、非常に個性的かつ掲示板らしいスタイルでお願いします。`;
+                            const firstChar = newUsername.trim().charAt(0);
+                            const avatarSeed = firstChar.match(/[a-zA-Z0-9\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/) ? firstChar.toUpperCase() : 'P';
+
+                            selectedPersonality = await savePersonality(newUsername, personalityDescription, commentingSystemPrompt, avatarSeed);
+                            aiStatus.textContent = `AI: 新人格「${selectedPersonality.username}」（性格: ${selectedPersonality.personalityTrait.substring(0,20)}...）を作成。`;
+                            successfullyCreatedPersona = true;
+                        } else {
+                            throw new Error("生成されたJSONに必要なキー（userNameまたはpersonalityDescription）が含まれていません。");
+                        }
+                    } catch (e) {
+                        console.error("ペルソナJSONの解析に失敗、または構造が無効です:", e, personaJsonString);
+                        aiStatus.textContent = `AI: ペルソナJSON解析失敗。フォールバック人格を使用。`;
+                    }
+                } else {
+                    aiStatus.textContent = `AI: ペルソナ生成API呼び出し失敗。フォールバック人格を使用。`;
+                }
+
+                if (!successfullyCreatedPersona) { 
+                    const adj = ["ありふれた", "普通の", "平凡な", "どこにでもいる"];
+                    const noun = ["一般人", "名無しさん", "通行人X", "その他大勢の一人"];
+                    const personalityTrait = `${adj[Math.floor(Math.random() * adj.length)]} ${noun[Math.floor(Math.random() * noun.length)]}`;
+                    const newUsername = `AI_${personalityTrait.replace(/\s/g,'')}${Math.floor(Math.random() * 100)}`;
+                    const commentingSystemPrompt = `あなたは「${newUsername}」です。あなたの性格は「${personalityTrait}」です。コメントは常に短く、1～3文程度にしてください。`;
+                    const avatarSeed = newUsername.replace(/AI/g,'').charAt(0).toUpperCase() || 'F';
+                    selectedPersonality = await savePersonality(newUsername, personalityTrait, commentingSystemPrompt, avatarSeed);
+                    aiStatus.textContent = `AI: フォールバック人格「${selectedPersonality.username}」を使用。`;
+                }
+
+            } else { 
                 selectedPersonality = aiPersonalities[Math.floor(Math.random() * aiPersonalities.length)];
-                aiStatus.textContent = `AI: 人格「${selectedPersonality.username}」(${selectedPersonality.personalityTrait})を選択。`;
+                aiStatus.textContent = `AI: 既存人格「${selectedPersonality.username}」（性格: ${selectedPersonality.personalityTrait.substring(0,20)}...）を選択。`;
             }
             
-            const avatarColor = Math.floor(Math.random()*127 + 128).toString(16) + Math.floor(Math.random()*127 + 128).toString(16) + Math.floor(Math.random()*127 + 128).toString(16); // 明るめの色
+            const avatarColor = Math.floor(Math.random()*127 + 128).toString(16).padStart(2,'0') + Math.floor(Math.random()*127 + 128).toString(16).padStart(2,'0') + Math.floor(Math.random()*127 + 128).toString(16).padStart(2,'0');
             const avatarUrl = `https://placehold.co/40x40/${avatarColor}/FFFFFF?text=${selectedPersonality.avatarSeed}`;
 
-            // 2. 行動の決定 (返信 or 新規コメント)
             const allCommentElements = Array.from(commentsList.querySelectorAll('.comment-item, .reply-item'));
             const shouldReply = Math.random() < 0.5 && allCommentElements.length > 0;
-            let promptForAI;
-            let targetParentId = null; // 返信先コメントのID
+            let promptForAIComment;
+            let targetParentId = null;
+            let basePrompt = selectedPersonality.personalityPrompt; 
 
-            if (shouldReply) { // A. 既存のコメントに返信
+            if (shouldReply) { 
                 const targetCommentElement = allCommentElements[Math.floor(Math.random() * allCommentElements.length)];
                 targetParentId = targetCommentElement.dataset.commentId;
                 const targetCommentText = targetCommentElement.querySelector('.comment-text').textContent;
                 const targetAuthor = targetCommentElement.querySelector('.font-semibold').textContent;
-                aiStatus.textContent = `AI: 「${targetAuthor}」のコメント「${targetCommentText.substring(0,15)}...」に返信準備中...`;
+                aiStatus.textContent = `AI (${selectedPersonality.username}): 「${targetAuthor}」の「${targetCommentText.substring(0,10)}...」に返信準備中...`;
 
-                let context = `あなたは「${selectedPersonality.username}」です。あなたの性格は「${selectedPersonality.personalityTrait}」です。\n以下のコメントに、あなたの性格で返信してください。返信は1～3文で簡潔にお願いします。\n\n`;
-                context += `返信対象のコメント (投稿者 ${targetAuthor}): "${targetCommentText}"\n\n`;
+                let replyContext = `\n\n以下のコメントに返信してください:\n`;
+                replyContext += `- ${targetAuthor}「${targetCommentText}」\n`;
                 
-                // 返信の連鎖を2レベル遡る
                 let currentElement = targetCommentElement;
-                for (let i = 0; i < 2; i++) {
-                    const parentWrapper = currentElement.parentElement.closest('.replies-list'); // 親のreplies-listを探す
-                    if (!parentWrapper) break; // replies-listがなければ、それはトップレベルコメントの直接の子ではないか、DOM構造が異なる
-                    const grandParentItem = parentWrapper.parentElement.closest('.comment-item, .reply-item'); // replies-listの親の親がコメントアイテム
-                    
+                for (let i = 0; i < 2; i++) { 
+                    const parentWrapper = currentElement.parentElement.closest('.replies-list');
+                    if (!parentWrapper) break;
+                    const grandParentItem = parentWrapper.parentElement.closest('.comment-item, .reply-item');
                     if (grandParentItem) {
                         const parentText = grandParentItem.querySelector('.comment-text').textContent;
                         const parentAuthor = grandParentItem.querySelector('.font-semibold').textContent;
-                        context += `その会話の文脈となる親コメント (投稿者 ${parentAuthor}): "${parentText}"\n`;
+                        replyContext += `(この返信の文脈となる親コメント: ${parentAuthor}「${parentText}」)\n`;
                         currentElement = grandParentItem;
                     } else {
                         break;
                     }
                 }
-                promptForAI = `${context}\nあなたの返信内容だけを生成してください。`;
-            } else { // B. 新しくコメントする
-                aiStatus.textContent = `AI: 新しいコメントを準備中...`;
-                let context = `あなたは「${selectedPersonality.username}」です。あなたの性格は「${selectedPersonality.personalityTrait}」です。\n`;
-                const recentComments = allCommentElements.slice(0, 3); // 直近3つのコメントを参照
+                promptForAIComment = `${basePrompt}${replyContext}\nあなたの返信内容だけを、あなたのキャラクターとして生成してください。`;
+            } else { 
+                aiStatus.textContent = `AI (${selectedPersonality.username}): 新しいコメントを準備中...`;
+                let newCommentContext = "\n\n最近のコメントや動画内容全体を考慮して、新しいコメントをしてください。\n";
+                const recentComments = allCommentElements.slice(0, 3); 
                 if (recentComments.length > 0) {
-                    context += "最近のいくつかのコメントを参考に、動画全体や他のコメントに対する新しいコメントをしてください。コメントは1～3文で簡潔にお願いします。\n\n最近のコメントの例:\n";
+                    newCommentContext += "最近のコメントの例:\n";
                     recentComments.forEach(el => {
                         const text = el.querySelector('.comment-text').textContent;
                         const author = el.querySelector('.font-semibold').textContent;
-                        context += `- ${author}: "${text.substring(0, 50)}..."\n`;
+                        newCommentContext += `- ${author}「${text.substring(0, 40)}...」\n`;
                     });
                 } else {
-                    context += "まだコメントはありません。動画に対する最初のコメントを、あなたの性格で1～3文で簡潔にどうぞ。\n";
+                    newCommentContext += "まだコメントはありません。最初のコメントをどうぞ。\n";
                 }
-                promptForAI = `${context}\nあなたの新しいコメント内容だけを生成してください。`;
+                promptForAIComment = `${basePrompt}${newCommentContext}\nあなたの新しいコメント内容だけを、あなたのキャラクターとして生成してください。`;
             }
 
-            // 3. Gemini APIでコメント生成
-            const aiCommentText = await callGeminiAPI(promptForAI, apiKey, modelName);
+            const aiCommentText = await callGeminiAPI(promptForAIComment, apiKey, modelName);
 
             if (aiCommentText) {
                 addCommentToDOM(aiCommentText, selectedPersonality.username, avatarUrl, targetParentId, selectedPersonality);
                 if (!targetParentId) { 
                     updateTopLevelCommentCount();
                 }
-                aiStatus.textContent = `AI: 「${selectedPersonality.username}」がコメントしました。次の処理まで待機中...`;
+                aiStatus.textContent = `AI (${selectedPersonality.username}): コメント完了。次回処理待機中...`;
             } else {
-                aiStatus.textContent = `AI: コメント生成失敗。次の処理まで待機中...`;
+                aiStatus.textContent = `AI (${selectedPersonality.username}): コメント生成失敗。次回処理待機中...`;
             }
         }
 
         startAiButton.addEventListener('click', async () => {
             if (!apiKeyInput.value) {
-                // alert()は使用できないので、ステータス表示で代替
                 aiStatus.textContent = "APIキーを入力してください。";
                 return;
             }
             if (aiIntervalId) return; 
             
-            if (firebaseInitialized && !userId) { // Firebase初期化済みだが認証がまだの場合
+            if (firebaseInitialized && !userId && !auth.currentUser) { 
                  aiStatus.textContent = "ユーザー認証待機中...完了後に再試行してください。";
-                 return;
+                 try {
+                    if (!auth.currentUser) await signInAnonymously(auth);
+                 } catch(e) { console.error("Forced anon signin failed", e); }
+                 if (!auth.currentUser) return;
             }
-            if (firebaseInitialized && aiPersonalities.length === 0) { // 念のため、DBからの読み込みを待つ
+            if (firebaseInitialized && userId && aiPersonalities.length === 0) { 
                 await loadPersonalities();
             }
 
-
             aiStatus.textContent = "AIコメント生成を開始します...";
             aiActionLoop(); 
-            aiIntervalId = setInterval(aiActionLoop, 5000); // 5秒ごとに変更
+            aiIntervalId = setInterval(aiActionLoop, 5000); 
             startAiButton.disabled = true;
             stopAiButton.disabled = false;
             apiKeyInput.disabled = true;
