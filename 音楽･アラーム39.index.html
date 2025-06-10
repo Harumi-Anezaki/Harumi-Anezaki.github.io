@@ -256,7 +256,7 @@
             if (alarmTime === currentTime) {
                 console.log("ALARM!");
                 if (tracks.length > 0 && !isPlaying) {
-                    playTrack(0); // Play the first song in the playlist
+                    playTrack(0);
                 }
                 clearAlarm();
             }
@@ -290,7 +290,7 @@
         }
 
         // --- Event Handlers ---
-        loadFolderBtn.addEventListener('click', async () => {
+        loadFolderBtn.addEventListener('click', async (e) => {
             if (!('showDirectoryPicker' in window)) {
                 alert('お使いのブラウザはフォルダ選択機能に対応していません。');
                 return;
@@ -303,14 +303,16 @@
                  if (err.name !== 'AbortError') console.error('フォルダ選択エラー:', err);
                  else console.log("フォルダ選択がキャンセルされました。");
             }
+            e.target.blur(); 
         });
 
-        setAlarmBtn.addEventListener('click', () => {
+        setAlarmBtn.addEventListener('click', (e) => {
             if (alarmTime) {
                 clearAlarm();
             } else {
                 setAlarm();
             }
+            e.target.blur();
         });
 
         const togglePlayPause = () => {
@@ -347,20 +349,22 @@
             if (li) playTrack(parseInt(li.dataset.index));
         });
 
-        playPauseBtn.addEventListener('click', togglePlayPause);
-        nextBtn.addEventListener('click', playNext);
-        prevBtn.addEventListener('click', playPrev);
+        playPauseBtn.addEventListener('click', (e) => { togglePlayPause(); e.currentTarget.blur(); });
+        nextBtn.addEventListener('click', (e) => { playNext(); e.currentTarget.blur(); });
+        prevBtn.addEventListener('click', (e) => { playPrev(); e.currentTarget.blur(); });
 
-        shuffleBtn.addEventListener('click', () => {
+        shuffleBtn.addEventListener('click', (e) => {
             isShuffle = !isShuffle;
             shuffleBtn.classList.toggle('text-green-400', isShuffle);
             shuffleBtn.classList.toggle('text-gray-400', !isShuffle);
+            e.currentTarget.blur();
         });
 
-        repeatBtn.addEventListener('click', () => {
+        repeatBtn.addEventListener('click', (e) => {
             isRepeat = !isRepeat;
             repeatBtn.classList.toggle('text-green-400', isRepeat);
             repeatBtn.classList.toggle('text-gray-400', !isRepeat);
+            e.currentTarget.blur();
         });
 
         audioPlayer.addEventListener('timeupdate', () => {
@@ -435,35 +439,35 @@
 
         // --- App Initialization ---
         async function init() {
-            // Set initial UI state before async operations
             renderPlaylist();
             updateUI();
-            
-            setInterval(updateClock, 1000); // Start the live clock display
+            setInterval(updateClock, 1000);
             
             if (!('showDirectoryPicker' in window)) {
                 loadFolderBtn.innerHTML = '<span>ブラウザ非対応</span>';
                 loadFolderBtn.disabled = true;
                 loadFolderBtn.classList.add("bg-gray-500", "cursor-not-allowed");
                 playlistSubtitle.textContent = "フォルダ記憶機能は非対応です";
-            } else {
-                try {
-                    playlistSubtitle.textContent = "保存されたフォルダを確認中...";
-                    const savedHandle = await getDirectoryHandle();
-                    if (savedHandle) {
-                        if (await verifyPermission(savedHandle)) {
-                            await processDirectory(savedHandle);
-                        } else {
-                            console.log('保存されたフォルダへのアクセスが許可されませんでした。');
-                            playlistSubtitle.textContent = 'フォルダへのアクセスが拒否されました';
-                        }
+                return;
+            }
+
+            try {
+                playlistSubtitle.textContent = "保存されたフォルダを確認中...";
+                const savedHandle = await getDirectoryHandle();
+                if (savedHandle) {
+                    if (await verifyPermission(savedHandle)) {
+                        await processDirectory(savedHandle);
                     } else {
-                         playlistSubtitle.textContent = '曲が読み込まれていません';
+                        playlistSubtitle.textContent = 'フォルダへのアクセスが拒否されました';
+                        // Clear the saved handle if permission is denied, so it doesn't ask again.
+                        await set(directoryHandleKey, null);
                     }
-                } catch(e) { 
-                    console.error("初期化失敗:", e);
-                    playlistSubtitle.textContent = '初期化エラー';
+                } else {
+                     playlistSubtitle.textContent = '曲が読み込まれていません';
                 }
+            } catch(e) { 
+                console.error("初期化失敗:", e);
+                playlistSubtitle.textContent = '初期化中にエラーが発生しました';
             }
         }
 
