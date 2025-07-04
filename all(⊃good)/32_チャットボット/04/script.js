@@ -3,7 +3,7 @@ const sendButton = document.getElementById("send-button");
 const chatMessages = document.getElementById("chat-messages");
 
 // ********** 重要 **********
-const API_KEY = "AIzaSyB03GJSLQsPg6wsNkeV5Qcb1nE1ZSwbC84"; // ここにGemini APIキーを貼り付け
+const API_KEY = ""; // ここにGemini APIキーを貼り付け
 const MODEL_NAME = "gemini-2.0-pro-exp-02-05"; // 使用するモデル (gemini-pro, gemini-pro-vision など)
 // *************************
 
