@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>進化する庭 - Evolving Garden</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="canvas-container"></div>  <!-- P5.jsのcanvasを配置する場所 -->
+    <div id="ui-container">
+        <h1>進化する庭</h1>
+        <p>植物の美しさを評価して、最高の庭を作りましょう！</p>
+
+        <label for="branchAngle">枝の角度:</label>
+        <input type="range" id="branchAngle" min="0" max="360" value="90"><br>
+
+        <label for="leafColor">葉の色:</label>
+        <input type="color" id="leafColor" value="#00FF00"><br>
+
+        <label for="branchLength">枝の長さ:</label>
+        <input type="range" id="branchLength" min="50" max="150" value="100"><br>
+
+        <label for="branchThickness">枝の太さ:</label>
+        <input type="range" id="branchThickness" min="2" max="10" value="5"><br>
+
+        <label for="leafSize">葉の大きさ:</label>
+        <input type="range" id="leafSize" min="5" max="20" value="10"><br>
+
+        <label for="numBranches">枝の数:</label>
+        <input type="range" id="numBranches" min="3" max="8" value="5"><br>
+
+
+        <button id="evaluateButton">評価する</button>
+        <p id="generationCounter">世代: 0</p>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/p5@1.4.0/lib/p5.js"></script>
+    <script src="sketch.js"></script>
+</body>
+</html>

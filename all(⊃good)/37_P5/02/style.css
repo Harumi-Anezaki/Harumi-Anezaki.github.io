@@ -1,0 +1,24 @@
+body {
+    font-family: sans-serif;
+    margin: 0;
+    padding: 0;
+    display: flex;
+}
+
+#canvas-container {
+    width: 70%; /* キャンバスの幅 */
+    height: 100vh; /* 画面いっぱいの高さ */
+    background-color: #f0f0f0;
+}
+
+#ui-container {
+    width: 30%; /* UIコンテナの幅 */
+    padding: 20px;
+    background-color: #eee;
+}
+
+#ui-container label,
+#ui-container input,
+#ui-container button {
+    margin-bottom: 10px;
+}

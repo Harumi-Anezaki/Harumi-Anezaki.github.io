@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Mandelbrot Set</title>
+<style>
+body {
+  margin: 0;
+  overflow: hidden; /* Prevent scrollbars */
+}
+canvas {
+  display: block; /* Remove extra space below canvas */
+}
+#controls {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background-color: rgba(255, 255, 255, 0.8);
+  padding: 10px;
+  border-radius: 5px;
+  font-family: sans-serif;
+  z-index: 1; /* Ensure controls are above the canvas */
+}
+label {
+  display: block; /* Each label on a new line */
+  margin-bottom: 5px;
+}
+
+input[type="number"] { /*, input[type="range"]  Removed range input */
+    width: 80px;  /* Consistent width */
+}
+
+button {
+    margin-top: 10px;
+}
+
+</style>
+</head>
+<body>
+
+<div id="controls">
+  <label for="maxIterations">Max Iterations:</label>
+  <input type="number" id="maxIterations" value="100" min="1" step="1">
+
+  <label for="zoom">Zoom:</label>
+    <input type="number" id="zoom" value="1" min="1" step="0.1">  <!-- Changed to number input -->
+
+
+  <label for="centerX">Center X:</label>
+  <input type="number" id="centerX" value="-0.5" step="0.01">
+
+  <label for="centerY">Center Y:</label>
+  <input type="number" id="centerY" value="0" step="0.01">
+    <button id="resetButton">Reset</button>
+
+</div>
+
+<canvas id="mandelbrotCanvas"></canvas>
+
+<script>
+const canvas = document.getElementById('mandelbrotCanvas');
+const ctx = canvas.getContext('2d');
+const maxIterationsInput = document.getElementById('maxIterations');
+const zoomInput = document.getElementById('zoom');
+const centerXInput = document.getElementById('centerX');
+const centerYInput = document.getElementById('centerY');
+const resetButton = document.getElementById('resetButton');
+
+
+let maxIterations = parseInt(maxIterationsInput.value);
+let zoom = parseFloat(zoomInput.value);
+let centerX = parseFloat(centerXInput.value);
+let centerY = parseFloat(centerYInput.value);
+
+
+function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    drawMandelbrot();  // Redraw on resize
+}
+
+
+function mandelbrot(cx, cy, max_iterations) {
+  let zx = 0;
+  let zy = 0;
+  let n = 0;
+
+  while (zx * zx + zy * zy <= 4 && n < max_iterations) {
+    const new_zx = zx * zx - zy * zy + cx;
+    const new_zy = 2 * zx * zy + cy;
+    zx = new_zx;
+    zy = new_zy;
+    n++;
+  }
+  return n;
+}
+
+function getColor(n) {
+    if (n === maxIterations) {
+        return [0, 0, 0]; // Black for points inside the set
+    }
+
+    //  More colorful and smoother color scheme:
+    const hue = (n * 360 / maxIterations) % 360;  // Cycle through hues
+     // Convert HSV to RGB.  Simpler than full conversion functions.
+    const i = Math.floor(hue / 60);
+    const f = hue / 60 - i;
+    const p = 0;
+    const q = 1 - f;
+    const t = f;
+
+    let r, g, b;
+    switch (i % 6) {
+        case 0: r = 1; g = t; b = p; break;
+        case 1: r = q; g = 1; b = p; break;
+        case 2: r = p; g = 1; b = t; break;
+        case 3: r = p; g = q; b = 1; break;
+        case 4: r = t; g = p; b = 1; break;
+        case 5: r = 1; g = p; b = q; break;
+    }
+
+    return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+
+}
+
+
+function drawMandelbrot() {
+  const width = canvas.width;
+  const height = canvas.height;
+
+  const xRange = 4 / zoom;  // Total x range
+  const yRange = (xRange * height) / width; // Keep aspect ratio
+
+    const xMin = centerX - xRange / 2;
+    const yMin = centerY - yRange / 2;
+
+    const xStep = xRange / width;
+    const yStep = yRange / height;
+    const imageData = ctx.getImageData(0, 0, width, height);
+    const data = imageData.data;
+
+
+  for (let py = 0; py < height; py++) {
+    for (let px = 0; px < width; px++) {
+      const cx = xMin + px * xStep;
+      const cy = yMin + py * yStep;
+
+      const n = mandelbrot(cx, cy, maxIterations);
+        const [r, g, b] = getColor(n);
+
+      const index = (py * width + px) * 4;
+      data[index] = r;
+      data[index + 1] = g;
+      data[index + 2] = b;
+      data[index + 3] = 255; // Alpha (fully opaque)
+    }
+  }
+    ctx.putImageData(imageData, 0, 0);
+}
+
+
+
+function updateMandelbrot() {
+    maxIterations = parseInt(maxIterationsInput.value);
+      zoom = parseFloat(zoomInput.value);
+    centerX = parseFloat(centerXInput.value);
+    centerY = parseFloat(centerYInput.value);
+
+    drawMandelbrot();
+}
+
+// Event listeners for input changes
+maxIterationsInput.addEventListener('input', updateMandelbrot);
+zoomInput.addEventListener('input', updateMandelbrot);
+centerXInput.addEventListener('input', updateMandelbrot);
+centerYInput.addEventListener('input', updateMandelbrot);
+
+resetButton.addEventListener('click', () => {
+    maxIterationsInput.value = 100;
+    zoomInput.value = 1;
+    centerXInput.value = -0.5;
+    centerYInput.value = 0;
+    updateMandelbrot();
+});
+
+// Initial draw and resize setup
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas(); // Initial size and draw
+
+
+</script>
+
+</body>
+</html>

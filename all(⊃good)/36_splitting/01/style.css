@@ -1,0 +1,28 @@
+body {
+  font-family: sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background-color: #f0f0f0;
+}
+
+h1 {
+  font-size: 3em;
+  color: #333;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Splitting.js が生成するクラスに対するスタイル */
+.char {
+  opacity: 0; /* 最初は非表示 */
+  transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+  transform: translateY(20px); /* 少し下にずらす */
+  display: inline-block; /* 横並びになるように */
+}
+
+/* JavaScript で 'active' クラスが付与された文字に適用されるスタイル */
+.char.active {
+  opacity: 1; /* 表示 */
+  transform: translateY(0); /* 元の位置に戻す */
+}
