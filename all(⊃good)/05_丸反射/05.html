@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ランダムな動く丸</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: black;
+        }
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        
+        class Circle {
+            constructor() {
+                this.radius = Math.random() * 20 + 5;
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.color = `hsl(${Math.random() * 360}, 50%, 50%)`;
+                this.dx = (Math.random() - 0.5) * 15; // より速い初期速度
+                this.dy = (Math.random() - 0.5) * 15;
+                this.changeDirectionCounter = 0;
+                this.turnRate = Math.random() * 0.2 + 0.5; // 曲がる度合い
+            }
+            
+            update() {
+                this.x += this.dx;
+                this.y += this.dy;
+                
+                // 画面端での反射
+                if(this.x - this.radius < 0 || this.x + this.radius > canvas.width) {
+                    this.dx = -this.dx;
+                }
+                if(this.y - this.radius < 0 || this.y + this.radius > canvas.height) {
+                    this.dy = -this.dy;
+                }
+
+                // より頻繁な軌道変更
+                this.changeDirectionCounter++;
+                if(this.changeDirectionCounter > Math.random() * 30 + 20) { // より短い間隔で方向変更
+                    this.dx += (Math.random() - 0.5) * 4 * this.turnRate;
+                    this.dy += (Math.random() - 0.5) * 4 * this.turnRate;
+                    
+                    // うねうねした動きのために、現在の方向に少し傾きを加える
+                    const angle = Math.atan2(this.dy, this.dx);
+                    const deviation = (Math.random() - 0.5) * Math.PI * 0.5;
+                    const speed = Math.sqrt(this.dx * this.dx + this.dy * this.dy);
+                    
+                    this.dx = Math.cos(angle + deviation) * speed;
+                    this.dy = Math.sin(angle + deviation) * speed;
+                    
+                    // 速度の正規化（やや不規則な速度を許容）
+                    const newSpeed = Math.random() * 4 + 8;
+                    this.dx = (this.dx / speed) * newSpeed;
+                    this.dy = (this.dy / speed) * newSpeed;
+                    
+                    this.changeDirectionCounter = 0;
+                }
+            }
+            
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+                ctx.closePath();
+            }
+        }
+        
+        const circles = Array(50).fill().map(() => new Circle());
+        
+        function animate() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            circles.forEach(circle => {
+                circle.update();
+                circle.draw();
+            });
+            
+            requestAnimationFrame(animate);
+        }
+        
+        animate();
+        
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+    </script>
+</body>
+</html>

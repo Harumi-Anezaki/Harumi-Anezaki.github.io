@@ -1,0 +1,21 @@
+/* style.css */
+body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background-color: #000;
+}
+
+#gameCanvas {
+    display: block;
+    margin: 0 auto;
+    background-color: #333;
+}
+
+#ui {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    color: #fff;
+    font-family: sans-serif;
+}

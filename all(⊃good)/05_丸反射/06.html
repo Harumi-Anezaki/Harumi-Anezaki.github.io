@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>不規則に動く丸</title>
+    <style>
+        #ball {
+            width: 50px;
+            height: 50px;
+            background-color: #ff0000;
+            border-radius: 50%;
+            position: absolute;
+            transition: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="ball"></div>
+
+    <script>
+        const ball = document.getElementById('ball');
+        let x = 0;
+        let y = 0;
+        let dx = 5;
+        let dy = 5;
+        let ax = 0;
+        let ay = 0;
+
+        function moveBall() {
+            // 加速度をランダムに変更
+            ax += (Math.random() - 0.5) * 0.5;
+            ay += (Math.random() - 0.5) * 0.5;
+            
+            // 速度に加速度を適用
+            dx += ax;
+            dy += ay;
+            
+            // 速度の上限を設定
+            dx = Math.max(Math.min(dx, 15), -15);
+            dy = Math.max(Math.min(dy, 15), -15);
+            
+            // 位置を更新
+            x += dx;
+            y += dy;
+            
+            // 壁との衝突判定と反射
+            if (x <= 0 || x >= window.innerWidth - 50) {
+                dx = -dx * 0.8;
+                x = x <= 0 ? 0 : window.innerWidth - 50;
+            }
+            if (y <= 0 || y >= window.innerHeight - 50) {
+                dy = -dy * 0.8;
+                y = y <= 0 ? 0 : window.innerHeight - 50;
+            }
+            
+            // 加速度の減衰
+            ax *= 0.95;
+            ay *= 0.95;
+            
+            ball.style.left = x + 'px';
+            ball.style.top = y + 'px';
+        }
+
+        setInterval(moveBall, 16);
+    </script>
+</body>
+</html>

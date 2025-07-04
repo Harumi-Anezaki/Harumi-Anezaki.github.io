@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>不規則に動く複数の球</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        const BALL_COUNT = 20;
+        const BALL_SIZE = 0.5;
+        const balls = [];
+
+        // シーン、カメラ、レンダラーの設定
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // カメラの位置設定
+        camera.position.z = 10;
+
+        // 光源の追加
+        const ambientLight = new THREE.AmbientLight(0x404040);
+        scene.add(ambientLight);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+        directionalLight.position.set(5, 5, 5);
+        scene.add(directionalLight);
+
+        // 球を生成
+        for (let i = 0; i < BALL_COUNT; i++) {
+            const geometry = new THREE.SphereGeometry(BALL_SIZE, 32, 32);
+            const material = new THREE.MeshPhongMaterial({
+                color: new THREE.Color(`hsl(${Math.random() * 360}, 100%, 50%)`),
+                specular: 0x444444,
+                shininess: 30
+            });
+            const sphere = new THREE.Mesh(geometry, material);
+            scene.add(sphere);
+            
+            balls.push({
+                mesh: sphere,
+                x: (Math.random() - 0.5) * 15,
+                y: (Math.random() - 0.5) * 15,
+                z: (Math.random() - 0.5) * 15,
+                dx: (Math.random() - 0.5) * 0.2,
+                dy: (Math.random() - 0.5) * 0.2,
+                dz: (Math.random() - 0.5) * 0.2,
+                ax: 0,
+                ay: 0,
+                az: 0
+            });
+        }
+
+        function checkCollision(ball1, ball2) {
+            const dx = ball1.x - ball2.x;
+            const dy = ball1.y - ball2.y;
+            const dz = ball1.z - ball2.z;
+            const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+            
+            if (distance < BALL_SIZE * 2) {
+                // 衝突時の速度交換
+                const tempDx = ball1.dx;
+                const tempDy = ball1.dy;
+                const tempDz = ball1.dz;
+                ball1.dx = ball2.dx * 0.9;
+                ball1.dy = ball2.dy * 0.9;
+                ball1.dz = ball2.dz * 0.9;
+                ball2.dx = tempDx * 0.9;
+                ball2.dy = tempDy * 0.9;
+                ball2.dz = tempDz * 0.9;
+                
+                // 重なりを防ぐ
+                const overlap = (BALL_SIZE * 2) - distance;
+                const angle = Math.atan2(Math.sqrt(dx * dx + dz * dz), dy);
+                const azimuth = Math.atan2(dz, dx);
+                ball1.x += Math.cos(azimuth) * Math.sin(angle) * overlap / 2;
+                ball1.y += Math.cos(angle) * overlap / 2;
+                ball1.z += Math.sin(azimuth) * Math.sin(angle) * overlap / 2;
+                ball2.x -= Math.cos(azimuth) * Math.sin(angle) * overlap / 2;
+                ball2.y -= Math.cos(angle) * overlap / 2;
+                ball2.z -= Math.sin(azimuth) * Math.sin(angle) * overlap / 2;
+            }
+        }
+
+        function moveBalls() {
+            for (let i = 0; i < balls.length; i++) {
+                const ball = balls[i];
+                
+                // 加速度をランダムに変更
+                ball.ax += (Math.random() - 0.5) * 0.01;
+                ball.ay += (Math.random() - 0.5) * 0.01;
+                ball.az += (Math.random() - 0.5) * 0.01;
+                
+                // 速度に加速度を適用
+                ball.dx += ball.ax;
+                ball.dy += ball.ay;
+                ball.dz += ball.az;
+                
+                // 速度の上限を設定
+                ball.dx = Math.max(Math.min(ball.dx, 0.3), -0.3);
+                ball.dy = Math.max(Math.min(ball.dy, 0.3), -0.3);
+                ball.dz = Math.max(Math.min(ball.dz, 0.3), -0.3);
+                
+                // 位置を更新
+                ball.x += ball.dx;
+                ball.y += ball.dy;
+                ball.z += ball.dz;
+                
+                // 壁との衝突判定と反射
+                const WALL_SIZE = 7.5;
+                if (Math.abs(ball.x) >= WALL_SIZE) {
+                    ball.dx = -ball.dx * 0.8;
+                    ball.x = Math.sign(ball.x) * WALL_SIZE;
+                }
+                if (Math.abs(ball.y) >= WALL_SIZE) {
+                    ball.dy = -ball.dy * 0.8;
+                    ball.y = Math.sign(ball.y) * WALL_SIZE;
+                }
+                if (Math.abs(ball.z) >= WALL_SIZE) {
+                    ball.dz = -ball.dz * 0.8;
+                    ball.z = Math.sign(ball.z) * WALL_SIZE;
+                }
+                
+                // 加速度の減衰
+                ball.ax *= 0.95;
+                ball.ay *= 0.95;
+                ball.az *= 0.95;
+                
+                // ボール同士の衝突判定
+                for (let j = i + 1; j < balls.length; j++) {
+                    checkCollision(ball, balls[j]);
+                }
+                
+                // 位置を反映
+                ball.mesh.position.set(ball.x, ball.y, ball.z);
+            }
+
+            // シーンを回転
+            scene.rotation.y += 0.002;
+            
+            renderer.render(scene, camera);
+            requestAnimationFrame(moveBalls);
+        }
+
+        // ウィンドウリサイズ対応
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        moveBalls();
+    </script>
+</body>
+</html>

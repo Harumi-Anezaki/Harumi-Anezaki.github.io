@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>不規則に動く複数の立方体</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        let CUBE_COUNT = 20;
+        const CUBE_SIZE = 2;
+        const cubes = [];
+
+        // シーン、カメラ、レンダラーの設定
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        camera.position.z = 30;
+
+        function createCube(size, position, velocity) {
+            const geometry = new THREE.BoxGeometry(size, size, size);
+            const material = new THREE.MeshPhongMaterial({
+                color: new THREE.Color(`hsl(${Math.random() * 360}, 100%, 50%)`)
+            });
+            const cube = new THREE.Mesh(geometry, material);
+            
+            if (position) {
+                cube.position.copy(position);
+            }
+            
+            scene.add(cube);
+            
+            return {
+                mesh: cube,
+                size: size,
+                dx: velocity ? velocity.dx : (Math.random() - 0.5) * 0.5,
+                dy: velocity ? velocity.dy : (Math.random() - 0.5) * 0.5,
+                dz: velocity ? velocity.dz : (Math.random() - 0.5) * 0.5,
+                ax: 0,
+                ay: 0,
+                az: 0
+            };
+        }
+
+        // 初期の立方体を生成
+        for (let i = 0; i < CUBE_COUNT; i++) {
+            cubes.push(createCube(CUBE_SIZE));
+        }
+
+        // ライトの追加
+        const light = new THREE.DirectionalLight(0xffffff, 1);
+        light.position.set(1, 1, 1);
+        scene.add(light);
+        
+        const ambientLight = new THREE.AmbientLight(0x404040);
+        scene.add(ambientLight);
+
+        function splitCube(cube) {
+            if (cube.size <= 0.5) return false; // これ以上分割しない最小サイズ
+            
+            const newSize = cube.size / 1.26; // 体積が半分になるようなサイズ
+            const offset = newSize / 2;
+            
+            // 2つの新しい立方体を作成
+            const cube1 = createCube(newSize, 
+                new THREE.Vector3(
+                    cube.mesh.position.x + offset,
+                    cube.mesh.position.y,
+                    cube.mesh.position.z
+                ),
+                { dx: cube.dx, dy: cube.dy, dz: cube.dz }
+            );
+            
+            const cube2 = createCube(newSize,
+                new THREE.Vector3(
+                    cube.mesh.position.x - offset,
+                    cube.mesh.position.y,
+                    cube.mesh.position.z
+                ),
+                { dx: -cube.dx, dy: cube.dy, dz: cube.dz }
+            );
+            
+            // 元の立方体を削除
+            scene.remove(cube.mesh);
+            const index = cubes.indexOf(cube);
+            cubes.splice(index, 1);
+            
+            // 新しい立方体を追加
+            cubes.push(cube1, cube2);
+            return true;
+        }
+
+        function checkCollision(cube1, cube2) {
+            const dx = cube1.mesh.position.x - cube2.mesh.position.x;
+            const dy = cube1.mesh.position.y - cube2.mesh.position.y;
+            const dz = cube1.mesh.position.z - cube2.mesh.position.z;
+            const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+            const minDistance = (cube1.size + cube2.size) * 0.75;
+            
+            if (distance < minDistance) {
+                // 衝突時に分割を試みる
+                const split1 = splitCube(cube1);
+                const split2 = splitCube(cube2);
+                
+                if (!split1 && !split2) {
+                    // 分割できない場合は通常の衝突処理
+                    const tempDx = cube1.dx;
+                    const tempDy = cube1.dy;
+                    const tempDz = cube1.dz;
+                    cube1.dx = cube2.dx * 0.9;
+                    cube1.dy = cube2.dy * 0.9;
+                    cube1.dz = cube2.dz * 0.9;
+                    cube2.dx = tempDx * 0.9;
+                    cube2.dy = tempDy * 0.9;
+                    cube2.dz = tempDz * 0.9;
+                    
+                    // 重なりを防ぐ
+                    const overlap = minDistance - distance;
+                    const angle = {
+                        xy: Math.atan2(dy, dx),
+                        xz: Math.atan2(dz, dx)
+                    };
+                    cube1.mesh.position.x += Math.cos(angle.xy) * Math.cos(angle.xz) * overlap / 2;
+                    cube1.mesh.position.y += Math.sin(angle.xy) * overlap / 2;
+                    cube1.mesh.position.z += Math.cos(angle.xy) * Math.sin(angle.xz) * overlap / 2;
+                    cube2.mesh.position.x -= Math.cos(angle.xy) * Math.cos(angle.xz) * overlap / 2;
+                    cube2.mesh.position.y -= Math.sin(angle.xy) * overlap / 2;
+                    cube2.mesh.position.z -= Math.cos(angle.xy) * Math.sin(angle.xz) * overlap / 2;
+                }
+            }
+        }
+
+        function moveCubes() {
+            for (let i = 0; i < cubes.length; i++) {
+                const cube = cubes[i];
+                
+                // 加速度をランダムに変更
+                cube.ax += (Math.random() - 0.5) * 0.02;
+                cube.ay += (Math.random() - 0.5) * 0.02;
+                cube.az += (Math.random() - 0.5) * 0.02;
+                
+                // 速度に加速度を適用
+                cube.dx += cube.ax;
+                cube.dy += cube.ay;
+                cube.dz += cube.az;
+                
+                // 速度の上限を設定
+                cube.dx = Math.max(Math.min(cube.dx, 0.5), -0.5);
+                cube.dy = Math.max(Math.min(cube.dy, 0.5), -0.5);
+                cube.dz = Math.max(Math.min(cube.dz, 0.5), -0.5);
+                
+                // 位置を更新
+                cube.mesh.position.x += cube.dx;
+                cube.mesh.position.y += cube.dy;
+                cube.mesh.position.z += cube.dz;
+                
+                // 回転を追加
+                cube.mesh.rotation.x += 0.01;
+                cube.mesh.rotation.y += 0.01;
+                
+                // 壁との衝突判定と反射
+                const BOUNDARY = 15;
+                if (Math.abs(cube.mesh.position.x) > BOUNDARY) {
+                    cube.dx = -cube.dx * 0.8;
+                    cube.mesh.position.x = Math.sign(cube.mesh.position.x) * BOUNDARY;
+                }
+                if (Math.abs(cube.mesh.position.y) > BOUNDARY) {
+                    cube.dy = -cube.dy * 0.8;
+                    cube.mesh.position.y = Math.sign(cube.mesh.position.y) * BOUNDARY;
+                }
+                if (Math.abs(cube.mesh.position.z) > BOUNDARY) {
+                    cube.dz = -cube.dz * 0.8;
+                    cube.mesh.position.z = Math.sign(cube.mesh.position.z) * BOUNDARY;
+                }
+                
+                // 加速度の減衰
+                cube.ax *= 0.95;
+                cube.ay *= 0.95;
+                cube.az *= 0.95;
+                
+                // 立方体同士の衝突判定
+                for (let j = i + 1; j < cubes.length; j++) {
+                    checkCollision(cube, cubes[j]);
+                }
+            }
+            
+            renderer.render(scene, camera);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            moveCubes();
+        }
+
+        animate();
+
+        // ウィンドウリサイズ対応
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
