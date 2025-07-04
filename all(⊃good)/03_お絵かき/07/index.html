@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Pictura</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>Pictura</h1>
+    </header>
+    <div id="toolbar">
+        <!-- ツールボタン -->
+        <button id="pen-tool">ペン</button>
+        <button id="line-tool">直線</button>
+        <button id="shape-tool">図形</button>
+        <button id="text-tool">テキスト</button>
+        <button id="eraser-tool">消しゴム</button>
+        <input type="color" id="color-picker" value="#000000">
+        <button id="undo">1つ前へ</button>
+        <button id="reset">リセット</button>
+        <button id="zoom-in">ズームイン</button>
+        <button id="zoom-out">ズームアウト</button>
+        <button id="save">保存</button>
+        <button id="layers">レイヤー</button>
+    </div>
+    <div id="canvas-container">
+        <canvas id="drawing-canvas" width="800" height="600"></canvas>
+    </div>
+
+    <!-- モーダル -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <!-- モーダルの内容 -->
+            <div id="shape-options" class="modal-section">
+                <h2>図形を選択</h2>
+                <button data-shape="rectangle">四角形</button>
+                <button data-shape="circle">円</button>
+                <button data-shape="star">星型</button>
+            </div>
+            <!-- レイヤー管理など他のモーダル内容 -->
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="utf-8">
+    <title>3D陰関数グラフ描画アプリ</title>
+    <style>
+        body { margin: 0; overflow: hidden; }
+        #functionInput {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            width: 250px;
+            padding: 5px;
+            font-size: 16px;
+        }
+        #submitBtn {
+            position: absolute;
+            top: 10px;
+            left: 270px;
+            padding: 5px 10px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <input type="text" id="functionInput" placeholder="例: x^2 + y^2 + z^2 - 1" />
+    <button id="submitBtn">グラフを作成</button>
+
+    <!-- Three.js ライブラリ -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r148/three.min.js"></script>
+    <!-- OrbitControls（カメラコントロール用） -->
+    <script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
+    <!-- MarchingCubes（陰関数の等値面描画用） -->
+    <script src="https://threejs.org/examples/js/objects/MarchingCubes.js"></script>
+    <!-- Math.js（数学関数のパースと評価用） -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/10.6.4/math.min.js"></script>
+    <!-- メインスクリプト -->
+    <script src="script.js"></script>
+</body>
+</html>

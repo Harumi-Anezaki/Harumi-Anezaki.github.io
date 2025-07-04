@@ -1,0 +1,309 @@
+/* リセットスタイル */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* 背景 */
+body {
+    background-color: #121212;
+    font-family: 'Segoe UI', sans-serif;
+    color: #fff;
+    overflow: hidden;
+}
+
+/* ファイル操作ボタン */
+#file-operations {
+    position: fixed;
+    top: 10px;
+    right: 230px;
+    display: flex;
+    gap: 10px;
+    z-index: 1000;
+}
+
+#file-operations button {
+    background: #1e1e1e;
+    border: none;
+    color: #fff;
+    font-size: 20px;
+    width: 40px;
+    height: 40px;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+#file-operations button:hover {
+    background: #333;
+}
+
+/* ツールバー */
+#toolbar {
+    position: fixed;
+    left: 10px;
+    top: 60px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 1000;
+}
+
+.tool-button {
+    background: #1e1e1e;
+    border: none;
+    color: #fff;
+    font-size: 24px;
+    width: 50px;
+    height: 50px;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: background 0.3s;
+}
+
+.tool-button:hover {
+    background: #333;
+}
+
+.tool-button.active {
+    background: #00c6ff;
+}
+
+.tool-dropdown {
+    position: relative;
+}
+
+.dropdown-content {
+    position: absolute;
+    top: 0;
+    left: 60px;
+    background: #1e1e1e;
+    border-radius: 8px;
+    display: none;
+    flex-direction: column;
+    gap: 10px;
+    padding: 10px;
+}
+
+.tool-dropdown:hover .dropdown-content {
+    display: flex;
+}
+
+.dropdown-content .tool-button {
+    width: 40px;
+    height: 40px;
+}
+
+/* 属性パネル */
+#property-panel {
+    position: fixed;
+    left: 70px;
+    top: 60px;
+    background: #1e1e1e;
+    padding: 10px;
+    border-radius: 8px;
+    width: 200px;
+    color: #fff;
+    z-index: 1000;
+}
+
+#property-panel label {
+    display: block;
+    margin-bottom: 5px;
+}
+
+#property-panel input,
+#property-panel select {
+    width: 100%;
+    margin-bottom: 10px;
+    padding: 5px;
+    background: #333;
+    border: none;
+    color: #fff;
+    border-radius: 4px;
+}
+
+/* レイヤーパネル */
+#layer-panel {
+    position: fixed;
+    right: 10px;
+    top: 60px;
+    background: #1e1e1e;
+    padding: 10px;
+    border-radius: 8px;
+    width: 200px;
+    color: #fff;
+    z-index: 1000;
+}
+
+#layer-panel #add-layer {
+    width: 100%;
+    background: #333;
+    border: none;
+    color: #fff;
+    padding: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-bottom: 10px;
+}
+
+#layer-panel #add-layer:hover {
+    background: #444;
+}
+
+#layer-list {
+    list-style: none;
+}
+
+.layer-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #2a2a2a;
+    padding: 5px;
+    margin-bottom: 5px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.layer-item.active {
+    background: #00c6ff;
+}
+
+.layer-item .layer-controls {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.layer-item .layer-actions {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.layer-item button {
+    background: none;
+    border: none;
+    color: #fff;
+    cursor: pointer;
+}
+
+.layer-item input[type="checkbox"] {
+    accent-color: #00c6ff;
+}
+
+/* カラーパレット */
+#color-palette {
+    position: fixed;
+    left: 10px;
+    bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 1000;
+}
+
+#color-picker {
+    width: 50px;
+    height: 50px;
+    border: none;
+    padding: 0;
+    border-radius: 8px;
+    cursor: pointer;
+    background: none;
+}
+
+/* キャンバスエリア */
+#canvas-container {
+    position: absolute;
+    left: 290px;
+    right: 230px;
+    top: 60px;
+    bottom: 60px;
+    background: #fff;
+    overflow: hidden;
+    cursor: crosshair;
+}
+
+#canvas {
+    background-color: transparent;
+    display: block;
+    transform-origin: 0 0;
+    position: absolute;
+    /* キャンバスの位置をセンターに */
+    left: 50%;
+    top: 50%;
+}
+
+/* ズームコントロール */
+#zoom-control {
+    position: fixed;
+    bottom: 10px;
+    right: 230px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 1000;
+}
+
+#zoom-control button {
+    background: #1e1e1e;
+    border: none;
+    color: #fff;
+    font-size: 20px;
+    width: 40px;
+    height: 40px;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+#zoom-control button:hover {
+    background: #333;
+}
+
+#zoom-slider {
+    width: 150px;
+    background: none;
+}
+
+/* モーダル */
+#modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 2000;
+}
+
+#modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #1e1e1e;
+    color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    width: 400px;
+    z-index: 2001;
+}
+
+#modal button {
+    background: #333;
+    border: none;
+    color: #fff;
+    padding: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+#modal button:hover {
+    background: #444;
+}
+
+.hidden {
+    display: none;
+}

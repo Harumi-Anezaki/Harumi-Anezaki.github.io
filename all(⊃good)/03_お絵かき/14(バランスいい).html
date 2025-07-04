@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Pictura</title>
+    <!-- おしゃれなフォントの読み込み -->
+    <link href="https://fonts.googleapis.com/css?family=Dancing+Script&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Sawarabi+Mincho&display=swap" rel="stylesheet">
+    <!-- 外部ライブラリの読み込み -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvg/dist/browser/canvg.min.js"></script>
+    <style>
+        /* スタイルシート */
+        body {
+            text-align: center;
+            font-family: 'Sawarabi Mincho', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f0f0;
+        }
+
+        h1 {
+            margin: 20px;
+            color: #333;
+            font-family: 'Dancing Script', cursive;
+            font-size: 60px;
+        }
+
+        #toolbar {
+            margin-bottom: 10px;
+            background-color: #ffffff;
+            padding: 10px 20px;
+            display: inline-block;
+            border-radius: 5px;
+            box-shadow: 0px 2px 5px rgba(0,0,0,0.1);
+        }
+
+        #toolbar label {
+            margin-right: 5px;
+        }
+
+        #toolbar select,
+        #toolbar input[type="number"],
+        #toolbar input[type="color"],
+        #toolbar input[type="file"] {
+            margin-right: 15px;
+            vertical-align: middle;
+            font-family: 'Sawarabi Mincho', sans-serif;
+        }
+
+        #toolbar button {
+            padding: 5px 10px;
+            margin-right: 10px;
+            background-color: #007BFF;
+            color: #fff;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        #toolbar button:hover {
+            background-color: #0056b3;
+        }
+
+        #drawingCanvas {
+            border: 1px solid #ccc;
+            cursor: crosshair;
+            background-color: #ffffff;
+            border-radius: 5px;
+            box-shadow: 0px 2px 10px rgba(0,0,0,0.1);
+        }
+
+        #helpButton {
+            margin-top: 10px;
+            padding: 5px 10px;
+            background-color: #28A745;
+            color: #fff;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        #helpButton:hover {
+            background-color: #218838;
+        }
+
+        /* モーダルのスタイル */
+        .modal {
+            display: none; /* モーダルを非表示 */
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 10% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 500px;
+            border-radius: 5px;
+            font-family: 'Sawarabi Mincho', sans-serif;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: #000;
+        }
+    </style>
+</head>
+<body>
+    <h1>Pictura</h1>
+
+    <div id="toolbar">
+        <label for="tool">ツール:</label>
+        <select id="tool">
+            <option value="pen">ペン</option>
+            <option value="line">直線</option>
+            <option value="rectangle">四角形</option>
+            <option value="circle">円</option>
+            <option value="eraser">消しゴム</option>
+            <option value="image">画像</option>
+        </select>
+
+        <label for="brushType">ブラシタイプ:</label>
+        <select id="brushType">
+            <option value="solid">通常</option>
+            <option value="dotted">点線</option>
+            <option value="dashed">破線</option>
+        </select>
+
+        <label for="brushSize">ブラシサイズ:</label>
+        <input type="number" id="brushSize" min="1" max="50" value="5">
+
+        <label for="brushColor">ブラシの色:</label>
+        <input type="color" id="brushColor" value="#000000">
+
+        <label for="bgColor">背景の色:</label>
+        <input type="color" id="bgColor" value="#FFFFFF">
+
+        <label for="bgLine">背景線:</label>
+        <select id="bgLine">
+            <option value="none">なし</option>
+            <option value="grid">グリッド</option>
+            <option value="lines">横線</option>
+        </select>
+
+        <label for="bgLineWidth">線の幅:</label>
+        <input type="number" id="bgLineWidth" min="1" max="50" value="1">
+
+        <button id="undoButton">◀️</button>
+        <button id="clearCanvas">キャンバスをクリア</button>
+
+        <button id="saveButton">保存</button>
+        <label for="saveFormat">形式:</label>
+        <select id="saveFormat">
+            <option value="png">PNG</option>
+            <option value="jpg">JPG</option>
+            <option value="bmp">BMP</option>
+            <option value="pdf">PDF</option>
+            <option value="svg">SVG</option>
+            <option value="html">HTML</option>
+        </select>
+    </div>
+
+    <canvas id="drawingCanvas" width="800" height="600"></canvas>
+
+    <!-- モーダルの実装（ヘルプモーダル） -->
+    <button id="helpButton">ヘルプ</button>
+    <div id="helpModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>使い方ガイド</h2>
+            <p>ツールバーからツールやブラシの設定を選択し、キャンバス上でお絵かきを楽しんでください。</p>
+            <p>「◀️」ボタンで一つ前の状態に戻せます。複数回押すとさらに戻すことができます。</p>
+            <p>保存ボタンからお好きな形式で作品を保存できます。</p>
+        </div>
+    </div>
+
+    <script>
+        // JavaScriptコード
+        const canvas = document.getElementById('drawingCanvas');
+        const context = canvas.getContext('2d');
+
+        let drawing = false;
+        let tool = 'pen';
+        let brushSize = 5;
+        let brushColor = '#000000';
+        let bgColor = '#FFFFFF';
+        let brushType = 'solid';
+        let startX, startY;
+        let img = null;
+
+        const toolSelect = document.getElementById('tool');
+        const brushSizeInput = document.getElementById('brushSize');
+        const brushColorInput = document.getElementById('brushColor');
+        const bgColorInput = document.getElementById('bgColor');
+        const brushTypeSelect = document.getElementById('brushType');
+        const bgLineSelect = document.getElementById('bgLine');
+        const bgLineWidthInput = document.getElementById('bgLineWidth');
+        const undoButton = document.getElementById('undoButton');
+        const clearCanvasButton = document.getElementById('clearCanvas');
+        const saveButton = document.getElementById('saveButton');
+        const saveFormatSelect = document.getElementById('saveFormat');
+
+        // Undoスタック
+        let undoStack = [];
+
+        // 初期設定
+        context.lineCap = 'round';
+        context.lineJoin = 'round';
+        context.lineWidth = brushSize;
+        context.strokeStyle = brushColor;
+        updateBrushType();
+        canvas.style.backgroundColor = bgColor;
+        drawBackgroundLines();
+
+        // ツールの変更
+        toolSelect.addEventListener('change', (e) => {
+            tool = e.target.value;
+            if (tool === 'image') {
+                // 画像を選択
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'image/*';
+                input.onchange = (event) => {
+                    const file = event.target.files[0];
+                    const reader = new FileReader();
+                    reader.onload = (loadEvent) => {
+                        img = new Image();
+                        img.onload = () => {
+                            pushUndoStack();
+                            context.drawImage(img, 0, 0);
+                            img = null;
+                        };
+                        img.src = loadEvent.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                };
+                input.click();
+            }
+        });
+
+        // ブラシサイズの変更
+        brushSizeInput.addEventListener('input', (e) => {
+            brushSize = e.target.value;
+            context.lineWidth = brushSize;
+            updateBrushType(); // ブラシサイズ変更時にラインのスタイルを更新
+        });
+
+        // ブラシの色の変更
+        brushColorInput.addEventListener('input', (e) => {
+            brushColor = e.target.value;
+            context.strokeStyle = brushColor;
+        });
+
+        // 背景色の変更
+        bgColorInput.addEventListener('input', (e) => {
+            bgColor = e.target.value;
+            canvas.style.backgroundColor = bgColor;
+            drawBackgroundLines();
+        });
+
+        // 背景線の種類の変更
+        bgLineSelect.addEventListener('change', () => {
+            drawBackgroundLines();
+        });
+
+        // 背景線の幅の変更
+        bgLineWidthInput.addEventListener('input', () => {
+            drawBackgroundLines();
+        });
+
+        // ブラシタイプの変更
+        brushTypeSelect.addEventListener('change', (e) => {
+            brushType = e.target.value;
+            updateBrushType();
+        });
+
+        // ブラシタイプの更新
+        function updateBrushType() {
+            switch (brushType) {
+                case 'solid':
+                    context.setLineDash([]);
+                    break;
+                case 'dotted':
+                    context.setLineDash([brushSize, brushSize]);
+                    break;
+                case 'dashed':
+                    context.setLineDash([brushSize * 5, brushSize * 5]);
+                    break;
+                default:
+                    context.setLineDash([]);
+                    break;
+            }
+        }
+
+        // キャンバスのクリア
+        clearCanvasButton.addEventListener('click', () => {
+            pushUndoStack();
+            context.clearRect(0, 0, canvas.width, canvas.height);
+            bgColor = '#FFFFFF';
+            canvas.style.backgroundColor = bgColor;
+            bgColorInput.value = bgColor;
+            drawBackgroundLines();
+        });
+
+        // アンドゥボタン
+        undoButton.addEventListener('click', () => {
+            if (undoStack.length > 0) {
+                const imgData = undoStack.pop();
+                context.putImageData(imgData, 0, 0);
+            }
+        });
+
+        // 保存ボタン
+        saveButton.addEventListener('click', () => {
+            const format = saveFormatSelect.value;
+
+            // 背景色込みのCanvasを作成
+            let temp_canvas = document.createElement('canvas');
+            temp_canvas.width = canvas.width;
+            temp_canvas.height = canvas.height;
+            let temp_context = temp_canvas.getContext('2d');
+
+            // 背景色を塗りつぶす
+            temp_context.fillStyle = bgColor;
+            temp_context.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 背景線を描画
+            drawBackgroundLines(temp_context);
+
+            // 元のCanvasを描画
+            temp_context.drawImage(canvas, 0, 0);
+
+            if (format === 'png') {
+                const dataURL = temp_canvas.toDataURL('image/png');
+                downloadImage(dataURL, 'Pictura.png');
+            } else if (format === 'jpg') {
+                const dataURL = temp_canvas.toDataURL('image/jpeg', 1.0);
+                downloadImage(dataURL, 'Pictura.jpg');
+            } else if (format === 'bmp') {
+                const dataURL = temp_canvas.toDataURL('image/bmp');
+                downloadImage(dataURL, 'Pictura.bmp');
+            } else if (format === 'pdf') {
+                // jsPDFを使用してPDFとして保存
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF('landscape');
+                const imgData = temp_canvas.toDataURL('image/png');
+
+                pdf.addImage(imgData, 'PNG', 0, 0, pdf.internal.pageSize.getWidth(), pdf.internal.pageSize.getHeight());
+                pdf.save('Pictura.pdf');
+            } else if (format === 'svg') {
+                // canvgを使用してSVGとして保存
+                const svg = canvg.Canvg.fromString(temp_context, temp_canvas.outerHTML);
+                const svgData = svg.svg();
+
+                const blob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'Pictura.svg';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            } else if (format === 'html') {
+                // HTMLファイルとして保存
+                const htmlContent = `
+                    <!DOCTYPE html>
+                    <html>
+                    <body>
+                    <img src="${temp_canvas.toDataURL()}">
+                    </body>
+                    </html>
+                `;
+                const blob = new Blob([htmlContent], { type: 'text/html' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'Pictura.html';
+                a.click();
+                URL.revokeObjectURL(url);
+            }
+        });
+
+        // 画像をダウンロード
+        function downloadImage(data, filename) {
+            const a = document.createElement('a');
+            a.href = data;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        // マウスダウンイベント
+        canvas.addEventListener('mousedown', (e) => {
+            drawing = true;
+            startX = getX(e);
+            startY = getY(e);
+            pushUndoStack(); // 描画前に現在の状態を保存
+            if (tool === 'pen' || tool === 'eraser') {
+                context.beginPath();
+                context.moveTo(startX, startY);
+            } else if (tool === 'line' || tool === 'rectangle' || tool === 'circle') {
+                // 現在のCanvasを保存（previewのため）
+                tempImageData = context.getImageData(0, 0, canvas.width, canvas.height);
+            }
+        });
+
+        // マウスムーブイベント
+        canvas.addEventListener('mousemove', (e) => {
+            if (!drawing) return;
+            const x = getX(e);
+            const y = getY(e);
+
+            if (tool === 'pen') {
+                context.lineTo(x, y);
+                context.strokeStyle = brushColor;
+                context.globalCompositeOperation = 'source-over';
+                context.stroke();
+            } else if (tool === 'eraser') {
+                context.lineTo(x, y);
+                context.strokeStyle = 'rgba(0,0,0,1)';
+                context.globalCompositeOperation = 'destination-out';
+                context.stroke();
+            } else if (tool === 'line' || tool === 'rectangle' || tool === 'circle') {
+                // プレビューを描画
+                context.putImageData(tempImageData, 0, 0);
+                context.beginPath();
+                context.strokeStyle = brushColor;
+                context.globalCompositeOperation = 'source-over';
+                if (tool === 'line') {
+                    context.moveTo(startX, startY);
+                    context.lineTo(x, y);
+                } else if (tool === 'rectangle') {
+                    const rectWidth = x - startX;
+                    const rectHeight = y - startY;
+                    context.rect(startX, startY, rectWidth, rectHeight);
+                } else if (tool === 'circle') {
+                    const radius = Math.sqrt(Math.pow(x - startX, 2) + Math.pow(y - startY, 2));
+                    context.arc(startX, startY, radius, 0, Math.PI * 2);
+                }
+                context.stroke();
+                context.closePath();
+            }
+            context.globalCompositeOperation = 'source-over';
+        });
+
+        // マウスアップイベント
+        canvas.addEventListener('mouseup', (e) => {
+            if (!drawing) return;
+            drawing = false;
+            const endX = getX(e);
+            const endY = getY(e);
+
+            // 形状の描画完了
+            if (tool === 'line' || tool === 'rectangle' || tool === 'circle') {
+                context.putImageData(tempImageData, 0, 0);
+                context.beginPath();
+                context.strokeStyle = brushColor;
+                context.globalCompositeOperation = 'source-over';
+                if (tool === 'line') {
+                    context.moveTo(startX, startY);
+                    context.lineTo(endX, endY);
+                } else if (tool === 'rectangle') {
+                    const rectWidth = endX - startX;
+                    const rectHeight = endY - startY;
+                    context.rect(startX, startY, rectWidth, rectHeight);
+                } else if (tool === 'circle') {
+                    const radius = Math.sqrt(Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2));
+                    context.arc(startX, startY, radius, 0, Math.PI * 2);
+                }
+                context.stroke();
+                context.closePath();
+            }
+            context.globalCompositeOperation = 'source-over';
+        });
+
+        // マウスアウトイベント
+        canvas.addEventListener('mouseout', () => {
+            if (drawing && (tool === 'line' || tool === 'rectangle' || tool === 'circle')) {
+                context.putImageData(tempImageData, 0, 0);
+            }
+            drawing = false;
+        });
+
+        // 座標取得関数
+        function getX(e) {
+            const rect = canvas.getBoundingClientRect();
+            return e.clientX - rect.left;
+        }
+
+        function getY(e) {
+            const rect = canvas.getBoundingClientRect();
+            return e.clientY - rect.top;
+        }
+
+        // Undoスタックに現在の状態を保存
+        function pushUndoStack() {
+            if (undoStack.length >= 20) {
+                undoStack.shift(); // 最大20まで保持
+            }
+            undoStack.push(context.getImageData(0, 0, canvas.width, canvas.height));
+        }
+
+        // 背景線を描画
+        function drawBackgroundLines(ctx = context) {
+            // 背景をクリア
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 背景色を塗りつぶす
+            ctx.fillStyle = bgColor;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 背景線を描画
+            const bgLineType = bgLineSelect.value;
+            const lineWidth = parseInt(bgLineWidthInput.value);
+            ctx.strokeStyle = '#cccccc';
+            ctx.lineWidth = 1;
+            if (bgLineType === 'grid') {
+                for (let x = 0; x <= canvas.width; x += lineWidth * 10) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, 0);
+                    ctx.lineTo(x, canvas.height);
+                    ctx.stroke();
+                }
+                for (let y = 0; y <= canvas.height; y += lineWidth * 10) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(canvas.width, y);
+                    ctx.stroke();
+                }
+            } else if (bgLineType === 'lines') {
+                for (let y = 0; y <= canvas.height; y += lineWidth * 10) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(canvas.width, y);
+                    ctx.stroke();
+                }
+            }
+        }
+
+        /* モーダルの操作 */
+        const helpButton = document.getElementById('helpButton');
+        const helpModal = document.getElementById('helpModal');
+        const closeModal = document.getElementsByClassName('close')[0];
+
+        // モーダルを表示
+        helpButton.addEventListener('click', () => {
+            helpModal.style.display = 'block';
+        });
+
+        // モーダルを閉じる
+        closeModal.addEventListener('click', () => {
+            helpModal.style.display = 'none';
+        });
+
+        // モーダル外をクリックした場合に閉じる
+        window.addEventListener('click', (e) => {
+            if (e.target == helpModal) {
+                helpModal.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>

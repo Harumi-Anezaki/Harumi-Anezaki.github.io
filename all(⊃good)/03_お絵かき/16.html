@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Pictura</title>
+    <!-- おしゃれなフォントの読み込み -->
+    <link href="https://fonts.googleapis.com/css?family=Dancing+Script&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Noto+Sans+JP&display=swap" rel="stylesheet">
+    <!-- 外部ライブラリの読み込み -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/4.6.0/fabric.min.js"></script>
+    <!-- レスポンシブ対応のためのメタタグ -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        /* スタイルシート */
+        body {
+            text-align: center;
+            font-family: 'Noto Sans JP', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f0f0;
+        }
+
+        h1 {
+            margin: 20px;
+            color: #333;
+            font-family: 'Dancing Script', cursive;
+            font-size: 60px;
+        }
+
+        #toolbar {
+            margin-bottom: 10px;
+            background-color: #ffffff;
+            padding: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            border-radius: 5px;
+            box-shadow: 0px 2px 5px rgba(0,0,0,0.1);
+        }
+
+        #toolbar label {
+            margin-right: 5px;
+        }
+
+        #toolbar select,
+        #toolbar input[type="number"],
+        #toolbar input[type="color"],
+        #toolbar input[type="file"] {
+            margin-right: 15px;
+            margin-bottom: 10px;
+            vertical-align: middle;
+            font-family: 'Noto Sans JP', sans-serif;
+        }
+
+        #toolbar button {
+            padding: 5px 10px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            background-color: #007BFF;
+            color: #fff;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        #toolbar button:hover {
+            background-color: #0056b3;
+        }
+
+        #drawingCanvas {
+            border: 1px solid #ccc;
+            background-color: #ffffff;
+            cursor: default;
+            border-radius: 5px;
+            box-shadow: 0px 2px 10px rgba(0,0,0,0.1);
+            max-width: 100%;
+            touch-action: none; /* タッチ操作を有効にする */
+        }
+
+        #helpButton {
+            margin-top: 10px;
+            padding: 5px 10px;
+            background-color: #28A745;
+            color: #fff;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        #helpButton:hover {
+            background-color: #218838;
+        }
+
+        /* モーダルのスタイル */
+        .modal {
+            display: none; /* モーダルを非表示 */
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 10% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 500px;
+            border-radius: 5px;
+            font-family: 'Noto Sans JP', sans-serif;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: #000;
+        }
+
+        /* メディアクエリでスマホ対応 */
+        @media screen and (max-width: 600px) {
+            h1 {
+                font-size: 40px;
+            }
+
+            #toolbar {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            #toolbar select,
+            #toolbar input[type="number"],
+            #toolbar input[type="color"],
+            #toolbar input[type="file"] {
+                margin-right: 0;
+            }
+
+            #toolbar button {
+                margin-right: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Pictura</h1>
+
+    <div id="toolbar">
+        <label for="tool">ツール:</label>
+        <select id="tool">
+            <option value="pen">ペン</option>
+            <option value="line">直線</option>
+            <option value="rectangle">四角形</option>
+            <option value="circle">円</option>
+            <option value="eraser">消しゴム</option>
+            <option value="image">画像</option>
+            <option value="text">テキスト</option>
+            <option value="select">調整</option>
+        </select>
+
+        <label for="brushType">ブラシ:</label>
+        <select id="brushType">
+            <option value="normal">ノーマル</option>
+            <option value="brush">筆</option>
+            <option value="spray">スプレー</option>
+        </select>
+
+        <label for="brushSize">ブラシサイズ:</label>
+        <input type="number" id="brushSize" min="1" max="50" value="5">
+
+        <label for="brushColor">ブラシの色:</label>
+        <input type="color" id="brushColor" value="#000000">
+
+        <label for="bgColor">背景の色:</label>
+        <input type="color" id="bgColor" value="#FFFFFF">
+
+        <label for="bgLine">背景線:</label>
+        <select id="bgLine">
+            <option value="none">なし</option>
+            <option value="grid">グリッド</option>
+            <option value="lines">横線</option>
+        </select>
+
+        <label for="bgLineWidth">線の幅:</label>
+        <input type="number" id="bgLineWidth" min="1" max="50" value="1">
+
+        <button id="undoButton">◀️</button>
+        <button id="clearCanvas">↺</button>
+
+        <button id="saveButton">保存</button>
+        <label for="saveFormat">形式:</label>
+        <select id="saveFormat">
+            <option value="png">PNG</option>
+            <option value="jpg">JPG</option>
+            <option value="bmp">BMP</option>
+            <option value="pdf">PDF</option>
+            <option value="svg">SVG</option>
+            <option value="html">HTML</option>
+        </select>
+    </div>
+
+    <canvas id="drawingCanvas" width="800" height="600"></canvas>
+
+    <!-- モーダルの実装（ヘルプモーダル） -->
+    <button id="helpButton">ヘルプ</button>
+    <div id="helpModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>使い方ガイド</h2>
+            <p>ツールバーからツールやブラシの設定を選択し、キャンバス上でお絵かきを楽しんでください。</p>
+            <p>「◀️」ボタンで一つ前の状態に戻せます。複数回押すとさらに戻すことができます。</p>
+            <p>「↺」ボタンでキャンバスをリセットします。背景線も「なし」に戻ります。</p>
+            <p>「調整」ツールでオブジェクトを拡大・縮小・回転できます。</p>
+            <p>「テキスト」ツールでキャンバスにテキストを追加できます。</p>
+            <p>保存ボタンからお好きな形式で作品を保存できます。</p>
+        </div>
+    </div>
+
+    <!-- テキスト入力モーダル -->
+    <div id="textModal" class="modal">
+        <div class="modal-content">
+            <span class="closeTextModal">&times;</span>
+            <h2>テキストの入力</h2>
+            <input type="text" id="textInput" placeholder="テキストを入力">
+            <button id="addTextButton">追加</button>
+        </div>
+    </div>
+
+    <script>
+        // JavaScriptコード
+        const canvasElement = document.getElementById('drawingCanvas');
+        const canvas = new fabric.Canvas('drawingCanvas', { isDrawingMode: false });
+
+        let drawingMode = false;
+        let tool = 'pen';
+        let brushSize = 5;
+        let brushColor = '#000000';
+        let bgColor = '#FFFFFF';
+        let brushType = 'normal';
+
+        const toolSelect = document.getElementById('tool');
+        const brushSizeInput = document.getElementById('brushSize');
+        const brushColorInput = document.getElementById('brushColor');
+        const bgColorInput = document.getElementById('bgColor');
+        const brushTypeSelect = document.getElementById('brushType');
+        const bgLineSelect = document.getElementById('bgLine');
+        const bgLineWidthInput = document.getElementById('bgLineWidth');
+        const undoButton = document.getElementById('undoButton');
+        const clearCanvasButton = document.getElementById('clearCanvas');
+        const saveButton = document.getElementById('saveButton');
+        const saveFormatSelect = document.getElementById('saveFormat');
+
+        // モーダル関連
+        const textModal = document.getElementById('textModal');
+        const closeTextModal = document.getElementsByClassName('closeTextModal')[0];
+        const textInput = document.getElementById('textInput');
+        const addTextButton = document.getElementById('addTextButton');
+
+        // 初期設定
+        canvas.backgroundColor = bgColor;
+        canvas.freeDrawingBrush.width = brushSize;
+        canvas.freeDrawingBrush.color = brushColor;
+        updateBrush();
+
+        drawBackgroundLines();
+
+        // レスポンシブ対応
+        window.addEventListener('resize', resizeCanvas, false);
+        resizeCanvas();
+
+        function resizeCanvas() {
+            // キャンバスのサイズをウィンドウ幅に合わせる
+            const ratio = canvas.width / canvas.height;
+            const width = Math.min(window.innerWidth * 0.9, 800);
+            const height = width / ratio;
+            canvasElement.style.width = width + 'px';
+            canvasElement.style.height = height + 'px';
+            canvas.renderAll();
+        }
+
+        // ツールの変更
+        toolSelect.addEventListener('change', (e) => {
+            tool = e.target.value;
+            canvas.isDrawingMode = false;
+            canvas.selection = false;
+            canvas.off('mouse:down');
+            canvas.off('mouse:move');
+            canvas.off('mouse:up');
+
+            if (tool === 'pen') {
+                canvas.isDrawingMode = true;
+                updateBrush();
+            } else if (tool === 'eraser') {
+                canvas.isDrawingMode = true;
+                updateBrush();
+            } else if (tool === 'line' || tool === 'rectangle' || tool === 'circle') {
+                let shape, isDown, origX, origY;
+                canvas.on('mouse:down', function(o){
+                    isDown = true;
+                    const pointer = canvas.getPointer(o.e);
+                    origX = pointer.x;
+                    origY = pointer.y;
+
+                    if (tool === 'line') {
+                        shape = new fabric.Line([origX, origY, origX, origY], {
+                            stroke: brushColor,
+                            strokeWidth: brushSize
+                        });
+                    } else if (tool === 'rectangle') {
+                        shape = new fabric.Rect({
+                            left: origX,
+                            top: origY,
+                            width: 0,
+                            height: 0,
+                            fill: 'transparent',
+                            stroke: brushColor,
+                            strokeWidth: brushSize
+                        });
+                    } else if (tool === 'circle') {
+                        shape = new fabric.Ellipse({
+                            left: origX,
+                            top: origY,
+                            originX: 'left',
+                            originY: 'top',
+                            rx: 0,
+                            ry: 0,
+                            fill: 'transparent',
+                            stroke: brushColor,
+                            strokeWidth: brushSize
+                        });
+                    }
+                    canvas.add(shape);
+                });
+                canvas.on('mouse:move', function(o){
+                    if (!isDown) return;
+                    const pointer = canvas.getPointer(o.e);
+                    if (tool === 'line') {
+                        shape.set({ x2: pointer.x, y2: pointer.y });
+                    } else if (tool === 'rectangle') {
+                        if(origX > pointer.x){
+                            shape.set({ left: Math.abs(pointer.x) });
+                        }
+                        if(origY > pointer.y){
+                            shape.set({ top: Math.abs(pointer.y) });
+                        }
+                        shape.set({ width: Math.abs(origX - pointer.x) });
+                        shape.set({ height: Math.abs(origY - pointer.y) });
+                    } else if (tool === 'circle') {
+                        var rx = Math.abs(origX - pointer.x)/2;
+                        var ry = Math.abs(origY - pointer.y)/2;
+                        if (rx > shape.strokeWidth) {
+                            rx -= shape.strokeWidth/2;
+                        }
+                        if (ry > shape.strokeWidth) {
+                            ry -= shape.strokeWidth/2;
+                        }
+                        shape.set({ rx: rx, ry: ry });
+                        if(origX > pointer.x){
+                            shape.set({ originX: 'right' });
+                        } else {
+                            shape.set({ originX: 'left' });
+                        }
+                        if(origY > pointer.y){
+                            shape.set({ originY: 'bottom' });
+                        } else {
+                            shape.set({ originY: 'top' });
+                        }
+                    }
+                    canvas.renderAll();
+                });
+                canvas.on('mouse:up', function(o){
+                    isDown = false;
+                });
+            } else if (tool === 'image') {
+                // 画像を選択
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'image/*';
+                input.onchange = (event) => {
+                    const file = event.target.files[0];
+                    const reader = new FileReader();
+                    reader.onload = (loadEvent) => {
+                        fabric.Image.fromURL(loadEvent.target.result, function(img) {
+                            // 画像を適度な大きさに縮小
+                            const scale = Math.min(canvas.width / img.width, canvas.height / img.height, 0.5);
+                            img.set({
+                                left: 0,
+                                top: 0,
+                                scaleX: scale,
+                                scaleY: scale
+                            });
+                            canvas.add(img);
+                        });
+                    };
+                    reader.readAsDataURL(file);
+                };
+                input.click();
+            } else if (tool === 'text') {
+                // テキスト入力モーダルを表示
+                textModal.style.display = 'block';
+            } else if (tool === 'select') {
+                canvas.selection = true;
+                canvas.forEachObject(function(obj) {
+                    obj.selectable = true;
+                });
+            }
+        });
+
+        // ブラシサイズの変更
+        brushSizeInput.addEventListener('input', (e) => {
+            brushSize = parseInt(e.target.value, 10) || 1;
+            canvas.freeDrawingBrush.width = brushSize;
+        });
+
+        // ブラシの色の変更
+        brushColorInput.addEventListener('input', (e) => {
+            brushColor = e.target.value;
+            canvas.freeDrawingBrush.color = brushColor;
+        });
+
+        // 背景色の変更
+        bgColorInput.addEventListener('input', (e) => {
+            bgColor = e.target.value;
+            canvas.backgroundColor = bgColor;
+            canvas.renderAll();
+        });
+
+        // 背景線の種類の変更
+        bgLineSelect.addEventListener('change', () => {
+            drawBackgroundLines();
+        });
+
+        // 背景線の幅の変更
+        bgLineWidthInput.addEventListener('input', () => {
+            drawBackgroundLines();
+        });
+
+        // ブラシタイプの変更
+        brushTypeSelect.addEventListener('change', (e) => {
+            brushType = e.target.value;
+            updateBrush();
+        });
+
+        function updateBrush() {
+            if (tool === 'eraser') {
+                canvas.freeDrawingBrush = new fabric.EraserBrush(canvas);
+                canvas.freeDrawingBrush.width = brushSize;
+            } else {
+                if (brushType === 'normal') {
+                    canvas.freeDrawingBrush = new fabric.PencilBrush(canvas);
+                } else if (brushType === 'brush') {
+                    canvas.freeDrawingBrush = new fabric.PatternBrush(canvas);
+                    let img = new Image();
+                    img.src = 'data:image/svg+xml;base64,PHN2ZyBoZWlnaHQ9IjYuOTkiIHZpZXdCb3g9IjAgMCA3MCA2LjkiIHdpZHRoPSI3MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvc3ZnIj48ZGVmcz48cGF0aCBpZD0iYSIgZD0iTTQ0LjYsMzIuNmMwLTEzLjMtMTIuMy0yNC0yNy4zLTI0cy0yNy4zLDEwLjctMjcuMywyNGMwLDExLjIsOSwyMS4xLDIxLjIsMjMuM2MwLCwwLTYuMyw2LjMtMTAuNCwxMEgzMmwxMS4yLDExLjJjNC4xLTQuMSwxMC40LTEwLDExLjItMTEuMmMxMi4yLTIuMiwxOS0xMi4xLDE5LTIzLjNabS0zNS4xLTE1LjZjMTAsMCwxOC4xLDYuNCwxOC4xLDE0LjJzLTguMSwxNC4yLTE4LjEsMTQuMnMtMTguMS02LjQtMTguMS0xNC4yQzIxLjUsMjMuNCwyOS43LDE3LDQwLjgsMTcsNDAsMTcuMSw0MC4xLDE3LjEsNDAuNCwxNy4xWk0zNS40LDMuNkM0NCwxMCwxMC4zLDEwLjMsMTAuMywxMC4zQzEwLjMsMTAuMywxMC4zLDEwLjMsMTAuMywxMC4zQzEwLjMsMTAuMywxMC4zLDEwLjMsMTAuMywxMC4zQzEwLjMsMTAuMywxMC4zLDEwLjMsMTAuMywxMC4zWiIvPjwvZGVmcz48Y2xpcFBhdGggaWQ9ImIiPjx1c2UgeGxpbms6aHJlZj0iI2EiIHg9IjAiIHk9IjAiLz48L2NsaXBQYXRoPjx0ZXh0IHg9IjAiIHk9IjAiPjx0c3BhbiBjbGlwLXBhdGg9InVybCgjYikiIC8+PC90ZXh0Pjwvc3ZnPg==';
+                    canvas.freeDrawingBrush.source = img;
+                } else if (brushType === 'spray') {
+                    canvas.freeDrawingBrush = new fabric.SprayBrush(canvas);
+                    canvas.freeDrawingBrush.width = brushSize;
+                }
+                canvas.freeDrawingBrush.color = brushColor;
+                canvas.freeDrawingBrush.width = brushSize;
+            }
+        }
+
+        // キャンバスのクリア
+        clearCanvasButton.addEventListener('click', () => {
+            canvas.clear();
+            canvas.backgroundColor = bgColor;
+            bgLineSelect.value = 'none';
+            drawBackgroundLines();
+        });
+
+        // アンドゥボタン
+        undoButton.addEventListener('click', () => {
+            // fabric.jsのヒストリー管理を使ったアンドゥ機能を実装する必要があります。
+            // ここでは簡易的に実装
+            if (canvas._objects.length > 0) {
+                canvas._objects.pop();
+                canvas.renderAll();
+            }
+        });
+
+        // 保存ボタン
+        saveButton.addEventListener('click', () => {
+            const format = saveFormatSelect.value;
+
+            // 背景線込みで保存するため、一時的に背景線を描画
+            drawBackgroundLines();
+
+            if (format === 'png') {
+                canvas.toBlob(function(blob) {
+                    saveAs(blob, 'Pictura.png');
+                });
+            } else if (format === 'jpg') {
+                canvas.toDataURL({
+                    format: 'jpeg',
+                    quality: 1.0
+                }, function(dataURL){
+                    downloadImage(dataURL, 'Pictura.jpg');
+                });
+            } else if (format === 'bmp') {
+                // BMP形式はサポートされていないため、PNGで代用
+                canvas.toBlob(function(blob) {
+                    saveAs(blob, 'Pictura.bmp');
+                });
+            } else if (format === 'pdf') {
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF('landscape');
+                canvas.toDataURL({
+                    format: 'png'
+                }, function(dataURL){
+                    pdf.addImage(dataURL, 'PNG', 0, 0, pdf.internal.pageSize.getWidth(), pdf.internal.pageSize.getHeight());
+                    pdf.save('Pictura.pdf');
+                });
+            } else if (format === 'svg') {
+                const svg = canvas.toSVG();
+                const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'Pictura.svg';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            } else if (format === 'html') {
+                const htmlContent = `
+                    <!DOCTYPE html>
+                    <html>
+                    <body>
+                    <img src="${canvas.toDataURL()}">
+                    </body>
+                    </html>
+                `;
+                const blob = new Blob([htmlContent], { type: 'text/html' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'Pictura.html';
+                a.click();
+                URL.revokeObjectURL(url);
+            }
+        });
+
+        // 画像をダウンロード
+        function downloadImage(data, filename) {
+            const a = document.createElement('a');
+            a.href = data;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        // 背景線を描画
+        function drawBackgroundLines() {
+            const bgLineType = bgLineSelect.value;
+            const lineWidth = parseInt(bgLineWidthInput.value);
+            const gridSpacing = lineWidth * 10;
+
+            // 既存のグリッドラインを削除
+            canvas.getObjects('line').forEach(function(line) {
+                canvas.remove(line);
+            });
+
+            if (bgLineType === 'grid') {
+                for (let i = 0; i <= (canvas.width / gridSpacing); i++) {
+                    const vertical = new fabric.Line([i * gridSpacing, 0, i * gridSpacing, canvas.height], {
+                        stroke: '#ccc',
+                        selectable: false
+                    });
+                    canvas.add(vertical);
+                }
+
+                for (let i = 0; i <= (canvas.height / gridSpacing); i++) {
+                    const horizontal = new fabric.Line([0, i * gridSpacing, canvas.width, i * gridSpacing], {
+                        stroke: '#ccc',
+                        selectable: false
+                    });
+                    canvas.add(horizontal);
+                }
+                canvas.sendToBack(canvas.getObjects());
+            } else if (bgLineType === 'lines') {
+                for (let i = 0; i <= (canvas.height / gridSpacing); i++) {
+                    const horizontal = new fabric.Line([0, i * gridSpacing, canvas.width, i * gridSpacing], {
+                        stroke: '#ccc',
+                        selectable: false
+                    });
+                    canvas.add(horizontal);
+                }
+                canvas.sendToBack(canvas.getObjects());
+            }
+
+            canvas.renderAll();
+        }
+
+        /* モーダルの操作 */
+        const helpButton = document.getElementById('helpButton');
+        const helpModal = document.getElementById('helpModal');
+        const closeModal = document.getElementsByClassName('close')[0];
+
+        // モーダルを表示
+        helpButton.addEventListener('click', () => {
+            helpModal.style.display = 'block';
+        });
+
+        // モーダルを閉じる
+        closeModal.addEventListener('click', () => {
+            helpModal.style.display = 'none';
+        });
+
+        // テキストモーダルを閉じる
+        closeTextModal.addEventListener('click', () => {
+            textModal.style.display = 'none';
+            textInput.value = '';
+        });
+
+        // テキストを追加
+        addTextButton.addEventListener('click', () => {
+            const text = textInput.value;
+            if (text) {
+                let fontFamily = 'Arial';
+                if (isJapanese(text)) {
+                    fontFamily = 'Noto Sans JP';
+                }
+                const textbox = new fabric.Textbox(text, {
+                    left: 50,
+                    top: 50,
+                    fill: brushColor,
+                    fontSize: brushSize * 5,
+                    fontFamily: fontFamily
+                });
+                canvas.add(textbox);
+            }
+            textModal.style.display = 'none';
+            textInput.value = '';
+        });
+
+        // テキストが日本語かどうかを判定
+        function isJapanese(str) {
+            return /[\u3000-\u30FF\u4E00-\u9FFF]/.test(str);
+        }
+
+        // モーダル外をクリックした場合に閉じる
+        window.addEventListener('click', (e) => {
+            if (e.target == helpModal) {
+                helpModal.style.display = 'none';
+            }
+            if (e.target == textModal) {
+                textModal.style.display = 'none';
+                textInput.value = '';
+            }
+        });
+
+        // 保存時に使用する関数
+        function saveAs(blob, filename) {
+            let elem = window.document.createElement('a');
+            elem.href = window.URL.createObjectURL(blob);
+            elem.download = filename;
+            document.body.appendChild(elem);
+            elem.click();
+            document.body.removeChild(elem);
+        }
+    </script>
+</body>
+</html>

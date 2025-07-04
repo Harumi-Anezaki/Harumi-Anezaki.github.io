@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Pictura</title>
+    <!-- おしゃれなフォントの読み込み（Google Fonts） -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Lobster&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+    <!-- カスタムCSSの読み込み -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="text-center py-3">
+        <h1 class="title">Pictura</h1>
+    </header>
+    <div class="container">
+        <div class="toolbar">
+            <button id="select-tool" class="tool-button">選択</button>
+            <button id="pen-tool" class="tool-button">ペン</button>
+            <button id="line-tool" class="tool-button">直線</button>
+            <button id="shape-tool" class="tool-button">図形</button>
+            <button id="text-tool" class="tool-button">テキスト</button>
+            <button id="image-tool" class="tool-button">画像</button>
+            <button id="eraser-tool" class="tool-button">消しゴム</button>
+            <button id="color-picker-tool" class="tool-button">カラーピッカー</button>
+            <button id="undo" class="toolbar-button">1つ前へ</button>
+            <button id="redo" class="toolbar-button">やり直し</button>
+            <button id="reset" class="toolbar-button">リセット</button>
+            <button id="zoom-in" class="toolbar-button">ズームイン</button>
+            <button id="zoom-out" class="toolbar-button">ズームアウト</button>
+            <button id="export-project" class="toolbar-button">プロジェクトをエクスポート</button>
+            <button id="import-project" class="toolbar-button">プロジェクトをインポート</button>
+            <button id="save" class="toolbar-button">保存</button>
+            <button id="layouts" class="toolbar-button">レイアウト</button>
+            <!-- 色変更 -->
+            <div class="color-picker">
+                <label for="background-color-picker">背景色</label>
+                <input type="color" id="background-color-picker">
+            </div>
+            <div class="color-picker">
+                <label for="pen-color-picker">ペンの色</label>
+                <input type="color" id="pen-color-picker">
+            </div>
+            <div class="color-picker">
+                <label for="text-color-picker">文字色</label>
+                <input type="color" id="text-color-picker">
+            </div>
+        </div>
+        <!-- キャンバスエリア -->
+        <div class="canvas-container">
+            <canvas id="drawing-canvas"></canvas>
+        </div>
+    </div>
+    <!-- モーダル -->
+    <!-- 図形選択モーダル -->
+    <div class="modal" id="shape-modal">
+        <div class="modal-content">
+            <span class="close-button" id="shape-modal-close">&times;</span>
+            <h2>図形を選択</h2>
+            <button data-shape="rectangle" class="shape-button">四角形</button>
+            <button data-shape="circle" class="shape-button">円</button>
+            <button data-shape="triangle" class="shape-button">三角形</button>
+            <button data-shape="star" class="shape-button">星型</button>
+        </div>
+    </div>
+    <!-- レイアウト選択モーダル -->
+    <div class="modal" id="layout-modal">
+        <div class="modal-content">
+            <span class="close-button" id="layout-modal-close">&times;</span>
+            <h2>レイアウトを選択</h2>
+            <div id="layout-options">
+                <label><input type="checkbox" name="layout" value="layout1"> レイアウト1</label>
+                <label><input type="checkbox" name="layout" value="layout2"> レイアウト2</label>
+                <label><input type="checkbox" name="layout" value="layout3"> レイアウト3</label>
+            </div>
+            <button id="apply-layout">適用</button>
+        </div>
+    </div>
+    <!-- スクリプトの読み込み -->
+    <script src="script.js"></script>
+</body>
+</html>

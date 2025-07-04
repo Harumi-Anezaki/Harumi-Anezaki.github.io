@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Pictura - おしゃれなお絵かきアプリ</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- フォントの読み込み（例: Google Fonts） -->
+    <link href="https://fonts.googleapis.com/css?family=Great+Vibes|Roboto&display=swap" rel="stylesheet">
+    <!-- アイコンフォントの読み込み（例: Font Awesome） -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <h1><span class="title">Pictura</span></h1>
+        <div class="toolbar">
+            <div class="toolbar-section">
+                <label for="tool">ツール:</label>
+                <select id="tool">
+                    <option value="select">選択</option>
+                    <option value="pen">ペン</option>
+                    <option value="line">直線</option>
+                    <option value="rectangle">四角形</option>
+                    <option value="circle">円</option>
+                    <option value="text">テキスト</option>
+                    <option value="image">画像</option>
+                </select>
+            </div>
+
+            <div class="toolbar-section">
+                <label for="color">色:</label>
+                <input type="color" id="color" value="#000000">
+                <label for="size">サイズ:</label>
+                <input type="number" id="size" value="2" min="1" max="100">
+            </div>
+
+            <div class="toolbar-section">
+                <label for="bgColor">背景色:</label>
+                <input type="color" id="bgColor" value="#ffffff">
+                <button id="setBgColor">適用</button>
+            </div>
+            
+            <div class="toolbar-section">
+                <button id="undo"><i class="fas fa-undo"></i> 元に戻す</button>
+                <button id="redo"><i class="fas fa-redo"></i> やり直し</button>
+                <button id="clearCanvas"><i class="fas fa-trash-alt"></i> クリア</button>
+                <button id="saveCanvas"><i class="fas fa-save"></i> 保存</button>
+            </div>
+        </div>
+
+        <canvas id="canvas" width="1000" height="600"></canvas>
+
+        <!-- 保存形式のボタンを含むモーダルダイアログ -->
+        <div id="saveModal" class="modal">
+            <div class="modal-content">
+                <span id="closeModal" class="close">&times;</span>
+                <h2>保存形式を選択してください</h2>
+                <div class="save-buttons">
+                    <button class="save-format" data-format="png">PNGで保存</button>
+                    <button class="save-format" data-format="jpeg">JPEGで保存</button>
+                    <button class="save-format" data-format="svg">SVGで保存</button>
+                    <button class="save-format" data-format="pdf">PDFで保存</button>
+                    <button class="save-format" data-format="html">HTMLで保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ライブラリの読み込み -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
+
+    <!-- スクリプトファイル -->
+    <script src="script.js"></script>
+</body>
+</html>

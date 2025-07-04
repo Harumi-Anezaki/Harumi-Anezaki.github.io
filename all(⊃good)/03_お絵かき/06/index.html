@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Pictura</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- フォントの読み込み -->
+    <link href="https://fonts.googleapis.com/css?family=Great+Vibes|Roboto&display=swap" rel="stylesheet">
+    <!-- アイコンフォントの読み込み -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <h1><span class="title">Pictura</span></h1>
+        <div class="toolbar">
+            <div class="toolbar-section">
+                <label for="tool">ツール:</label>
+                <select id="tool">
+                    <option value="select">選択</option>
+                    <option value="pen">ペン</option>
+                    <option value="line">直線</option>
+                    <option value="rectangle">四角形</option>
+                    <option value="circle">円</option>
+                    <option value="polygon">多角形</option>
+                    <option value="star">星形</option>
+                    <option value="text">テキスト</option>
+                    <option value="image">画像</option>
+                    <option value="eraser">消しゴム</option>
+                    <option value="colorpicker">カラーピッカー</option>
+                </select>
+            </div>
+
+            <div class="toolbar-section">
+                <label for="brush">ブラシ:</label>
+                <select id="brush">
+                    <option value="Pencil">鉛筆</option>
+                    <option value="Circle">丸ブラシ</option>
+                    <option value="Spray">スプレー</option>
+                    <option value="Pattern">パターン</option>
+                </select>
+            </div>
+
+            <div class="toolbar-section">
+                <label for="color">色:</label>
+                <input type="color" id="color" value="#000000">
+                <button id="addToPalette"><i class="fas fa-plus-square"></i></button>
+            </div>
+
+            <div class="toolbar-section" id="colorPalette">
+                <!-- カラーパレットの色ボタンがここに追加されます -->
+            </div>
+
+            <div class="toolbar-section">
+                <label for="size">サイズ:</label>
+                <input type="number" id="size" value="5" min="1" max="100">
+            </div>
+
+            <div class="toolbar-section">
+                <button id="zoomIn"><i class="fas fa-search-plus"></i></button>
+                <button id="zoomOut"><i class="fas fa-search-minus"></i></button>
+                <button id="toggleGrid"><i class="fas fa-th"></i></button>
+            </div>
+
+            <div class="toolbar-section">
+                <label for="bgColor">背景色:</label>
+                <input type="color" id="bgColor" value="#ffffff">
+                <button id="setBgColor">適用</button>
+            </div>
+            
+            <div class="toolbar-section">
+                <button id="undo"><i class="fas fa-undo"></i> 元に戻す</button>
+                <button id="redo"><i class="fas fa-redo"></i> やり直し</button>
+                <button id="clearCanvas"><i class="fas fa-trash-alt"></i> クリア</button>
+                <button id="saveCanvas"><i class="fas fa-save"></i> 保存</button>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <!-- レイヤーパネル -->
+            <div class="layer-panel">
+                <h3>レイヤー</h3>
+                <ul id="layerList">
+                    <!-- レイヤーのリストがここに追加されます -->
+                </ul>
+                <button id="addLayer"><i class="fas fa-plus"></i> レイヤー追加</button>
+            </div>
+
+            <!-- キャンバスエリア -->
+            <div class="canvas-container">
+                <canvas id="canvas" width="1200" height="800"></canvas>
+            </div>
+        </div>
+
+        <!-- テキスト入力用のモーダルダイアログ -->
+        <div id="textModal" class="modal">
+            <div class="modal-content">
+                <span id="closeTextModal" class="close">&times;</span>
+                <h2>テキストを入力してください</h2>
+                <textarea id="textInput" rows="4" placeholder="ここにテキストを入力"></textarea>
+                <button id="addText">追加</button>
+            </div>
+        </div>
+
+        <!-- 保存形式のボタンを含むモーダルダイアログ -->
+        <div id="saveModal" class="modal">
+            <div class="modal-content">
+                <span id="closeSaveModal" class="close">&times;</span>
+                <h2>保存形式を選択してください</h2>
+                <div class="save-buttons">
+                    <button class="save-format" data-format="png">PNGで保存</button>
+                    <button class="save-format" data-format="jpeg">JPEGで保存</button>
+                    <button class="save-format" data-format="svg">SVGで保存</button>
+                    <button class="save-format" data-format="pdf">PDFで保存</button>
+                    <button class="save-format" data-format="html">HTMLで保存</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- プロジェクトの保存・読み込みボタン -->
+        <div class="project-buttons">
+            <button id="exportCanvas"><i class="fas fa-file-export"></i> プロジェクトをエクスポート</button>
+            <button id="importCanvas"><i class="fas fa-file-import"></i> プロジェクトをインポート</button>
+        </div>
+    </div>
+
+    <!-- ライブラリの読み込み -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
+    <!-- jsPDFライブラリの読み込み -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
+    <!-- スクリプトファイル -->
+    <script src="script.js"></script>
+</body>
+</html>

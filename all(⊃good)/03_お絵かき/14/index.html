@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>未来的な描画アプリ</title>
+    <!-- スタイルシートの読み込み -->
+    <link rel="stylesheet" href="style.css">
+    <!-- アイコンフォントの読み込み -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- ファイル操作ボタン -->
+    <div id="file-operations">
+        <button id="new-project" title="新規プロジェクト（N）">
+            <i class="fas fa-file"></i>
+        </button>
+        <button id="import-button" title="インポート（Ctrl+O）">
+            <i class="fas fa-file-import"></i>
+        </button>
+        <input type="file" id="import-file" accept=".json" hidden>
+        <button id="export-button" title="エクスポート（Ctrl+E）">
+            <i class="fas fa-file-export"></i>
+        </button>
+        <button id="save-image" title="画像として保存（Ctrl+S）">
+            <i class="fas fa-save"></i>
+        </button>
+    </div>
+
+    <!-- ツールバー -->
+    <div id="toolbar">
+        <button class="tool-button" data-tool="select" title="選択（V）">
+            <i class="fas fa-mouse-pointer"></i>
+        </button>
+        <button class="tool-button" data-tool="pen" title="ペン（P）">
+            <i class="fas fa-pen"></i>
+        </button>
+        <button class="tool-button" data-tool="line" title="直線（L）">
+            <i class="fas fa-slash"></i>
+        </button>
+        <div class="tool-dropdown">
+            <button class="tool-button" data-tool="shape" title="図形（U）">
+                <i class="fas fa-square"></i>
+            </button>
+            <div class="dropdown-content">
+                <button class="tool-button" data-tool="rectangle" title="四角形">
+                    <i class="fas fa-square"></i>
+                </button>
+                <button class="tool-button" data-tool="circle" title="円">
+                    <i class="fas fa-circle"></i>
+                </button>
+                <button class="tool-button" data-tool="star" title="星形">
+                    <i class="fas fa-star"></i>
+                </button>
+            </div>
+        </div>
+        <button class="tool-button" data-tool="text" title="テキスト（T）">
+            <i class="fas fa-font"></i>
+        </button>
+        <button class="tool-button" data-tool="eraser" title="消しゴム（E）">
+            <i class="fas fa-eraser"></i>
+        </button>
+        <button class="tool-button" data-tool="image" title="画像挿入（I）">
+            <i class="fas fa-image"></i>
+        </button>
+    </div>
+
+    <!-- 属性パネル -->
+    <div id="property-panel">
+        <!-- ツールに応じて内容が変わる -->
+    </div>
+
+    <!-- レイヤーパネル -->
+    <div id="layer-panel">
+        <button id="add-layer">＋ 新規レイヤー</button>
+        <ul id="layer-list">
+            <!-- レイヤー項目がここに挿入される -->
+        </ul>
+    </div>
+
+    <!-- カラーパレット -->
+    <div id="color-palette">
+        <input type="color" id="color-picker" value="#000000">
+        <!-- 最近使用した色など -->
+    </div>
+
+    <!-- キャンバスエリア -->
+    <div id="canvas-container">
+        <canvas id="canvas"></canvas>
+    </div>
+
+    <!-- ズームコントロール -->
+    <div id="zoom-control">
+        <button id="zoom-out" title="ズームアウト（-）">
+            <i class="fas fa-search-minus"></i>
+        </button>
+        <input type="range" id="zoom-slider" min="10" max="200" value="100">
+        <button id="zoom-in" title="ズームイン（+）">
+            <i class="fas fa-search-plus"></i>
+        </button>
+    </div>
+
+    <!-- モーダル関連 -->
+    <div id="modal-overlay" class="hidden"></div>
+    <div id="modal" class="hidden">
+        <div id="modal-content">
+            <!-- モーダルの内容がここに挿入される -->
+        </div>
+        <button id="modal-close">&times;</button>
+    </div>
+
+    <!-- スクリプトの読み込み -->
+    <script src="script.js"></script>
+</body>
+</html>

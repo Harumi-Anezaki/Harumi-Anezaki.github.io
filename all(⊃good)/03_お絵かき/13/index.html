@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Pictura</title>
+    <link rel="stylesheet" href="style.css">
+
+    <!-- フォントの読み込み（Google Fonts） -->
+    <link href="https://fonts.googleapis.com/css?family=Dancing+Script&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Sawarabi+Mincho&display=swap" rel="stylesheet">
+    
+    <!-- 外部ライブラリの読み込み（jsPDF） -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+    <h1>Pictura</h1>
+
+    <div id="toolbar">
+        <label for="tool">ツール:</label>
+        <select id="tool">
+            <option value="pen">ペン</option>
+            <option value="line">直線</option>
+            <option value="rectangle">四角形</option>
+            <option value="circle">円</option>
+        </select>
+
+        <label for="brushType">ブラシタイプ:</label>
+        <select id="brushType">
+            <option value="solid">通常</option>
+            <option value="dotted">点線</option>
+            <option value="dashed">破線</option>
+        </select>
+
+        <label for="brushSize">ブラシサイズ:</label>
+        <input type="number" id="brushSize" min="1" max="50" value="5">
+
+        <label for="brushColor">ブラシの色:</label>
+        <input type="color" id="brushColor" value="#000000">
+
+        <label for="bgColor">背景の色:</label>
+        <input type="color" id="bgColor" value="#FFFFFF">
+
+        <button id="undoButton">◀️</button>
+        <button id="clearCanvas">キャンバスをクリア</button>
+
+        <button id="saveButton">保存</button>
+        <label for="saveFormat">形式:</label>
+        <select id="saveFormat">
+            <option value="png">PNG</option>
+            <option value="jpg">JPG</option>
+            <option value="bmp">BMP</option>
+            <option value="pdf">PDF</option>
+            <option value="svg">SVG</option>
+            <option value="html">HTML</option>
+        </select>
+    </div>
+
+    <canvas id="drawingCanvas" width="800" height="600"></canvas>
+
+    <!-- モーダルの実装（ヘルプモーダル） -->
+    <button id="helpButton">ヘルプ</button>
+    <div id="helpModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>使い方ガイド</h2>
+            <p>ツールバーからツールやブラシの設定を選択し、キャンバス上でお絵かきを楽しんでください。</p>
+            <p>「◀️」ボタンで一つ前の状態に戻せます。</p>
+            <p>保存ボタンからお好きな形式で作品を保存できます。</p>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

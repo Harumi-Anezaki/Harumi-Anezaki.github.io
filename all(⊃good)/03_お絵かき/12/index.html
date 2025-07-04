@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>シンプルなお絵かきアプリ</title>
+    <link rel="stylesheet" href="style.css">
+
+    <!-- フォントの読み込み（Google Fonts） -->
+    <link href="https://fonts.googleapis.com/css?family=Noto+Sans+JP&display=swap" rel="stylesheet">
+</head>
+<body>
+    <h1>シンプルなお絵かきアプリ</h1>
+
+    <div id="toolbar">
+        <label for="tool">ツール:</label>
+        <select id="tool">
+            <option value="pen">ペン</option>
+            <option value="line">直線</option>
+            <option value="rectangle">四角形</option>
+            <option value="circle">円</option>
+        </select>
+
+        <label for="brushSize">ブラシサイズ:</label>
+        <input type="range" id="brushSize" min="1" max="50" value="5">
+
+        <label for="brushColor">ブラシの色:</label>
+        <input type="color" id="brushColor" value="#000000">
+
+        <label for="bgColor">背景の色:</label>
+        <input type="color" id="bgColor" value="#FFFFFF">
+
+        <button id="clearCanvas">キャンバスをクリア</button>
+    </div>
+
+    <canvas id="drawingCanvas" width="800" height="600"></canvas>
+
+    <!-- モーダルの実装（例としてヘルプモーダルを追加） -->
+    <button id="helpButton">ヘルプ</button>
+    <div id="helpModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>使い方ガイド</h2>
+            <p>ツールバーからツールやブラシの設定を選択し、キャンバス上でお絵かきを楽しんでください。</p>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

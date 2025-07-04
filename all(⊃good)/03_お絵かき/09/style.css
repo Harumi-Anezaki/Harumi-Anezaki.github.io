@@ -1,0 +1,52 @@
+body {
+    margin: 0;
+    padding: 0;
+    background: linear-gradient(to bottom, black, red);
+    font-family: 'Arial', sans-serif;
+}
+
+.title {
+    color: white;
+    font-size: 60px;
+    font-family: 'Pacifico', cursive;
+}
+
+.toolbar {
+    background-color: rgba(0, 0, 0, 0.8);
+    min-height: 100vh;
+    padding: 10px;
+}
+
+.toolbar .btn {
+    width: 100%;
+}
+
+.canvas-container {
+    position: relative;
+    background-color: #fff;
+    overflow: hidden;
+}
+
+#drawing-canvas {
+    border: 1px solid #ccc;
+    width: 100%;
+    height: calc(100vh - 80px);
+}
+
+.modal-content {
+    background-color: #f0f0f0;
+}
+
+.form-group label {
+    margin-top: 10px;
+}
+
+hr.bg-white {
+    border-top: 1px solid #fff;
+}
+
+@media (max-width: 767.98px) {
+    .toolbar {
+        min-height: auto;
+    }
+}w

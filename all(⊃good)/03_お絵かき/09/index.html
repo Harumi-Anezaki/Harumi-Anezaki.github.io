@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Pictura</title>
+    <!-- おしゃれなフォントの読み込み（Google Fonts） -->
+    <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
+    <!-- Bootstrapの読み込み（CDN） -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <!-- Font Awesomeの読み込み（アイコン用） -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+    <!-- カスタムCSSの読み込み -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="text-center py-3">
+        <h1 class="title">Pictura</h1>
+    </header>
+    <div class="container-fluid">
+        <div class="row no-gutters">
+            <!-- ツールバー -->
+            <div class="col-md-2 toolbar">
+                <div class="btn-group-vertical w-100">
+                    <button id="select-tool" class="btn btn-primary my-1"><i class="fas fa-mouse-pointer"></i> 選択</button>
+                    <button id="pen-tool" class="btn btn-primary my-1"><i class="fas fa-pen"></i> ペン</button>
+                    <button id="line-tool" class="btn btn-primary my-1"><i class="fas fa-slash"></i> 直線</button>
+                    <button id="shape-tool" class="btn btn-primary my-1"><i class="fas fa-shapes"></i> 図形</button>
+                    <button id="text-tool" class="btn btn-primary my-1"><i class="fas fa-font"></i> テキスト</button>
+                    <button id="image-tool" class="btn btn-primary my-1"><i class="fas fa-image"></i> 画像</button>
+                    <button id="eraser-tool" class="btn btn-primary my-1"><i class="fas fa-eraser"></i> 消しゴム</button>
+                    <button id="color-picker-tool" class="btn btn-primary my-1"><i class="fas fa-palette"></i> カラーピッカー</button>
+                </div>
+                <hr class="bg-white">
+                <div class="btn-group-vertical w-100">
+                    <button id="undo" class="btn btn-secondary my-1"><i class="fas fa-undo"></i> 1つ前へ</button>
+                    <button id="redo" class="btn btn-secondary my-1"><i class="fas fa-redo"></i> やり直し</button>
+                    <button id="reset" class="btn btn-secondary my-1"><i class="fas fa-trash-alt"></i> リセット</button>
+                </div>
+                <hr class="bg-white">
+                <div class="btn-group-vertical w-100">
+                    <button id="zoom-in" class="btn btn-secondary my-1"><i class="fas fa-search-plus"></i> ズームイン</button>
+                    <button id="zoom-out" class="btn btn-secondary my-1"><i class="fas fa-search-minus"></i> ズームアウト</button>
+                </div>
+                <hr class="bg-white">
+                <div class="btn-group-vertical w-100">
+                    <button id="export-project" class="btn btn-success my-1"><i class="fas fa-file-export"></i> プロジェクトをエクスポート</button>
+                    <button id="import-project" class="btn btn-success my-1"><i class="fas fa-file-import"></i> プロジェクトをインポート</button>
+                    <button id="save" class="btn btn-success my-1"><i class="fas fa-save"></i> 保存</button>
+                </div>
+                <hr class="bg-white">
+                <div class="btn-group-vertical w-100">
+                    <button id="layers" class="btn btn-info my-1"><i class="fas fa-layer-group"></i> レイヤー</button>
+                </div>
+                <hr class="bg-white">
+                <!-- 色変更 -->
+                <div class="form-group text-white">
+                    <label for="background-color-picker">背景色</label>
+                    <input type="color" id="background-color-picker" class="form-control">
+                </div>
+                <div class="form-group text-white">
+                    <label for="pen-color-picker">ペンの色</label>
+                    <input type="color" id="pen-color-picker" class="form-control">
+                </div>
+                <div class="form-group text-white">
+                    <label for="text-color-picker">文字色</label>
+                    <input type="color" id="text-color-picker" class="form-control">
+                </div>
+            </div>
+            <!-- キャンバスエリア -->
+            <div class="col-md-10 canvas-container">
+                <!-- Fabric.js用のキャンバス -->
+                <canvas id="drawing-canvas"></canvas>
+            </div>
+        </div>
+    </div>
+    <!-- モーダル -->
+    <!-- 図形選択モーダル -->
+    <div class="modal fade" id="shape-modal" tabindex="-1" role="dialog" aria-labelledby="shape-modal-label" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content text-dark">
+          <div class="modal-header">
+            <h5 class="modal-title" id="shape-modal-label">図形を選択</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="閉じる">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body text-center">
+            <button data-shape="rectangle" class="btn btn-outline-primary mx-2 my-2"><i class="fas fa-square fa-2x"></i></button>
+            <button data-shape="circle" class="btn btn-outline-primary mx-2 my-2"><i class="fas fa-circle fa-2x"></i></button>
+            <button data-shape="triangle" class="btn btn-outline-primary mx-2 my-2"><i class="fas fa-play fa-rotate-270 fa-2x"></i></button>
+            <button data-shape="star" class="btn btn-outline-primary mx-2 my-2"><i class="fas fa-star fa-2x"></i></button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- レイヤー管理モーダル -->
+    <div class="modal fade" id="layers-modal" tabindex="-1" role="dialog" aria-labelledby="layers-modal-label" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content text-dark">
+          <div class="modal-header">
+            <h5 class="modal-title" id="layers-modal-label">レイヤー管理</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="閉じる">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body" id="layers-list">
+            <!-- レイヤーのリスト -->
+          </div>
+          <div class="modal-footer">
+            <button id="add-layer" class="btn btn-primary">レイヤーを追加</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- スクリプトの読み込み -->
+    <!-- jQueryとBootstrapのJavaScript（CDN） -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <!-- Popper.js -->
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+    <!-- Bootstrap -->
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <!-- Fabric.js（Canvas操作用） -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/4.6.0/fabric.min.js"></script>
+    <!-- FileSaver.js（ファイル保存用） -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <!-- jsPDF（PDF保存用） -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.3.1/jspdf.umd.min.js"></script>
+    <!-- カスタムスクリプトの読み込み -->
+    <script src="script.js"></script>
+</body>
+</html>
