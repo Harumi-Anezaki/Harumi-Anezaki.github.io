@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>20</title>
+</head>
+<body>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web版シンプルワープロ (最終厳密実装版)</title>
+    <style>
+        /* NF-4: BEMを意識した命名規則 */
+        :root {
+            --a4-aspect-ratio: 210 / 297;
+            --page-width-vw: 70;
+            --page-gap: 20px;
+            /* FR-1-2: A4用紙の余白設定 */
+            --margin-top: 25mm;
+            --margin-bottom: 25mm;
+            --margin-left: 20mm;
+            --margin-right: 20mm;
+        }
+        body {
+            margin: 0;
+            background-color: #f0f2f5;
+            font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+            font-size: 11pt;
+            line-height: 1.5;
+            color: #1f1f1f;
+        }
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        header {
+            background-color: #ffffff;
+            padding: 10px 20px;
+            border-bottom: 1px solid #d1d1d1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        header h1 { font-size: 1.2em; margin: 0; font-weight: 600; }
+        #print-button {
+            padding: 8px 16px; border: 1px solid #adadad; background-color: #ffffff;
+            border-radius: 4px; cursor: pointer; transition: background-color 0.2s;
+        }
+        #print-button:hover { background-color: #f0f0f0; }
+        main { flex-grow: 1; padding: 20px 0; }
+        /* FR-1-1: ページコンテナとページレイアウト */
+        .pages-container {
+            display: flex; flex-direction: column;
+            align-items: center; gap: var(--page-gap);
+        }
+        .page {
+            width: calc(var(--page-width-vw) * 1vw);
+            max-width: 794px;
+            aspect-ratio: var(--a4-aspect-ratio);
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
+            display: flex; flex-direction: column;
+        }
+        /* FR-1-2 & FR-2-1: ページ内部と入力領域 */
+        .page__content {
+            flex-grow: 1;
+            padding: var(--margin-top) var(--margin-right) var(--margin-bottom) var(--margin-left);
+            outline: none;
+            overflow: hidden;
+            word-break: break-all;
+        }
+        /* FR-2-2: Enterキーの挙動を安定させる */
+        .page__content p { margin: 0; }
+        .page__content div { margin: 0; }
+        .page__content br:only-child { content: ""; after: { content: "\00a0" } } /* 空行の高さを確保 */
+        /* FR-4-1: ステータスバー */
+        .status-bar {
+            position: fixed; bottom: 0; left: 0; width: 100%;
+            background-color: #333; color: white; padding: 5px 20px;
+            font-size: 0.9em; display: flex; justify-content: flex-end;
+            gap: 20px; z-index: 1000; box-sizing: border-box;
+        }
+        /* FR-4-2: 印刷用スタイル */
+        @media print {
+            body { background-color: white; }
+            header, .status-bar { display: none; }
+            main { padding: 0; }
+            .pages-container { gap: 0; }
+            .page {
+                width: 210mm; height: 297mm;
+                box-shadow: none; margin: 0;
+                page-break-after: always;
+            }
+            .page:last-child { page-break-after: auto; }
+            .page__content { padding: var(--margin-top) var(--margin-right) var(--margin-bottom) var(--margin-left); }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <h1>Web版シンプルワープロ</h1>
+            <button id="print-button">印刷</button>
+        </header>
+        <main>
+            <div id="pages-container" class="pages-container"></div>
+        </main>
+        <footer class="status-bar">
+            <span id="page-counter">ページ: - / -</span>
+            <span id="char-counter">文字数: 0</span>
+        </footer>
+    </div>
+
+    <script>
+    /**
+     * @class Caret - カーソル操作を専門に扱うクラス
+     * Selection APIをラップし、カーソル位置の保存・復元を厳密に行う
+     */
+    class Caret {
+        constructor() {
+            this.savedRange = null;
+        }
+        /** 現在のカーソル位置を保存する */
+        save() {
+            const sel = window.getSelection();
+            if (sel.rangeCount > 0) {
+                this.savedRange = sel.getRangeAt(0).cloneRange();
+            }
+        }
+        /** 保存したカーソル位置を復元する */
+        restore() {
+            if (!this.savedRange) return;
+            const sel = window.getSelection();
+            sel.removeAllRanges();
+            sel.addRange(this.savedRange);
+            this.savedRange = null;
+        }
+        /** 指定要素の末尾にカーソルを移動する */
+        moveToEndOf(element) {
+            const range = document.createRange();
+            const sel = window.getSelection();
+            range.selectNodeContents(element);
+            range.collapse(false); // falseで末尾
+            sel.removeAllRanges();
+            sel.addRange(range);
+        }
+        /** 指定要素の先頭にカーソルを移動する */
+        moveToStartOf(element) {
+            const range = document.createRange();
+            const sel = window.getSelection();
+            range.selectNodeContents(element);
+            range.collapse(true); // trueで先頭
+            sel.removeAllRanges();
+            sel.addRange(range);
+        }
+        /** contentEditable要素内での絶対文字オフセットを取得 */
+        getAbsoluteOffset(container) {
+            const sel = window.getSelection();
+            if (sel.rangeCount === 0) return 0;
+            const range = sel.getRangeAt(0);
+            const preCaretRange = range.cloneRange();
+            preCaretRange.selectNodeContents(container);
+            preCaretRange.setEnd(range.startContainer, range.startOffset);
+            return preCaretRange.toString().length;
+        }
+        /** 絶対文字オフセットからカーソル位置を設定 */
+        setByAbsoluteOffset(container, offset) {
+            let node, charIndex = 0;
+            const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null, false);
+            while (node = walker.nextNode()) {
+                const nodeLength = node.textContent.length;
+                if (charIndex + nodeLength >= offset) {
+                    const range = document.createRange();
+                    range.setStart(node, offset - charIndex);
+                    range.collapse(true);
+                    const sel = window.getSelection();
+                    sel.removeAllRanges();
+                    sel.addRange(range);
+                    return;
+                }
+                charIndex += nodeLength;
+            }
+            this.moveToEndOf(container); // オフセットが範囲外なら末尾へ
+        }
+    }
+
+    /**
+     * @class Page - 1ページのDOMと状態を管理するクラス
+     */
+    class Page {
+        constructor(editor, initialHTML = '<p><br></p>') {
+            this.editor = editor;
+            this.element = document.createElement('div');
+            this.element.className = 'page';
+            
+            this.contentElement = document.createElement('div');
+            this.contentElement.className = 'page__content';
+            this.contentElement.contentEditable = true;
+            this.contentElement.innerHTML = initialHTML;
+            
+            this.element.appendChild(this.contentElement);
+            this.editor.addContentEventListeners(this);
+        }
+        isOverflowing() { return this.contentElement.scrollHeight > this.contentElement.clientHeight + 1; }
+        isEmpty() { return this.contentElement.innerText.trim() === ''; }
+        get next() {
+            const nextEl = this.element.nextElementSibling;
+            return nextEl ? this.editor.findPageByElement(nextEl) : null;
+        }
+        get prev() {
+            const prevEl = this.element.previousElementSibling;
+            return prevEl ? this.editor.findPageByElement(prevEl) : null;
+        }
+    }
+
+    /**
+     * @class EditorCore - エディタ全体のロジックを統括するクラス
+     */
+    class EditorCore {
+        constructor(containerId, pageCounterId, charCounterId, printButtonId) {
+            this.pagesContainer = document.getElementById(containerId);
+            this.pageCounterEl = document.getElementById(pageCounterId);
+            this.charCounterEl = document.getElementById(charCounterId);
+            this.printButton = document.getElementById(printButtonId);
+            
+            this.pages = [];
+            this.caret = new Caret();
+            this.isUpdating = false;
+            this.reflowQueued = false;
+            this.debounceTimer = null;
+            this.PAGE_BREAK_SEPARATOR = '<!--PAGE_BREAK-->';
+        }
+
+        init() {
+            this.printButton.addEventListener('click', () => window.print());
+            this.pagesContainer.addEventListener('focusin', () => this.updateStatusBar());
+
+            const savedContent = localStorage.getItem('editorContent');
+            if (savedContent && savedContent.trim() !== '') {
+                this.restoreContent(savedContent);
+            } else {
+                this.addPage();
+            }
+            
+            this.updateStatusBar();
+            const firstPage = this.pages[0];
+            if (firstPage) {
+                firstPage.contentElement.focus();
+                this.caret.moveToStartOf(firstPage.contentElement);
+            }
+        }
+
+        // --- ページ管理 ---
+        addPage(index = -1, initialHTML) {
+            const newPage = new Page(this, initialHTML);
+            if (index === -1 || index >= this.pages.length) {
+                this.pagesContainer.appendChild(newPage.element);
+                this.pages.push(newPage);
+            } else {
+                this.pagesContainer.insertBefore(newPage.element, this.pages[index].element);
+                this.pages.splice(index, 0, newPage);
+            }
+            return newPage;
+        }
+        removePage(pageInstance) {
+            const index = this.pages.indexOf(pageInstance);
+            if (index > -1) {
+                pageInstance.element.remove();
+                this.pages.splice(index, 1);
+            }
+        }
+        findPageByElement(element) { return this.pages.find(p => p.element === element || p.contentElement === element); }
+
+        // --- リフロー処理 (FR-3) ---
+        queueReflow() {
+            if (this.isUpdating || this.reflowQueued) return;
+            this.reflowQueued = true;
+            requestAnimationFrame(() => { // NF-1: パフォーマンス最適化
+                this.performReflow();
+                this.reflowQueued = false;
+            });
+        }
+        performReflow() {
+            if (this.isUpdating) return;
+            this.isUpdating = true;
+
+            this.caret.save(); // 現在のカーソル位置を一時保存
+
+            // 1. オーバーフロー処理 (前から後ろへ)
+            for (let i = 0; i < this.pages.length; i++) {
+                if (this.pages[i].isOverflowing()) {
+                    this.splitPage(this.pages[i]);
+                }
+            }
+            // 2. 結合処理 (後ろから前へ)
+            for (let i = this.pages.length - 2; i >= 0; i--) {
+                this.mergePagesIfNeeded(this.pages[i], this.pages[i+1]);
+            }
+            
+            this.caret.restore(); // カーソル位置を復元
+            this.updateStatusBar();
+            this.saveContentWithDebounce();
+            this.isUpdating = false;
+        }
+        
+        // FR-3-2: ページ分割（厳密なカーソル維持）
+        splitPage(page) {
+            let nextPage = page.next;
+            if (!nextPage) {
+                const pageIndex = this.pages.indexOf(page);
+                nextPage = this.addPage(pageIndex + 1, '');
+                nextPage.contentElement.innerHTML = '';
+            }
+            
+            const content = page.contentElement;
+            while (page.isOverflowing()) {
+                const lastNode = content.lastChild;
+                if (!lastNode) break;
+
+                // テキストノードがオーバーフローしている場合、分割する
+                if(lastNode.nodeType === Node.TEXT_NODE) {
+                    const range = document.createRange();
+                    range.selectNodeContents(content);
+                    range.setStart(lastNode, 0);
+                    if (range.getBoundingClientRect().bottom > content.clientHeight) {
+                        // テキストを分割して次ページへ
+                        for (let i = lastNode.length - 1; i >= 0; i--) {
+                            range.setEnd(lastNode, i);
+                            if(range.getBoundingClientRect().bottom <= content.clientHeight) {
+                                const overflowingText = lastNode.splitText(i);
+                                nextPage.contentElement.prepend(overflowingText);
+                                break;
+                            }
+                        }
+                        continue;
+                    }
+                }
+                
+                // ブロック要素や分割できないノードの場合
+                content.removeChild(lastNode);
+                nextPage.contentElement.prepend(lastNode);
+            }
+        }
+        
+        // FR-3-3: ページ結合（厳密なカーソル維持）
+        mergePagesIfNeeded(page, nextPage) {
+            if (!nextPage) return;
+
+            // 結合後の高さをシミュレート
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = page.contentElement.innerHTML + nextPage.contentElement.innerHTML;
+            page.element.appendChild(tempDiv);
+            const canMerge = tempDiv.scrollHeight <= page.contentElement.clientHeight;
+            page.element.removeChild(tempDiv);
+
+            if (canMerge) {
+                const currentPageOffset = this.caret.getAbsoluteOffset(page.contentElement);
+                
+                // コンテンツを結合
+                const nextContent = nextPage.contentElement;
+                while(nextContent.firstChild) {
+                    page.contentElement.appendChild(nextContent.firstChild);
+                }
+                this.removePage(nextPage);
+
+                // カーソル位置を再設定
+                this.caret.setByAbsoluteOffset(page.contentElement, currentPageOffset);
+            }
+        }
+
+        // --- イベントハンドリング (FR-2, FR-3-4) ---
+        addContentEventListeners(page) {
+            const contentEl = page.contentElement;
+            const observer = new MutationObserver(() => this.queueReflow());
+            observer.observe(contentEl, { childList: true, characterData: true, subtree: true });
+
+            contentEl.addEventListener('paste', e => {
+                e.preventDefault();
+                const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+                document.execCommand('insertText', false, text);
+            });
+            
+            contentEl.addEventListener('keydown', e => this.handleKeyDown(e, page));
+        }
+
+        handleKeyDown(e, page) {
+            const sel = window.getSelection();
+            if (!sel.rangeCount) return;
+            
+            const isAtStart = this.caret.getAbsoluteOffset(page.contentElement) === 0;
+            // FR-3-4: Backspaceキーによるページ結合
+            if (e.key === 'Backspace' && isAtStart && page.prev) {
+                e.preventDefault();
+                const prevPage = page.prev;
+                const prevContentLength = prevPage.contentElement.innerText.length;
+                
+                // 現在のページの中身を前のページに移動
+                while(page.contentElement.firstChild) {
+                    prevPage.contentElement.appendChild(page.contentElement.firstChild);
+                }
+                this.removePage(page);
+                prevPage.contentElement.focus();
+                this.caret.setByAbsoluteOffset(prevPage.contentElement, prevContentLength);
+                this.queueReflow();
+            }
+
+            // FR-3-4: 矢印キーによるページ間移動
+            const range = sel.getRangeAt(0);
+            if (range.collapsed) {
+                const caretRect = range.getClientRects()[0];
+                if (!caretRect) return;
+                const contentRect = page.contentElement.getBoundingClientRect();
+                
+                if (e.key === 'ArrowDown' && caretRect.bottom > contentRect.bottom - 5 && page.next) {
+                    e.preventDefault();
+                    page.next.contentElement.focus();
+                    this.caret.moveToStartOf(page.next.contentElement);
+                } else if (e.key === 'ArrowUp' && caretRect.top < contentRect.top + 5 && page.prev) {
+                    e.preventDefault();
+                    page.prev.contentElement.focus();
+                    this.caret.moveToEndOf(page.prev.contentElement);
+                }
+            }
+        }
+
+        // --- UI & データ永続化 (FR-4, FR-5) ---
+        updateStatusBar() {
+            const totalPages = this.pages.length;
+            let totalChars = 0;
+            let currentPageNum = 0;
+            
+            const activeEl = document.activeElement;
+            const activePage = this.findPageByElement(activeEl);
+
+            this.pages.forEach((page, index) => {
+                totalChars += page.contentElement.innerText.replace(/\r?\n/g, "").length;
+                if (page === activePage) {
+                    currentPageNum = index + 1;
+                }
+            });
+            
+            this.pageCounterEl.textContent = `ページ: ${currentPageNum || 1} / ${totalPages}`;
+            this.charCounterEl.textContent = `文字数: ${totalChars}`;
+        }
+        saveContentWithDebounce() {
+            clearTimeout(this.debounceTimer);
+            this.debounceTimer = setTimeout(() => {
+                const contentToSave = this.pages.map(p => p.contentElement.innerHTML).join(this.PAGE_BREAK_SEPARATOR);
+                localStorage.setItem('editorContent', contentToSave);
+            }, 2000); // FR-5-1
+        }
+        restoreContent(savedContent) {
+            this.pagesContainer.innerHTML = '';
+            this.pages = [];
+            const pageContents = savedContent.split(this.PAGE_BREAK_SEPARATOR);
+            pageContents.forEach(html => this.addPage(-1, html));
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const editor = new EditorCore(
+            'pages-container', 'page-counter', 'char-counter', 'print-button'
+        );
+        editor.init();
+    });
+    </script>
+</body>
+</html>
+</body>
+</html>

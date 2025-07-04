@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>銀河</title>
+</head>
+<body>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>three.js - 圧巻のインタラクティブ銀河</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #000000;
+        }
+        canvas {
+            display: block;
+        }
+        /* ちょっとした説明文 */
+        .info {
+            position: absolute;
+            top: 10px;
+            width: 100%;
+            text-align: center;
+            color: white;
+            font-family: 'Helvetica', 'Arial', sans-serif;
+            font-size: 14px;
+            text-shadow: 0 0 5px #ffffff;
+            pointer-events: none; /* マウス操作を妨げない */
+        }
+    </style>
+</head>
+<body>
+    <div class="info">マウスを動かして銀河を眺めてみよう</div>
+
+    <!-- 1. ES Moduleの読み込み先を定義 (CDN) -->
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+
+    <!-- 2. three.js メインコード -->
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+        // === 基本設定 =================================================
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.z = 5;
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        document.body.appendChild(renderer.domElement);
+
+        // === 銀河のパラメータ =========================================
+        const parameters = {
+            count: 200000,      // 星の数
+            size: 0.01,         // 星の基本サイズ
+            radius: 5,          // 銀河の半径
+            branches: 3,        // 銀河の渦の数
+            spin: 1,            // 渦の巻き付き度合い
+            randomness: 0.5,    // 星のばらつき度
+            randomnessPower: 3, // ばらつきの影響力（大きいほど中心に密集）
+            insideColor: '#ff6030', // 銀河中心部の色
+            outsideColor: '#1b3984' // 銀河外側の色
+        };
+
+        let geometry = null;
+        let material = null;
+        let points = null;
+
+        const generateGalaxy = () => {
+            // 既存の銀河があれば破棄
+            if (points !== null) {
+                geometry.dispose();
+                material.dispose();
+                scene.remove(points);
+            }
+
+            geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(parameters.count * 3);
+            const colors = new Float32Array(parameters.count * 3);
+
+            const colorInside = new THREE.Color(parameters.insideColor);
+            const colorOutside = new THREE.Color(parameters.outsideColor);
+
+            for (let i = 0; i < parameters.count; i++) {
+                const i3 = i * 3;
+
+                // 位置の計算
+                const radius = Math.random() * parameters.radius;
+                const spinAngle = radius * parameters.spin;
+                const branchAngle = (i % parameters.branches) / parameters.branches * Math.PI * 2;
+
+                const randomX = Math.pow(Math.random(), parameters.randomnessPower) * (Math.random() < 0.5 ? 1 : -1) * parameters.randomness * radius;
+                const randomY = Math.pow(Math.random(), parameters.randomnessPower) * (Math.random() < 0.5 ? 1 : -1) * parameters.randomness * radius;
+                const randomZ = Math.pow(Math.random(), parameters.randomnessPower) * (Math.random() < 0.5 ? 1 : -1) * parameters.randomness * radius;
+
+                positions[i3] = Math.cos(branchAngle + spinAngle) * radius + randomX;
+                positions[i3 + 1] = randomY;
+                positions[i3 + 2] = Math.sin(branchAngle + spinAngle) * radius + randomZ;
+
+                // 色の計算
+                const mixedColor = colorInside.clone();
+                mixedColor.lerp(colorOutside, radius / parameters.radius);
+
+                colors[i3] = mixedColor.r;
+                colors[i3 + 1] = mixedColor.g;
+                colors[i3 + 2] = mixedColor.b;
+            }
+
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+            // マテリアルの設定
+            material = new THREE.PointsMaterial({
+                size: parameters.size,
+                sizeAttenuation: true,      // 遠くのものを小さく
+                depthWrite: false,          // 重なりのチラつき防止
+                blending: THREE.AdditiveBlending, // 加算合成（光る表現）
+                vertexColors: true          // 各頂点の色を有効化
+            });
+
+            points = new THREE.Points(geometry, material);
+            scene.add(points);
+        };
+
+        generateGalaxy();
+
+
+        // === ポストプロセッシング（ブルーム効果） =====================
+        const renderScene = new RenderPass(scene, camera);
+        const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
+        bloomPass.threshold = 0;
+        bloomPass.strength = 1.0; // 光の強さ
+        bloomPass.radius = 0.5;   // 光の広がり
+
+        const composer = new EffectComposer(renderer);
+        composer.addPass(renderScene);
+        composer.addPass(bloomPass);
+
+        // === マウスインタラクション =====================================
+        const mouse = new THREE.Vector2();
+        window.addEventListener('mousemove', (event) => {
+            // -1から1の範囲に正規化
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+        });
+
+        // === ウィンドウリサイズ対応 ===================================
+        window.addEventListener('resize', () => {
+            // カメラのアスペクト比を更新
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+
+            // レンダラーとコンポーザーのサイズを更新
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            composer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        });
+
+        // === アニメーションループ =====================================
+        const clock = new THREE.Clock();
+        const tick = () => {
+            const elapsedTime = clock.getElapsedTime();
+
+            // 銀河を回転させる
+            points.rotation.y = elapsedTime * 0.1;
+
+            // マウスの位置に応じてカメラを滑らかに動かす（視差効果）
+            const parallaxX = mouse.x * 0.5;
+            const parallaxY = -mouse.y * 0.5;
+
+            // カメラの位置を目標値に近づける (Lerp)
+            camera.position.x += (parallaxX - camera.position.x) * 0.02;
+            camera.position.y += (parallaxY - camera.position.y) * 0.02;
+            camera.lookAt(scene.position);
+
+            // OrbitControls を使う場合はこちらを有効化
+            // controls.update();
+
+            // レンダリング（ポストプロセッシングを使う場合）
+            composer.render();
+
+            requestAnimationFrame(tick);
+        };
+
+        tick();
+
+    </script>
+</body>
+</html>
+</body>
+</html>

@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>爆発</title>
+</head>
+<body>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Three.js SUPERNOVA Interactive Art</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #000000; cursor: pointer; }
+        canvas { display: block; }
+        #info {
+            position: absolute;
+            top: 10px;
+            width: 100%;
+            text-align: center;
+            z-index: 100;
+            display:block;
+            color: white;
+            font-family: monospace;
+            font-size: 1.2em;
+            text-shadow: 0 0 5px #ffffff;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+<div id="info">CLICK TO TRIGGER SUPERNOVA</div>
+
+<script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
+<script type="importmap">
+{
+    "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/",
+        "gsap": "https://unpkg.com/gsap@3.12.4/index.js"
+    }
+}
+</script>
+
+<script type="module">
+    // ---------------------------------------------------------------
+    // モジュールインポート
+    // ---------------------------------------------------------------
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+    import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+    import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+    import { AfterimagePass } from 'three/addons/postprocessing/AfterimagePass.js';
+    import { gsap } from 'gsap';
+
+    // ---------------------------------------------------------------
+    // 基本設定
+    // ---------------------------------------------------------------
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
+    camera.position.set(0, 150, 400);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    document.body.appendChild(renderer.domElement);
+    
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.minDistance = 50;
+    controls.maxDistance = 1000;
+    
+    // ---------------------------------------------------------------
+    // ポストプロセッシング (エフェクト)
+    // ---------------------------------------------------------------
+    const composer = new EffectComposer(renderer);
+    composer.addPass(new RenderPass(scene, camera));
+
+    // 残像エフェクト
+    const afterimagePass = new AfterimagePass();
+    afterimagePass.uniforms.damp.value = 0.85; // 残像の強さ (0-1)
+    composer.addPass(afterimagePass);
+
+    // ブルームエフェクト (光彩)
+    const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
+    bloomPass.threshold = 0;
+    bloomPass.strength = 2.5; // 光の強さ
+    bloomPass.radius = 0.8;   // 光の広がり
+    composer.addPass(bloomPass);
+
+    // ---------------------------------------------------------------
+    // 100万個のパーティクル生成
+    // ---------------------------------------------------------------
+    const particleCount = 1000; // 100万個！
+    const geometry = new THREE.BufferGeometry();
+    
+    const positions = new Float32Array(particleCount * 3);
+    const randoms = new Float32Array(particleCount * 3); // x,y,zにランダム値
+    const sizes = new Float32Array(particleCount);
+
+    const galaxyRadius = 300;
+    const galaxyBranch = 5;
+    const galaxyRandomness = 2.5;
+
+    for(let i = 0; i < particleCount; i++) {
+        const i3 = i * 3;
+        
+        // 銀河の渦の形に配置
+        const radius = Math.random() * galaxyRadius;
+        const branchAngle = (i % galaxyBranch) / galaxyBranch * Math.PI * 2;
+        const spinAngle = radius * 0.02;
+
+        const randomX = Math.pow(Math.random(), galaxyRandomness) * (Math.random() < 0.5 ? 1 : -1) * 50;
+        const randomY = Math.pow(Math.random(), galaxyRandomness) * (Math.random() < 0.5 ? 1 : -1) * 50;
+        const randomZ = Math.pow(Math.random(), galaxyRandomness) * (Math.random() < 0.5 ? 1 : -1) * 50;
+
+        positions[i3    ] = Math.cos(branchAngle + spinAngle) * radius + randomX;
+        positions[i3 + 1] = randomY;
+        positions[i3 + 2] = Math.sin(branchAngle + spinAngle) * radius + randomZ;
+
+        randoms[i3    ] = Math.random();
+        randoms[i3 + 1] = Math.random();
+        randoms[i3 + 2] = Math.random();
+
+        sizes[i] = Math.random() * 2.0 + 1.0;
+    }
+
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geometry.setAttribute('aRandom', new THREE.BufferAttribute(randoms, 3));
+    geometry.setAttribute('aSize', new THREE.BufferAttribute(sizes, 1));
+    
+    // ---------------------------------------------------------------
+    // シェーダーマテリアル (動きと色の心臓部)
+    // ---------------------------------------------------------------
+    const uniforms = {
+        uTime: { value: 0 },
+        uSize: { value: 30.0 * renderer.getPixelRatio() },
+        uProgress: { value: 0.0 } // 0: 銀河, 1: 収縮, 2: 爆発
+    };
+
+    const material = new THREE.ShaderMaterial({
+        uniforms: uniforms,
+        vertexShader: `
+            uniform float uTime;
+            uniform float uSize;
+            uniform float uProgress;
+
+            attribute vec3 aRandom;
+            attribute float aSize;
+
+            varying vec3 vColor;
+            
+            // 3D Simplex Noise by Inigo Quilez
+            vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+            vec4 mod289(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+            vec4 permute(vec4 x) { return mod289(((x*34.0)+1.0)*x); }
+            vec4 taylorInvSqrt(vec4 r) { return 1.79284291400159 - 0.85373472095314 * r; }
+            float snoise(vec3 v) {
+                const vec2 C = vec2(1.0/6.0, 1.0/3.0);
+                const vec4 D = vec4(0.0, 0.5, 1.0, 2.0);
+                vec3 i = floor(v + dot(v, C.yyy));
+                vec3 x0 = v - i + dot(i, C.xxx);
+                vec3 g = step(x0.yzx, x0.xyz);
+                vec3 l = 1.0 - g;
+                vec3 i1 = min(g.xyz, l.zxy);
+                vec3 i2 = max(g.xyz, l.zxy);
+                vec3 x1 = x0 - i1 + C.xxx;
+                vec3 x2 = x0 - i2 + C.yyy;
+                vec3 x3 = x0 - D.yyy;
+                i = mod289(i);
+                vec4 p = permute(permute(permute(
+                    i.z + vec4(0.0, i1.z, i2.z, 1.0))
+                    + i.y + vec4(0.0, i1.y, i2.y, 1.0))
+                    + i.x + vec4(0.0, i1.x, i2.x, 1.0));
+                float n_ = 0.142857142857; // 1.0/7.0
+                vec3 ns = n_ * D.wyz - D.xzx;
+                vec4 j = p - 49.0 * floor(p * ns.z * ns.z);
+                vec4 x_ = floor(j * ns.z);
+                vec4 y_ = floor(j - 7.0 * x_);
+                vec4 x = x_ * ns.x + ns.yyyy;
+                vec4 y = y_ * ns.x + ns.yyyy;
+                vec4 h = 1.0 - abs(x) - abs(y);
+                vec4 b0 = vec4(x.xy, y.xy);
+                vec4 b1 = vec4(x.zw, y.zw);
+                vec4 s0 = floor(b0) * 2.0 + 1.0;
+                vec4 s1 = floor(b1) * 2.0 + 1.0;
+                vec4 sh = -step(h, vec4(0.0));
+                vec4 a0 = b0.xzyw + s0.xzyw * sh.xxyy;
+                vec4 a1 = b1.xzyw + s1.xzyw * sh.zzww;
+                vec3 p0 = vec3(a0.xy, h.x);
+                vec3 p1 = vec3(a0.zw, h.y);
+                vec3 p2 = vec3(a1.xy, h.z);
+                vec3 p3 = vec3(a1.zw, h.w);
+                vec4 norm = taylorInvSqrt(vec4(dot(p0,p0), dot(p1,p1), dot(p2,p2), dot(p3,p3)));
+                p0 *= norm.x; p1 *= norm.y; p2 *= norm.z; p3 *= norm.w;
+                vec4 m = max(0.6 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.0);
+                m = m * m;
+                return 42.0 * dot(m*m, vec4(dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3)));
+            }
+
+            void main() {
+                // ---- ステージ1: 銀河 ----
+                float angle = atan(position.x, position.z);
+                float dist = length(position.xz);
+                float angleOffset = 1.0 / (dist * 0.01 + 0.1) * uTime * 0.1;
+                float newX = cos(angle - angleOffset) * dist;
+                float newZ = sin(angle - angleOffset) * dist;
+                vec3 galaxyPos = vec3(newX, position.y, newZ);
+                
+                // ---- ステージ2: 爆発 ----
+                // aRandomを正規化して爆発方向のベクトルとして使う
+                vec3 explosionDir = normalize(aRandom - 0.5);
+                // 爆発の進行度 (0 -> 1 -> 0)
+                float explosionFactor = sin(min(uProgress, 1.0) * 3.14159);
+                // 爆発の勢いをイージング
+                float explosionStrength = pow(explosionFactor, 0.5) * 800.0;
+                vec3 explosionPos = explosionDir * explosionStrength;
+
+                // ---- ポジション遷移 ----
+                // 銀河 -> 中心 (uProgress: 0 -> 1)
+                float toCenterProgress = smoothstep(0.0, 0.5, uProgress);
+                vec3 finalPos = mix(galaxyPos, vec3(0.0), toCenterProgress);
+                // 中心 -> 爆発 (uProgress: 0.5 -> 1.0)
+                float fromCenterProgress = smoothstep(0.5, 1.0, uProgress);
+                finalPos = mix(finalPos, explosionPos, fromCenterProgress);
+
+                // ノイズで微振動を追加
+                finalPos += snoise(finalPos * 0.01 + uTime * 0.2) * 5.0;
+
+                vec4 mvPosition = modelViewMatrix * vec4(finalPos, 1.0);
+                gl_Position = projectionMatrix * mvPosition;
+                gl_PointSize = uSize * aSize * (300.0 / -mvPosition.z) * (1.0 - toCenterProgress * 0.8);
+                
+                // ---- 色の計算 ----
+                vec3 galaxyColor = vec3(0.1, 0.3, 1.0) * (aRandom.x * 0.5 + 0.5);
+                vec3 hotColor = vec3(1.0, 1.0, 1.0);
+                vec3 explosionColor = mix(vec3(1.0, 0.1, 0.1), vec3(0.2, 0.5, 1.0), aRandom.y);
+                explosionColor = mix(explosionColor, vec3(1.0, 1.0, 0.2), aRandom.z);
+
+                vec3 mixedColor = mix(galaxyColor, hotColor, toCenterProgress);
+                mixedColor = mix(mixedColor, explosionColor, fromCenterProgress);
+                vColor = mixedColor;
+            }
+        `,
+        fragmentShader: `
+            varying vec3 vColor;
+            void main() {
+                float dist = distance(gl_PointCoord, vec2(0.5));
+                float alpha = 1.0 - smoothstep(0.4, 0.5, dist);
+                if (alpha < 0.01) discard;
+                gl_FragColor = vec4(vColor, alpha);
+            }
+        `,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        transparent: true,
+    });
+    
+    const particleSystem = new THREE.Points(geometry, material);
+    scene.add(particleSystem);
+    
+    // ---------------------------------------------------------------
+    // インタラクション & アニメーション
+    // ---------------------------------------------------------------
+    let isAnimating = false;
+    const infoText = document.getElementById('info');
+
+    window.addEventListener('click', () => {
+        if (isAnimating) return;
+        isAnimating = true;
+        
+        infoText.style.opacity = 0;
+
+        gsap.to(uniforms.uProgress, {
+            value: 1.0,
+            duration: 4, // 爆発までの時間
+            ease: 'power2.in',
+            onComplete: () => {
+                // 爆発から銀河に戻るアニメーション
+                gsap.to(uniforms.uProgress, {
+                    value: 0.0,
+                    duration: 5, // 戻るまでの時間
+                    ease: 'power2.out',
+                    onComplete: () => {
+                        isAnimating = false;
+                        infoText.style.opacity = 1;
+                    }
+                });
+            }
+        });
+    });
+
+    // ---------------------------------------------------------------
+    // レンダリングループ
+    // ---------------------------------------------------------------
+    const clock = new THREE.Clock();
+    function animate() {
+        requestAnimationFrame(animate);
+        const elapsedTime = clock.getElapsedTime();
+        uniforms.uTime.value = elapsedTime;
+        controls.update();
+        composer.render();
+    }
+    
+    // リサイズ対応
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        composer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        uniforms.uSize.value = 30.0 * renderer.getPixelRatio();
+    });
+
+    animate();
+</script>
+</body>
+</html>
+</body>
+</html>

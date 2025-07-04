@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>08</title>
+</head>
+<body>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>テキスト to 連続ダウンロードHTMLジェネレーター</title>
+    <style>
+        /* --- アプリ全体のスタイル --- */
+        body {
+            font-family: 'Segoe UI', Meiryo, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f4f7f9;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+        textarea {
+            width: 100%;
+            height: 250px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+            box-sizing: border-box;
+            margin-bottom: 15px;
+        }
+        .controls {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        button {
+            background-color: #e67e22;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            font-size: 18px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover:not(:disabled) {
+            background-color: #d35400;
+        }
+        button:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+        }
+        #status-area {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #ecf0f1;
+            border-left: 5px solid #3498db;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 16px;
+            display: none; /* 初期状態では非表示 */
+        }
+        .loader {
+            display: none;
+            margin: 20px auto;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* --- 生成されるHTMLに埋め込むスタイル --- */
+        .page-content-style {
+            font-family: "游明朝", YuMincho, "ヒラギノ明朝 ProN W3", "Hiragino Mincho ProN", "HG明朝E", "ＭＳ Ｐ明朝", "ＭＳ 明朝", serif;
+            font-size: 10.5pt;
+            line-height: 1.8;
+            width: 210mm;
+            min-height: 297mm;
+            padding: 20mm 25mm;
+            margin: 0 auto;
+            box-sizing: border-box;
+            background-color: white;
+            color: black;
+        }
+        .page-content-style p {
+            margin: 0 0 1em 0;
+            text-align: justify;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>テキスト to 連続ダウンロードHTMLジェネレーター</h1>
+        <p>下のテキストエリアに文章を貼り付けてボタンを押してください。文章をWordの1ページのような見た目で分割し、個別のHTMLファイルとして連続でダウンロードします。</p>
+        <p><strong>※ブラウザから「複数のファイルをダウンロードしますか？」と聞かれたら「許可」してください。</strong></p>
+        
+        <textarea id="text-input" placeholder="ここに文章を貼り付けます..."></textarea>
+        
+        <div class="controls">
+            <button id="generate-btn">HTMLを生成＆連続ダウンロード</button>
+        </div>
+
+        <div class="loader" id="loader"></div>
+        <div id="status-area"></div>
+    </div>
+
+    <!-- 非表示の計測用div -->
+    <div id="measure-div" style="position: absolute; left: -9999px; top: -9999px; visibility: hidden;"></div>
+
+    <script>
+        // --- 設定項目 ---
+        const PAGE_HEIGHT_MM = 297;
+        const PAGE_WIDTH_MM = 210;
+        const MARGIN_TOP_MM = 20;
+        const MARGIN_BOTTOM_MM = 20;
+        const PIXELS_PER_MM = 3.78;
+        const CONTENT_MAX_HEIGHT_PX = (PAGE_HEIGHT_MM - MARGIN_TOP_MM - MARGIN_BOTTOM_MM) * PIXELS_PER_MM;
+        const DOWNLOAD_INTERVAL_MS = 500; // ファイルをダウンロードする間隔 (ミリ秒)
+
+        // DOM要素の取得
+        const generateBtn = document.getElementById('generate-btn');
+        const textInput = document.getElementById('text-input');
+        const statusArea = document.getElementById('status-area');
+        const loader = document.getElementById('loader');
+        const measureDiv = document.getElementById('measure-div');
+
+        // 生成されるHTMLのテンプレート
+        const htmlTemplate = (content) => `<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Page</title>
+    <style>
+        body { margin: 0; background-color: #eee; }
+        .page-content-style {
+            font-family: "游明朝", YuMincho, "ヒラギノ明朝 ProN W3", "Hiragino Mincho ProN", "HG明朝E", "ＭＳ Ｐ明朝", "ＭＳ 明朝", serif;
+            font-size: 10.5pt;
+            line-height: 1.8;
+            width: ${PAGE_WIDTH_MM}mm;
+            min-height: ${PAGE_HEIGHT_MM}mm;
+            padding: ${MARGIN_TOP_MM}mm ${MARGIN_BOTTOM_MM}mm;
+            margin: 1em auto;
+            box-sizing: border-box;
+            background-color: white;
+            color: black;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+        }
+        .page-content-style p { margin: 0 0 1em 0; text-align: justify; }
+    </style>
+</head>
+<body>
+    <div class="page-content-style">
+        ${content}
+    </div>
+</body>
+</html>`;
+
+        // 生成ボタンのクリックイベント
+        generateBtn.addEventListener('click', async () => {
+            const fullText = textInput.value;
+            if (!fullText.trim()) {
+                alert('テキストを入力してください。');
+                return;
+            }
+
+            // UIを処理中状態にする
+            loader.style.display = 'block';
+            statusArea.style.display = 'none';
+            generateBtn.disabled = true;
+            generateBtn.textContent = '処理中...';
+
+            // 非同期で処理を実行してUIが固まるのを防ぐ
+            await new Promise(resolve => setTimeout(resolve, 50));
+
+            try {
+                // ページ分割処理
+                const pages = splitTextIntoPages(fullText);
+                
+                if (pages.length > 0) {
+                    statusArea.textContent = `${pages.length}個のファイルに分割しました。ダウンロードを開始します...`;
+                    statusArea.style.display = 'block';
+                    // 連続ダウンロード処理
+                    await downloadFilesSequentially(pages);
+                    statusArea.textContent = `完了: ${pages.length}個のファイルをダウンロードしました。`;
+                } else {
+                    statusArea.textContent = '生成するページがありませんでした。';
+                    statusArea.style.display = 'block';
+                }
+
+            } catch (error) {
+                console.error('エラーが発生しました:', error);
+                alert('処理中にエラーが発生しました。コンソールを確認してください。');
+                statusArea.textContent = 'エラーが発生しました。';
+                statusArea.style.display = 'block';
+            } finally {
+                // UIを元に戻す
+                loader.style.display = 'none';
+                generateBtn.disabled = false;
+                generateBtn.textContent = 'HTMLを生成＆連続ダウンロード';
+            }
+        });
+
+        // テキストをページに分割するメインの関数
+        function splitTextIntoPages(text) {
+            const pages = [];
+            const paragraphs = text.split('\n').map(p => p.trim() ? `<p>${p.replace(/</g, '<').replace(/>/g, '>')}</p>` : '<p> </p>');
+
+            measureDiv.className = 'page-content-style';
+            let currentPageContent = '';
+            measureDiv.innerHTML = '';
+
+            for (const p of paragraphs) {
+                const originalContent = measureDiv.innerHTML;
+                measureDiv.innerHTML += p;
+
+                if (measureDiv.scrollHeight > CONTENT_MAX_HEIGHT_PX) {
+                    if (originalContent) {
+                        pages.push(originalContent);
+                    }
+                    currentPageContent = p;
+                    measureDiv.innerHTML = p;
+                } else {
+                    currentPageContent = measureDiv.innerHTML;
+                }
+            }
+
+            if (currentPageContent) {
+                pages.push(currentPageContent);
+            }
+            return pages;
+        }
+
+        // ファイルを順番にダウンロードする関数
+        async function downloadFilesSequentially(pages) {
+            for (let i = 0; i < pages.length; i++) {
+                const pageContent = pages[i];
+                const pageNum = i + 1;
+                const fullHtml = htmlTemplate(pageContent);
+                
+                // ダウンロード処理
+                triggerDownload(fullHtml, `page-${pageNum}.html`);
+                
+                // ステータスを更新
+                statusArea.textContent = `${pageNum} / ${pages.length} 個目のファイルをダウンロード中...`;
+
+                // 次のダウンロードまで待機
+                if (i < pages.length - 1) {
+                    await new Promise(resolve => setTimeout(resolve, DOWNLOAD_INTERVAL_MS));
+                }
+            }
+        }
+
+        // 単一ファイルのダウンロードをトリガーする関数
+        function triggerDownload(content, filename) {
+            const blob = new Blob([content], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            
+            // メモリ解放
+            URL.revokeObjectURL(url);
+        }
+
+    </script>
+</body>
+</html>
+</body>
+</html>

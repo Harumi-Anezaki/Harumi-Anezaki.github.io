@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>18</title>
+</head>
+<body>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>シンプルワープロ (修正・改善版)</title>
+    <style>
+        /* FR-V1-4, FR-V2-2 */
+        body {
+            background-color: #F0F0F0;
+            margin: 0;
+            padding: 40px 0;
+            font-family: "Helvetica", "Arial", "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
+        }
+
+        /* FR-V1-5 */
+        .editor-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* FR-V1-1, FR-V1-2, FR-V1-3, FR-V1-6 */
+        .page {
+            background-color: white;
+            width: 794px;
+            height: 1123px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.15);
+            margin-bottom: 20px;
+            overflow: hidden; /* コンテンツのはみ出しを隠す */
+        }
+
+        /* FR-C1-1, FR-V2-1, FR-V2-2, FR-C3-1 */
+        .content {
+            box-sizing: border-box; 
+            width: 100%;
+            height: 100%;
+            padding: 40px;
+            font-size: 16px;
+            line-height: 1.6;
+            outline: none;
+            overflow-wrap: break-word;
+        }
+        /* contenteditableが空の時にクリックやフォーカスがしづらい問題を解決 */
+        .content:empty::before {
+            content: '\200B'; /* ゼロ幅スペース */
+            display: inline-block;
+        }
+
+        /* FR-S1-1, FR-S1-2 */
+        .status-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: #333;
+            color: white;
+            padding: 5px 15px;
+            font-size: 14px;
+            box-sizing: border-box;
+            z-index: 100;
+            display: flex;
+            gap: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="editor-container" class="editor-container"></div>
+    <div id="status-bar" class="status-bar">
+        <span id="page-count-display"></span>
+        <span id="char-count-display"></span>
+    </div>
+
+    <script>
+    (function() {
+        'use strict';
+
+        class WordProcessor {
+            constructor(containerId, statusBarId) {
+                this.container = document.getElementById(containerId);
+                this.pageCountDisplay = document.getElementById('page-count-display');
+                this.charCountDisplay = document.getElementById('char-count-display');
+
+                this.isProcessing = false;
+                this.observer = null;
+            }
+
+            init() {
+                if (!this.container) return;
+                this._createNewPage();
+                this._setupEventListeners();
+                this.updateStatus();
+            }
+
+            _setupEventListeners() {
+                this.container.addEventListener('paste', e => {
+                    e.preventDefault();
+                    const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+                    document.execCommand('insertText', false, text);
+                });
+
+                this.observer = new MutationObserver(() => this._scheduleCheck());
+                this._startObserver();
+            }
+
+            _startObserver() {
+                this.observer.observe(this.container, {
+                    childList: true, subtree: true, characterData: true,
+                });
+            }
+
+            _stopObserver() {
+                this.observer.disconnect();
+            }
+
+            _scheduleCheck() {
+                if (this.isProcessing) return;
+                this.isProcessing = true;
+
+                requestAnimationFrame(() => {
+                    this._stopObserver(); // DOM操作前に監視を停止
+                    const cursor = this._saveCursorState();
+
+                    this._checkAndFixPages();
+                    this.updateStatus();
+                    
+                    this._restoreCursorState(cursor);
+                    this._startObserver(); // 処理完了後に監視を再開
+                    this.isProcessing = false;
+                });
+            }
+
+            _checkAndFixPages() {
+                // 1. ページ溢れ(Overflow)の修正
+                let pages = this._getPages();
+                for (let i = 0; i < pages.length; i++) {
+                    const content = pages[i].querySelector('.content');
+                    while (content.scrollHeight > content.clientHeight) {
+                        let nextPage = pages[i + 1] || this._createNewPage(pages[i]);
+                        const nextContent = nextPage.querySelector('.content');
+                        this._reflowContent(content, nextContent);
+                        pages = this._getPages(); // ページが追加された可能性があるのでリストを更新
+                    }
+                }
+
+                // 2. ページ結合(Underflow)の修正
+                pages = this._getPages();
+                for (let i = pages.length - 1; i > 0; i--) {
+                    const currentContent = pages[i].querySelector('.content');
+                    const prevContent = pages[i - 1].querySelector('.content');
+
+                    if (this._isMergeable(prevContent, currentContent)) {
+                        this._mergePages(prevContent, currentContent);
+                    }
+                }
+            }
+
+            /**
+             * FR-P2-2, P2-3: 溢れたコンテンツを次のページへ移動する（再設計版）
+             */
+            _reflowContent(source, target) {
+                const nodeToMove = source.lastChild;
+                if (!nodeToMove) return;
+
+                // 1. まずノードを丸ごと次のページへ移動
+                target.prepend(nodeToMove);
+
+                // 2. もし移動した結果、元のページが収まるようになったら、
+                //    移動したノードがページ境界をまたいでいた可能性があるため、中身を調整する
+                if (source.scrollHeight <= source.clientHeight) {
+                    this._adjustBoundaryNode(source, target, nodeToMove);
+                }
+            }
+            
+            /**
+             * ページ境界にまたがったノードの中身を単語・文字単位で調整する
+             */
+            _adjustBoundaryNode(source, target, boundaryNode) {
+                 if (boundaryNode.nodeType === Node.TEXT_NODE) {
+                    // テキストノードの場合
+                    source.appendChild(boundaryNode); // いったん戻す
+                    const words = boundaryNode.textContent.split(/(\s+)/);
+                    while (source.scrollHeight > source.clientHeight && words.length > 1) {
+                        target.prepend(document.createTextNode(words.pop())); // 空白もノードとして移動
+                        boundaryNode.textContent = words.join('');
+                    }
+                 } else if (boundaryNode.nodeType === Node.ELEMENT_NODE) {
+                    // 要素ノードの場合 (<div>, <p>など)
+                    source.appendChild(boundaryNode); // いったん戻す
+                    while (source.scrollHeight > source.clientHeight && boundaryNode.lastChild) {
+                        // 要素の中身を末尾から移動
+                        target.prepend(boundaryNode.lastChild);
+                    }
+                 }
+            }
+
+            _isMergeable(prevContent, currentContent) {
+                // 後のページが空なら常に結合可能
+                if (!currentContent.hasChildNodes() || currentContent.textContent.trim() === '') {
+                    return true;
+                }
+                
+                // シミュレーションで高さをチェック
+                const testDiv = prevContent.cloneNode(true);
+                while(currentContent.firstChild) {
+                    testDiv.appendChild(currentContent.firstChild.cloneNode(true));
+                }
+                
+                const container = document.createElement('div');
+                container.style.position = 'absolute';
+                container.style.visibility = 'hidden';
+                container.style.width = prevContent.clientWidth + 'px';
+                container.appendChild(testDiv);
+                document.body.appendChild(container);
+                
+                const canMerge = testDiv.scrollHeight <= prevContent.clientHeight;
+                document.body.removeChild(container);
+                
+                return canMerge;
+            }
+
+            _mergePages(prevContent, currentContent) {
+                const pageToRemove = currentContent.closest('.page');
+                while (currentContent.firstChild) {
+                    prevContent.appendChild(currentContent.firstChild);
+                }
+                pageToRemove.remove();
+            }
+
+            _createNewPage(afterNode = null) {
+                const page = document.createElement('div');
+                page.className = 'page';
+                page.innerHTML = `<div class="content" contenteditable="true"></div>`;
+                
+                if (afterNode) {
+                    afterNode.after(page);
+                } else {
+                    this.container.appendChild(page);
+                }
+                return page;
+            }
+
+            updateStatus() {
+                const pages = this._getPages();
+                const totalPages = pages.length;
+                const totalChars = pages.reduce((sum, page) => sum + page.querySelector('.content').innerText.length, 0);
+
+                this.pageCountDisplay.textContent = `ページ: ${totalPages}`;
+                this.charCountDisplay.textContent = `文字数: ${totalChars}`;
+            }
+
+            _getPages() {
+                return Array.from(this.container.querySelectorAll('.page'));
+            }
+
+            _saveCursorState() {
+                const selection = window.getSelection();
+                if (selection.rangeCount === 0) return null;
+                const range = selection.getRangeAt(0);
+                const { startContainer, startOffset } = range;
+                
+                const contentEl = startContainer.nodeType === Node.ELEMENT_NODE 
+                    ? startContainer.closest('.content') 
+                    : startContainer.parentNode.closest('.content');
+                if (!contentEl) return null;
+
+                const pageIndex = this._getPages().findIndex(p => p.contains(contentEl));
+                if (pageIndex === -1) return null;
+
+                let node = startContainer;
+                const path = [];
+                while (node && node !== contentEl) {
+                    path.unshift(Array.from(node.parentNode.childNodes).indexOf(node));
+                    node = node.parentNode;
+                }
+                return { pageIndex, path, startOffset };
+            }
+
+            _restoreCursorState(cursor) {
+                if (!cursor) return;
+                try {
+                    const pages = this._getPages();
+                    if (cursor.pageIndex >= pages.length) return;
+                    
+                    let node = pages[cursor.pageIndex].querySelector('.content');
+                    for (const index of cursor.path) {
+                        if (node && node.childNodes[index]) {
+                            node = node.childNodes[index];
+                        } else {
+                            // パスが途切れた場合、その親までをターゲットにする
+                            break;
+                        }
+                    }
+
+                    const offset = Math.min(cursor.startOffset, node.textContent.length);
+                    const newRange = document.createRange();
+                    newRange.setStart(node, offset);
+                    newRange.collapse(true);
+
+                    const selection = window.getSelection();
+                    selection.removeAllRanges();
+                    selection.addRange(newRange);
+                    node.parentElement.focus(); // カーソルが見えるようにフォーカス
+                } catch (e) {
+                    console.warn("カーソルの復元に失敗しました:", e);
+                }
+            }
+        }
+
+        const app = new WordProcessor('editor-container', 'status-bar');
+        app.init();
+
+    })();
+    </script>
+</body>
+</html>
+</body>
+</html>

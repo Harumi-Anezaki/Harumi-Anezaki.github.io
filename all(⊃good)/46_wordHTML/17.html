@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>17</title>
+</head>
+<body>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>シンプルワープロ (改ページ修正・完全版)</title>
+    <style>
+        /* FR-V1-4: 画面の背景色 */
+        body {
+            background-color: #F0F0F0;
+            margin: 0;
+            padding: 40px 0;
+            /* FR-V2-2: デフォルトフォント */
+            font-family: "Helvetica", "Arial", "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
+        }
+
+        /* FR-V1-5: ページを配置するコンテナ */
+        .editor-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* FR-V1-1, FR-V1-2, FR-V1-3, FR-V1-6: ページの視覚的表現 */
+        .page {
+            background-color: white;
+            width: 794px;
+            height: 1123px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.15);
+            margin-bottom: 20px;
+            overflow: hidden; /* この要素からはみ出たものは表示しないことが重要 */
+        }
+
+        /* FR-C1-1, FR-V2-1, FR-V2-2, FR-C3-1: テキスト入力エリア */
+        .content {
+            box-sizing: border-box; 
+            width: 100%;
+            height: 100%;
+            padding: 40px;
+            font-size: 16px;
+            line-height: 1.6;
+            outline: none; /* フォーカス時の枠線を消す */
+            overflow-wrap: break-word; /* 自動折り返し */
+        }
+        
+        /* contenteditableが空の時にクリックやフォーカスがしやすいように */
+        .content:empty::before {
+            content: '';
+            display: inline-block;
+        }
+        
+        /* FR-S1-1, FR-S1-2: ステータスバーのスタイル */
+        .status-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: #333;
+            color: white;
+            padding: 5px 15px;
+            font-size: 14px;
+            box-sizing: border-box;
+            z-index: 100;
+            display: flex;
+            gap: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="editor-container" class="editor-container">
+        <!-- ページはJavaScriptで動的に生成 -->
+    </div>
+
+    <div id="status-bar" class="status-bar">
+        <span id="page-count-display">ページ: 1/1</span>
+        <span id="char-count-display">文字数: 0</span>
+    </div>
+
+    <script>
+    (function() {
+        'use strict';
+
+        /**
+         * NF-4: アプリケーション全体を管理するクラス
+         */
+        class WordProcessor {
+            constructor(containerId, statusBarId) {
+                this.container = document.getElementById(containerId);
+                this.statusBar = document.getElementById(statusBarId);
+                this.pageCountDisplay = this.statusBar.querySelector('#page-count-display');
+                this.charCountDisplay = this.statusBar.querySelector('#char-count-display');
+
+                this.isProcessing = false;
+                this.mutationObserver = null;
+            }
+
+            init() {
+                this._createNewPage();
+                this._setupEventListeners();
+                this.updateStatus();
+            }
+
+            _setupEventListeners() {
+                this.container.addEventListener('paste', this._handlePaste.bind(this));
+                this.container.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('page')) {
+                        e.target.querySelector('.content').focus();
+                    }
+                });
+                
+                this.mutationObserver = new MutationObserver(() => this._scheduleCheck());
+                this.mutationObserver.observe(this.container, {
+                    childList: true, subtree: true, characterData: true,
+                });
+            }
+
+            _handlePaste(e) {
+                e.preventDefault();
+                const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+                document.execCommand('insertText', false, text);
+            }
+
+            _scheduleCheck() {
+                if (this.isProcessing) return;
+                this.isProcessing = true;
+                
+                // DOMの変更が落ち着くのを待ち、次の描画フレームで処理を実行
+                setTimeout(() => {
+                    requestAnimationFrame(() => {
+                        this._checkAndFixPages();
+                        this.isProcessing = false;
+                    });
+                }, 0);
+            }
+
+            /**
+             * FR-P1, P2, P3: 全ページをチェックし、溢れや空きを修正する司令塔
+             */
+            _checkAndFixPages() {
+                const cursor = this._saveCursorState();
+                this.mutationObserver.disconnect(); // DOM変更中の再トリガーを防止
+
+                let needsAnotherPass = true;
+                let safeguard = 0; // 無限ループ防止
+                
+                while (needsAnotherPass && safeguard < 50) {
+                    needsAnotherPass = false;
+
+                    // 1. ページ溢れ(Overflow)のチェック (前から)
+                    let pages = this._getPages();
+                    for (let i = 0; i < pages.length; i++) {
+                        const content = pages[i].querySelector('.content');
+                        // FR-P1-2: ページ溢れの検知
+                        while (content.scrollHeight > content.clientHeight) {
+                            needsAnotherPass = true;
+                            let nextPage = pages[i + 1];
+                            if (!nextPage) {
+                                // FR-P2-1: 新規ページの生成
+                                nextPage = this._createNewPage(pages[i]);
+                                pages = this._getPages(); // ページリストを更新
+                            }
+                            const nextContent = nextPage.querySelector('.content');
+                            // FR-P2-2, P2-3: 溢れたコンテンツを移動
+                            this._reflowOverflow(content, nextContent);
+                        }
+                    }
+
+                    // 2. ページ結合(Underflow)のチェック (後ろから)
+                    pages = this._getPages();
+                    for (let i = pages.length - 1; i > 0; i--) {
+                        const currentContent = pages[i].querySelector('.content');
+                        const prevContent = pages[i - 1].querySelector('.content');
+
+                        // FR-P3-2: 結合可能か判定
+                        if (this._isMergeable(prevContent, currentContent)) {
+                            needsAnotherPass = true;
+                            const pageToRemove = currentContent.closest('.page');
+                            // FR-P3-3: ページを結合
+                            this._mergePages(prevContent, currentContent);
+                            pageToRemove.remove(); // 空になったページを削除
+                            break; // ページ数が変わったので、最初から再チェック
+                        }
+                    }
+                    safeguard++;
+                }
+                
+                if (safeguard >= 50) console.error("Reflow process exceeded safeguard limit.");
+
+                this._restoreCursorState(cursor);
+                this.updateStatus();
+                
+                this.mutationObserver.observe(this.container, { childList: true, subtree: true, characterData: true });
+            }
+
+            /**
+             * FR-P2-2, P2-3: 溢れたページから最小単位のコンテンツを次のページへ移動する
+             * @param {HTMLElement} source - 溢れているページの.content要素
+             * @param {HTMLElement} target - 移動先のページの.content要素
+             */
+            _reflowOverflow(source, target) {
+                const lastNode = source.lastChild;
+                if (!lastNode) return;
+
+                // ケース1: 末尾が要素ノード (<p>, <div>など) -> 要素ごと移動
+                if (lastNode.nodeType === Node.ELEMENT_NODE) {
+                    target.prepend(lastNode);
+                    return;
+                }
+
+                // ケース2: 末尾がテキストノード -> 単語単位で分割して移動
+                if (lastNode.nodeType === Node.TEXT_NODE) {
+                    const text = lastNode.textContent;
+                    // 単語の切れ目（空白）で分割
+                    const words = text.split(/(\s+)/).filter(Boolean); // 空の要素を除外
+                    if (words.length > 0) {
+                        const toMove = words.pop();
+                        const toKeep = words.join('');
+                        
+                        lastNode.textContent = toKeep;
+                        
+                        // 移動するテキストをターゲットの先頭に追加
+                        if (target.firstChild && target.firstChild.nodeType === Node.TEXT_NODE) {
+                            target.firstChild.textContent = toMove + target.firstChild.textContent;
+                        } else {
+                            target.prepend(document.createTextNode(toMove));
+                        }
+                        
+                        if (lastNode.textContent === '') lastNode.remove();
+                        return;
+                    }
+                }
+                
+                // ケース3: <br>タグなど、その他のノードはそのまま移動
+                target.prepend(lastNode);
+            }
+            
+            _isMergeable(prevContent, currentContent) {
+                // シミュレーション用の非表示コンテナを作成
+                const testDiv = document.createElement('div');
+                testDiv.style.width = prevContent.clientWidth + 'px'; // 幅を合わせる
+                testDiv.style.visibility = 'hidden';
+                testDiv.style.position = 'absolute';
+                
+                const combinedContent = prevContent.cloneNode(true);
+                while (currentContent.firstChild) {
+                    combinedContent.appendChild(currentContent.firstChild.cloneNode(true));
+                }
+                testDiv.appendChild(combinedContent);
+                document.body.appendChild(testDiv);
+                
+                const canMerge = combinedContent.scrollHeight <= prevContent.clientHeight;
+                
+                document.body.removeChild(testDiv);
+                return canMerge;
+            }
+            
+            _mergePages(prevContent, currentContent) {
+                while (currentContent.firstChild) {
+                    prevContent.appendChild(currentContent.firstChild);
+                }
+            }
+
+            _createNewPage(afterNode = null) {
+                const page = document.createElement('div');
+                page.className = 'page';
+                const content = document.createElement('div');
+                content.className = 'content';
+                content.setAttribute('contenteditable', 'true');
+                page.appendChild(content);
+
+                if (afterNode) {
+                    afterNode.parentNode.insertBefore(page, afterNode.nextSibling);
+                } else {
+                    this.container.appendChild(page);
+                }
+                return page;
+            }
+            
+            updateStatus() {
+                const pages = this._getPages();
+                const totalPages = pages.length;
+                const totalChars = pages.reduce((sum, page) => sum + page.querySelector('.content').innerText.length, 0);
+
+                this.pageCountDisplay.textContent = `ページ: ${totalPages}`;
+                this.charCountDisplay.textContent = `文字数: ${totalChars}`;
+            }
+
+            _getPages() {
+                return Array.from(this.container.querySelectorAll('.page'));
+            }
+            
+            _saveCursorState() {
+                const selection = window.getSelection();
+                if (selection.rangeCount === 0) return null;
+                const range = selection.getRangeAt(0);
+                const { startContainer, startOffset } = range;
+                let parentContent = startContainer.nodeType === Node.ELEMENT_NODE ? startContainer : startContainer.parentNode;
+                parentContent = parentContent.closest('.content');
+                if (!parentContent) return null;
+                const pageIndex = this._getPages().findIndex(p => p.contains(parentContent));
+                let node = startContainer;
+                const path = [];
+                while(node && node !== parentContent) {
+                    path.unshift(Array.from(node.parentNode.childNodes).indexOf(node));
+                    node = node.parentNode;
+                }
+                return { pageIndex, path, startOffset };
+            }
+
+            _restoreCursorState(cursor) {
+                if (!cursor || cursor.pageIndex === -1) return;
+                try {
+                    const pages = this._getPages();
+                    if (cursor.pageIndex >= pages.length) return;
+                    let parentContent = pages[cursor.pageIndex].querySelector('.content');
+                    let node = parentContent;
+                    for (const index of cursor.path) {
+                        if (node.childNodes[index]) {
+                            node = node.childNodes[index];
+                        } else { break; }
+                    }
+                    const offset = Math.min(cursor.startOffset, node.textContent.length);
+                    const newRange = document.createRange();
+                    newRange.setStart(node, offset);
+                    newRange.collapse(true);
+                    const selection = window.getSelection();
+                    selection.removeAllRanges();
+                    selection.addRange(newRange);
+                    node.getRootNode().body.focus(); // カーソルが見えるようにフォーカス
+                } catch (e) {
+                    console.warn("カーソルの復元に失敗しました:", e);
+                }
+            }
+        }
+
+        const app = new WordProcessor('editor-container', 'status-bar');
+        app.init();
+    })();
+    </script>
+</body>
+</html>
+</body>
+</html>

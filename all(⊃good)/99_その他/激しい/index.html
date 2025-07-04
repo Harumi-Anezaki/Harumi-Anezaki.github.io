@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>激しい点滅</title>
+<style>
+body {
+  background-color: black;
+}
+
+.blinking {
+  animation: blinker 0.5s linear infinite;
+}
+
+@keyframes blinker {
+  50% {
+    opacity: 0;
+  }
+}
+
+.moving-box {
+    width: 100px;
+    height: 100px;
+    background-color: red;
+    position: absolute;
+    animation: move 2s linear infinite;
+}
+
+@keyframes move {
+    0% { left: 0; top: 0; }
+    25% { left: 100%; top: 0; transform: rotate(360deg); }
+    50% { left: 100%; top: 100%; background-color: blue; }
+    75% { left: 0; top: 100%; transform: rotate(720deg); }
+    100% { left: 0; top: 0; background-color: red;}
+}
+</style>
+</head>
+<body>
+<h1 class="blinking" style="color: white; font-size: 5em; text-align: center;">激しい！！！</h1>
+<div class="moving-box"></div>
+<script>
+  // 激しい色変化 (JavaScript)
+    setInterval(() => {
+        const randomColor = Math.floor(Math.random()*16777215).toString(16);
+        document.body.style.backgroundColor = "#" + randomColor;
+
+        // h1の色も変える
+        document.querySelector('.blinking').style.color = "#" + (16777215 - parseInt(randomColor, 16)).toString(16); //反対色
+
+    }, 100); // 100ミリ秒ごとに色を変更
+
+
+</script>
+</body>
+</html>

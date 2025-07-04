@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>04</title>
+</head>
+<body>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>複雑怪奇アニメーション</title>
+    <style>
+        /* --- CSS: スタイルと基本アニメーション --- */
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #000;
+            cursor: crosshair;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        /* 背景のパーティクルを描画するキャンバス */
+        #particle-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        /* 全ての要素を中央に配置するコンテナ */
+        .container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* 中央の「眼」 */
+        #eye-container {
+            width: 200px;
+            height: 120px;
+            background: #111;
+            border-radius: 50%;
+            position: relative;
+            border: 3px solid #505;
+            box-shadow: 0 0 20px #f0f, 0 0 40px #a0f, inset 0 0 15px #000;
+            animation: pulse 4s infinite ease-in-out;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        /* 脈打つアニメーション */
+        @keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 0 20px #f0f, 0 0 40px #a0f, inset 0 0 15px #000; }
+            50% { transform: scale(1.05); box-shadow: 0 0 30px #f0f, 0 0 60px #a0f, inset 0 0 25px #000; }
+            100% { transform: scale(1); box-shadow: 0 0 20px #f0f, 0 0 40px #a0f, inset 0 0 15px #000; }
+        }
+
+        /* 瞳 */
+        #pupil {
+            width: 40px;
+            height: 40px;
+            background: radial-gradient(circle, #f00 0%, #a00 40%, #000 70%);
+            border-radius: 50%;
+            position: absolute;
+            border: 2px solid #ff555;
+            box-shadow: 0 0 15px #f00;
+            transition: transform 0.1s ease-out; /* 動きを滑らかに */
+        }
+        
+        /* グリッチテキスト */
+        .glitch-container {
+            position: absolute;
+            top: 75%;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 3;
+        }
+
+        .glitch {
+            font-size: 2rem;
+            color: #fff;
+            position: relative;
+            letter-spacing: 0.2em;
+            text-shadow: 0 0 5px #fff, 0 0 10px #f0f;
+        }
+
+        .glitch::before,
+        .glitch::after {
+            content: attr(data-text);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            overflow: hidden;
+        }
+
+        .glitch::before {
+            left: 2px;
+            text-shadow: -1px 0 red;
+            animation: glitch-anim-1 2s infinite linear alternate-reverse;
+        }
+
+        .glitch::after {
+            left: -2px;
+            text-shadow: -1px 0 blue;
+            animation: glitch-anim-2 2s infinite linear alternate-reverse;
+        }
+        
+        @keyframes glitch-anim-1 {
+            0% { clip-path: polygon(0 2%, 100% 2%, 100% 5%, 0 5%); }
+            10% { clip-path: polygon(0 40%, 100% 40%, 100% 45%, 0 45%); }
+            40% { clip-path: polygon(0 60%, 100% 60%, 100% 70%, 0 70%); }
+            60% { clip-path: polygon(0 15%, 100% 15%, 100% 20%, 0 20%); }
+            80% { clip-path: polygon(0 80%, 100% 80%, 100% 85%, 0 85%); }
+            100% { clip-path: polygon(0 50%, 100% 50%, 100% 55%, 0 55%); }
+        }
+
+        @keyframes glitch-anim-2 {
+            0% { clip-path: polygon(0 50%, 100% 50%, 100% 51%, 0 51%); }
+            15% { clip-path: polygon(0 10%, 100% 10%, 100% 12%, 0 12%); }
+            35% { clip-path: polygon(0 90%, 100% 90%, 100% 95%, 0 95%); }
+            55% { clip-path: polygon(0 30%, 100% 30%, 100% 33%, 0 33%); }
+            75% { clip-path: polygon(0 70%, 100% 70%, 100% 72%, 0 72%); }
+            100% { clip-path: polygon(0 5%, 100% 5%, 100% 7%, 0 7%); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 背景パーティクル用Canvas -->
+    <canvas id="particle-canvas"></canvas>
+
+    <!-- 中央の「眼」 -->
+    <div class="container">
+        <div id="eye-container">
+            <div id="pupil"></div>
+        </div>
+    </div>
+    
+    <!-- グリッチテキスト -->
+    <div class="glitch-container">
+        <h1 class="glitch" data-text="... 監視サレテイル ...">... 監視サレテイル ...</h1>
+    </div>
+
+    <script>
+    // --- JavaScript: インタラクティブな動き ---
+
+    // --- 1. 眼の動きの制御 ---
+    const pupil = document.getElementById('pupil');
+    const eyeContainer = document.getElementById('eye-container');
+
+    document.addEventListener('mousemove', (e) => {
+        const rect = eyeContainer.getBoundingClientRect();
+        // 眼の中心座標
+        const eyeX = rect.left + rect.width / 2;
+        const eyeY = rect.top + rect.height / 2;
+        
+        // マウスと眼の中心との角度を計算
+        const angle = Math.atan2(e.clientY - eyeY, e.clientX - eyeX);
+        
+        // 瞳が動ける範囲を制限
+        const maxMoveX = rect.width / 2 - pupil.offsetWidth / 2 - 10;
+        const maxMoveY = rect.height / 2 - pupil.offsetHeight / 2 - 10;
+        
+        // 角度と半径から瞳の位置を計算
+        const x = Math.cos(angle) * maxMoveX;
+        const y = Math.sin(angle) * maxMoveY;
+
+        pupil.style.transform = `translate(${x}px, ${y}px)`;
+    });
+
+    // --- 2. 背景パーティクルの制御 ---
+    const canvas = document.getElementById('particle-canvas');
+    const ctx = canvas.getContext('2d');
+
+    let width = canvas.width = window.innerWidth;
+    let height = canvas.height = window.innerHeight;
+
+    window.addEventListener('resize', () => {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+    });
+
+    const mouse = {
+        x: null,
+        y: null,
+        radius: 150 // マウスの影響範囲
+    };
+
+    document.addEventListener('mousemove', (e) => {
+        mouse.x = e.x;
+        mouse.y = e.y;
+    });
+
+    // パーティクルクラス
+    class Particle {
+        constructor(x, y, directionX, directionY, size, color) {
+            this.x = x;
+            this.y = y;
+            this.directionX = directionX;
+            this.directionY = directionY;
+            this.size = size;
+            this.color = color;
+            this.baseX = this.x; // 初期位置を記憶
+            this.baseY = this.y;
+            this.density = (Math.random() * 30) + 1; // 戻る力の強さ
+        }
+
+        draw() {
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2, false);
+            ctx.fillStyle = this.color;
+            ctx.fill();
+        }
+
+        update() {
+            // マウスとの距離を計算
+            let dx = mouse.x - this.x;
+            let dy = mouse.y - this.y;
+            let distance = Math.sqrt(dx * dx + dy * dy);
+
+            // マウスの影響範囲内なら反発する
+            if (distance < mouse.radius) {
+                const forceDirectionX = dx / distance;
+                const forceDirectionY = dy / distance;
+                const force = (mouse.radius - distance) / mouse.radius;
+                this.x -= forceDirectionX * force * 3;
+                this.y -= forceDirectionY * force * 3;
+            } else {
+                // 影響範囲外なら元の位置に戻ろうとする
+                if (this.x !== this.baseX) {
+                    let dx_base = this.x - this.baseX;
+                    this.x -= dx_base / this.density;
+                }
+                if (this.y !== this.baseY) {
+                    let dy_base = this.y - this.baseY;
+                    this.y -= dy_base / this.density;
+                }
+            }
+
+            this.draw();
+        }
+    }
+
+    let particlesArray = [];
+    const particleCount = 300; // パーティクルの数
+
+    function init() {
+        particlesArray = [];
+        for (let i = 0; i < particleCount; i++) {
+            let size = Math.random() * 2 + 1;
+            let x = Math.random() * width;
+            let y = Math.random() * height;
+            // 色を紫〜赤系の間でランダムに
+            let color = `hsl(${Math.random() * 60 + 270}, 100%, 50%)`;
+            particlesArray.push(new Particle(x, y, 0, 0, size, color));
+        }
+    }
+
+    function animate() {
+        // 軌跡を残すために半透明の黒で塗りつぶす
+        ctx.fillStyle = 'rgba(0,0,0,0.1)';
+        ctx.fillRect(0, 0, width, height);
+
+        for (let i = 0; i < particlesArray.length; i++) {
+            particlesArray[i].update();
+        }
+        requestAnimationFrame(animate);
+    }
+
+    init();
+    animate();
+    </script>
+</body>
+</html>
+</body>
+</html>

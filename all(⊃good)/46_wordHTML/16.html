@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>16</title>
+</head>
+<body>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>シンプルワープロ (厳密実装版)</title>
+    <style>
+        /* --- 4.1. ページ表示機能 (View) / 4.2. テキスト入力機能 (View部分) --- */
+
+        /* FR-V1-4: 画面の背景色 */
+        body {
+            background-color: #F0F0F0;
+            margin: 0;
+            padding: 40px 0;
+            /* FR-V2-2: デフォルトフォント */
+            font-family: "Helvetica", "Arial", "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
+        }
+
+        /* ページを配置するコンテナ */
+        .editor-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* FR-V1-1, FR-V1-2, FR-V1-3, FR-V1-5, FR-V1-6: ページの視覚的表現 */
+        .page {
+            background-color: white;
+            width: 794px;
+            height: 1123px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.15);
+            margin-bottom: 20px;
+            overflow: hidden; /* この要素からはみ出たものは表示しないことが重要 */
+            position: relative; /* 子要素の位置決めの基準 */
+        }
+
+        /* FR-C1-1, FR-V2-1, FR-V2-2, FR-C3-1: テキスト入力エリア */
+        .content {
+            box-sizing: border-box; 
+            width: 100%;
+            height: 100%;
+            padding: 40px;
+            font-size: 16px;
+            line-height: 1.6;
+            outline: none; /* フォーカス時の枠線を消す */
+            overflow-wrap: break-word;
+        }
+
+        /* contenteditableが空の時にカーソルが表示されない問題を解決 */
+        .content:empty::before {
+            content: '';
+            display: inline-block;
+        }
+
+        /* --- 4.4. ステータス表示機能 --- */
+        /* FR-S1-1, FR-S1-2: ステータスバーのスタイル */
+        .status-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: #333;
+            color: white;
+            padding: 5px 15px;
+            font-size: 14px;
+            box-sizing: border-box;
+            z-index: 100;
+            display: flex;
+            gap: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="editor-container" class="editor-container">
+        <!-- ページはJavaScriptで動的に生成 -->
+    </div>
+
+    <div id="status-bar" class="status-bar">
+        <span id="page-count-display">ページ: 0/0</span>
+        <span id="char-count-display">文字数: 0</span>
+    </div>
+
+    <script>
+    (function() {
+        'use strict';
+
+        /**
+         * NF-4: アプリケーション全体を管理するクラス
+         */
+        class WordProcessor {
+            /**
+             * @param {string} containerId - ページを描画するコンテナのID
+             * @param {string} statusBarId - ステータスバーのID
+             */
+            constructor(containerId, statusBarId) {
+                this.container = document.getElementById(containerId);
+                this.statusBar = document.getElementById(statusBarId);
+                this.pageCountDisplay = this.statusBar.querySelector('#page-count-display');
+                this.charCountDisplay = this.statusBar.querySelector('#char-count-display');
+
+                this.isProcessing = false; // 処理の多重実行を防ぐフラグ
+                this.mutationObserver = null;
+            }
+
+            /**
+             * アプリケーションを初期化する
+             */
+            init() {
+                if (!this.container || !this.statusBar) {
+                    console.error("必要なコンテナ要素が見つかりません。");
+                    return;
+                }
+                this._createNewPage(); // 最初のページを作成
+                this._setupEventListeners();
+                this.updateStatus();
+            }
+
+            /**
+             * イベントリスナーをセットアップする
+             */
+            _setupEventListeners() {
+                // NF-1-2: パフォーマンスのため、コンテナでイベントを監視（イベント委譲）
+                this.container.addEventListener('paste', this._handlePaste.bind(this));
+                // FR-C1-2: 空のページでもクリックでフォーカスできるようにする
+                this.container.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('page')) {
+                        e.target.querySelector('.content').focus();
+                    }
+                });
+
+                // NF-1-2, FR-P1-1: DOMの変更を監視するMutationObserverが最も堅牢
+                this.mutationObserver = new MutationObserver(() => this._scheduleCheck());
+                this.mutationObserver.observe(this.container, {
+                    childList: true,
+                    subtree: true,
+                    characterData: true,
+                });
+            }
+
+            /**
+             * FR-C2-5: ペーストイベントを処理し、書式をプレーンテキストに変換する
+             */
+            _handlePaste(e) {
+                e.preventDefault();
+                const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+                document.execCommand('insertText', false, text);
+            }
+            
+            /**
+             * NF-1: パフォーマンスを考慮し、連続する変更をまとめて処理するスケジューラ
+             */
+            _scheduleCheck() {
+                if (this.isProcessing) return;
+                this.isProcessing = true;
+                
+                // requestAnimationFrameでブラウザの描画タイミングに合わせる
+                requestAnimationFrame(() => {
+                    // 変更処理の前にObserverを一時停止
+                    this.mutationObserver.disconnect();
+                    
+                    this._checkAndFixPages();
+                    this.updateStatus();
+                    
+                    // 処理が終わったらObserverを再開
+                    this.mutationObserver.observe(this.container, {
+                        childList: true, subtree: true, characterData: true
+                    });
+                    this.isProcessing = false;
+                });
+            }
+
+            /**
+             * FR-P1, P2, P3: 全ページをチェックし、溢れや空きを修正するコアロジック
+             */
+            _checkAndFixPages() {
+                const cursor = this._saveCursorState(); // NF-2-2: カーソル位置を保存
+
+                // 1. ページ溢れ(Overflow)のチェックと修正
+                let pages = this._getPages();
+                for (let i = 0; i < pages.length; i++) {
+                    const content = pages[i].querySelector('.content');
+                    while (content.scrollHeight > content.clientHeight) {
+                        let nextPage = pages[i + 1];
+                        if (!nextPage) {
+                            nextPage = this._createNewPage(pages[i]);
+                            pages = this._getPages(); // ページリストを更新
+                        }
+                        const nextContent = nextPage.querySelector('.content');
+                        this._reflowContent(content, nextContent);
+                    }
+                }
+
+                // 2. ページ結合(Underflow)のチェックと修正 (後ろからチェック)
+                pages = this._getPages();
+                for (let i = pages.length - 1; i > 0; i--) {
+                    const currentContent = pages[i].querySelector('.content');
+                    const prevContent = pages[i - 1].querySelector('.content');
+
+                    if (this._isMergeable(prevContent, currentContent)) {
+                        this._mergePages(prevContent, currentContent);
+                    }
+                }
+                
+                this._restoreCursorState(cursor); // NF-2-2: カーソル位置を復元
+            }
+
+            /**
+             * FR-P2-2, P2-3: 溢れたコンテンツを次のページへ移動する（単語単位分割）
+             * @param {HTMLElement} source - 溢れているページの.content要素
+             * @param {HTMLElement} target - 移動先のページの.content要素
+             */
+            _reflowContent(source, target) {
+                const lastNode = source.lastChild;
+                if (!lastNode) return;
+
+                // 末尾のノードがテキストノードの場合、単語/文字単位で分割
+                if (lastNode.nodeType === Node.TEXT_NODE) {
+                    const words = lastNode.textContent.split(/(?<=\s)/); // 空白を維持して分割
+                    let tempText = '';
+                    // 溢れが解消されるまで単語を末尾から移動
+                    while (source.scrollHeight > source.clientHeight && words.length > 0) {
+                        tempText = words.pop() + tempText;
+                        lastNode.textContent = words.join('');
+                    }
+                    target.prepend(document.createTextNode(tempText));
+                }
+                // 末尾のノードが要素ノードの場合 (例: <p>, <div>)
+                else if (lastNode.nodeType === Node.ELEMENT_NODE) {
+                    // 要素を丸ごと移動しても溢れが解消されない場合、要素内で再帰的に分割
+                    const tempFragment = document.createDocumentFragment();
+                    tempFragment.appendChild(lastNode.cloneNode(true));
+                    target.prepend(tempFragment);
+                    lastNode.remove();
+
+                    if (source.scrollHeight > source.clientHeight) {
+                       // まだ溢れているなら、今移動させた要素を分割対象にする
+                       this._reflowContent(source, target.firstChild);
+                    }
+                } 
+                // それ以外のノード (改行の<br>など)
+                else {
+                    target.prepend(lastNode);
+                }
+            }
+            
+            /**
+             * FR-P3-2: ページが結合可能か判定する
+             * @param {HTMLElement} prevContent - 前のページの.content要素
+             * @param {HTMLElement} currentContent - 現在のページの.content要素
+             * @returns {boolean}
+             */
+            _isMergeable(prevContent, currentContent) {
+                if (currentContent.textContent.trim() === '' && currentContent.childNodes.length <= 1) {
+                    return true; // ほぼ空のページは常に結合可能
+                }
+                // 実際にDOMを変更せず、高さをシミュレーションする
+                const prevClone = prevContent.cloneNode(true);
+                while(currentContent.firstChild) {
+                    prevClone.appendChild(currentContent.firstChild.cloneNode(true));
+                }
+                // 一時的な非表示コンテナで高さを測る
+                const testContainer = document.createElement('div');
+                testContainer.style.position = 'absolute';
+                testContainer.style.visibility = 'hidden';
+                testContainer.style.width = prevContent.clientWidth + 'px';
+                testContainer.appendChild(prevClone);
+                document.body.appendChild(testContainer);
+                const canMerge = prevClone.scrollHeight <= prevContent.clientHeight;
+                document.body.removeChild(testContainer);
+                return canMerge;
+            }
+            
+            /**
+             * FR-P3-3: 2つのページを結合する
+             */
+            _mergePages(prevContent, currentContent) {
+                const pageToRemove = currentContent.closest('.page');
+                // currentContentの子ノードをすべてprevContentの末尾に移動
+                while (currentContent.firstChild) {
+                    prevContent.appendChild(currentContent.firstChild);
+                }
+                pageToRemove.remove(); // 空になったページを削除
+            }
+
+            /**
+             * FR-P2-1: 新しいページ要素を生成してDOMに追加する
+             * @param {HTMLElement} [afterNode=null] - このノードの直後にページを挿入
+             * @returns {HTMLElement} 生成された新しいページ要素
+             */
+            _createNewPage(afterNode = null) {
+                const page = document.createElement('div');
+                page.className = 'page';
+                const content = document.createElement('div');
+                content.className = 'content';
+                content.setAttribute('contenteditable', 'true');
+                page.appendChild(content);
+
+                if (afterNode) {
+                    afterNode.parentNode.insertBefore(page, afterNode.nextSibling);
+                } else {
+                    this.container.appendChild(page);
+                }
+                return page;
+            }
+
+            /**
+             * 4.4. ステータス表示機能
+             */
+            updateStatus() {
+                const pages = this._getPages();
+                const totalPages = pages.length;
+                
+                // FR-S1-4: 全ページのテキストコンテンツの長さを合計
+                const totalChars = pages.reduce((sum, page) => {
+                    return sum + page.querySelector('.content').innerText.length;
+                }, 0);
+
+                this.pageCountDisplay.textContent = `ページ: ${totalPages}`;
+                this.charCountDisplay.textContent = `文字数: ${totalChars}`;
+            }
+
+            _getPages() {
+                return Array.from(this.container.querySelectorAll('.page'));
+            }
+
+            /**
+             * NF-2-2: 現在のカーソル位置を保存する
+             * @returns {object|null} カーソル情報、またはnull
+             */
+            _saveCursorState() {
+                const selection = window.getSelection();
+                if (selection.rangeCount === 0) return null;
+                
+                const range = selection.getRangeAt(0);
+                const { startContainer, startOffset } = range;
+                
+                // コンテナが.content要素内にあるか確認
+                let parentContent = startContainer.nodeType === Node.ELEMENT_NODE 
+                    ? startContainer.closest('.content')
+                    : startContainer.parentNode.closest('.content');
+                if (!parentContent) return null;
+
+                const pages = this._getPages();
+                const pageIndex = pages.findIndex(p => p.contains(parentContent));
+
+                // ノードまでのパスを計算
+                let node = startContainer;
+                const path = [];
+                while(node && node !== parentContent) {
+                    path.unshift(Array.from(node.parentNode.childNodes).indexOf(node));
+                    node = node.parentNode;
+                }
+
+                return { pageIndex, path, startOffset };
+            }
+
+            /**
+             * NF-2-2: 保存した情報からカーソル位置を復元する
+             * @param {object|null} cursor - _saveCursorStateで保存したオブジェクト
+             */
+            _restoreCursorState(cursor) {
+                if (!cursor) return;
+
+                try {
+                    const pages = this._getPages();
+                    if (cursor.pageIndex >= pages.length) return;
+                    
+                    let parentContent = pages[cursor.pageIndex].querySelector('.content');
+                    let node = parentContent;
+                    for (const index of cursor.path) {
+                        if (node.childNodes[index]) {
+                            node = node.childNodes[index];
+                        } else {
+                            // パスが途中で途切れた場合 (ノードが削除されたなど)
+                            break;
+                        }
+                    }
+
+                    // オフセットがノードの長さを超えないように調整
+                    const offset = Math.min(cursor.startOffset, node.textContent.length);
+                    
+                    const newRange = document.createRange();
+                    newRange.setStart(node, offset);
+                    newRange.collapse(true);
+
+                    const selection = window.getSelection();
+                    selection.removeAllRanges();
+                    selection.addRange(newRange);
+                } catch (e) {
+                    console.warn("カーソルの復元に失敗しました:", e);
+                }
+            }
+        }
+
+        // --- アプリケーションの起動 ---
+        const app = new WordProcessor('editor-container', 'status-bar');
+        app.init();
+
+    })();
+    </script>
+</body>
+</html>
+</body>
+</html>

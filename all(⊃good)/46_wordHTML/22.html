@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>22</title>
+</head>
+<body>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Document Editor</title>
+    <style>
+        /* F-01-04: ページを際立たせるための背景設定 */
+        body {
+            background-color: #F0F0F0;
+            margin: 0;
+            padding: 24px 0; /* 上下の余白 */
+            font-family: serif; /* F-4.2: デフォルトフォント */
+            font-size: 12pt;    /* F-4.2: デフォルトフォントサイズ */
+            line-height: 1.7;   /* F-4.2: デフォルト行間 */
+        }
+
+        /* 4.1: アプリケーション全体のコンテナ */
+        #editor-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* 4.2: ページ要素のスタイル */
+        .page {
+            /* F-01-02: A4用紙の物理サイズを指定 */
+            width: 210mm;
+            min-height: 297mm; /* F-4.2: heightではなくmin-heightを使用 */
+            
+            /* F-01-03: 印刷領域を模した余白 */
+            padding: 25mm;
+
+            /* F-01-04: ページ間の間隔と影 */
+            margin: 16px 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+
+            background: white;
+            box-sizing: border-box; /* paddingを含めてサイズ計算する */
+            
+            /* F-03-07: 禁則処理 */
+            overflow-wrap: break-word;
+            word-wrap: break-word; /* 古いブラウザ用のフォールバック */
+
+            /* F-4.2: contenteditableのフォーカス枠線を非表示に */
+            outline: none;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 4.1: アプリケーションのコンテナ -->
+    <main id="editor-container"></main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // =================================================================
+            // 定数とグローバル変数
+            // =================================================================
+            const editorContainer = document.getElementById('editor-container');
+
+            // NF-01-03: Debounce関数 (過剰なリフロー計算を防ぐ)
+            function debounce(func, delay) {
+                let timeout;
+                return function(...args) {
+                    clearTimeout(timeout);
+                    timeout = setTimeout(() => func.apply(this, args), delay);
+                };
+            }
+
+            // =================================================================
+            // コアロジック: ページ管理とリフロー
+            // =================================================================
+
+            /**
+             * F-03-03: 新しいページ要素を生成する
+             * @returns {HTMLElement} 新しいページ要素
+             */
+            function createPage() {
+                const newPage = document.createElement('div');
+                newPage.className = 'page';
+                newPage.setAttribute('contenteditable', 'true');
+                return newPage;
+            }
+            
+            /**
+             * F-03: 自動改ページ処理（コア機能）
+             * この関数は、すべてのページを検査し、オーバーフローとアンダーフローを処理する。
+             */
+            function reflowPages() {
+                const pages = Array.from(editorContainer.querySelectorAll('.page'));
+                let needsAnotherPass = false;
+
+                for (let i = 0; i < pages.length; i++) {
+                    const currentPage = pages[i];
+                    
+                    // F-03-01: オーバーフロー検知
+                    // clientHeightは固定だが、scrollHeightは内容に応じて変動する
+                    while (currentPage.scrollHeight > currentPage.clientHeight) {
+                        needsAnotherPass = true;
+                        let nextPage = currentPage.nextElementSibling;
+
+                        // F-03-03: 次のページがなければ新規作成
+                        if (!nextPage) {
+                            nextPage = createPage();
+                            editorContainer.appendChild(nextPage);
+                        }
+                        
+                        // F-03-02: はみ出した末尾のノードを次のページの先頭に移動
+                        nextPage.prepend(currentPage.lastChild);
+                    }
+                    
+                    // F-03-04 & F-03-05: アンダーフロー処理 (内容の繰り上げ)
+                    const nextPage = currentPage.nextElementSibling;
+                    if (nextPage) {
+                        // 次のページが空で、ページが2つ以上ある場合は削除
+                        // F-03-06: 不要ページの削除 (繰り上げ前に空ページを掃除)
+                        if (!nextPage.hasChildNodes() && pages.length > 1) {
+                            nextPage.remove();
+                            needsAnotherPass = true; // DOMが変更されたので再チェック
+                            continue; // 次のループへ
+                        }
+
+                        // 次ページの先頭要素を現在ページに移動できるか試みる
+                        while (nextPage.hasChildNodes()) {
+                            const firstNodeOfNext = nextPage.firstChild;
+                            // 要素の高さを一時的に測るための処理
+                            currentPage.appendChild(firstNodeOfNext);
+                            if (currentPage.scrollHeight > currentPage.clientHeight) {
+                                // 戻す: はみ出してしまうので移動はキャンセル
+                                nextPage.prepend(firstNodeOfNext);
+                                break; // このページの繰り上げは終了
+                            }
+                            needsAnotherPass = true;
+                        }
+
+                        // 繰り上げの結果、次のページが空になったか再チェック
+                        if (!nextPage.hasChildNodes() && pages.length > 1) {
+                            nextPage.remove();
+                        }
+                    }
+                }
+
+                // 再帰的なリフロー: あるページの変更が次のページに影響を及ぼす可能性があるため
+                if (needsAnotherPass) {
+                    // requestAnimationFrameでブラウザの描画サイクルに合わせる
+                    requestAnimationFrame(reflowPages);
+                }
+            }
+
+            const debouncedReflow = debounce(reflowPages, 150); // 150msの間に入力があればリフローを遅延
+
+            // =================================================================
+            // イベントハンドラ
+            // =================================================================
+
+            /**
+             * F-02: テキスト入力・編集イベントのハンドリング
+             * @param {InputEvent} event
+             */
+            function handleInput(event) {
+                // `input`イベントは文字入力、削除、改行など広範な編集操作で発火する
+                // NF-01-03: Debounceを適用し、パフォーマンスを最適化
+                debouncedReflow();
+            }
+
+            /**
+             * F-04: クリップボード（ペースト）機能のハンドリング
+             * @param {ClipboardEvent} event
+             */
+            function handlePaste(event) {
+                // F-04-02: デフォルトのHTMLリッチペーストをキャンセル
+                event.preventDefault();
+
+                // F-04-03: クリップボードからプレーンテキストのみを抽出
+                const text = (event.clipboardData || window.clipboardData).getData('text/plain');
+
+                if (text) {
+                    // F-04-04: 抽出したテキストを現在のカーソル位置に挿入
+                    // execCommandは非推奨だが、プレーンテキスト挿入では最もシンプルで互換性が高い
+                    document.execCommand('insertText', false, text);
+                }
+                
+                // ペースト後は即座にリフローを実行（debounceなし）
+                // 大量のテキストが貼られた場合、即時反映が望ましいため
+                requestAnimationFrame(reflowPages);
+            }
+
+            /**
+             * NF-02-03: フォーカス管理（高度なカーソル制御）
+             * @param {KeyboardEvent} event
+             */
+            function handleKeyDown(event) {
+                // この機能はSelection APIとRange APIの高度な操作を要するため、
+                // 仕様書の「MVPでは実装を見送る可能性も考慮」に基づき、ここでは実装していません。
+                // 実装する場合、以下のようなロジックが必要になります。
+                // 1. `event.key`が "ArrowDown" または "ArrowUp" かを判定
+                // 2. `window.getSelection()`で現在のカーソル位置を取得
+                // 3. カーソルがページの末尾（または先頭）にあるかを判定
+                // 4. 隣のページが存在すれば、`event.preventDefault()`でデフォルトの動作を止め、
+                //    手動でRangeオブジェクトを作成し、隣のページの先頭（または末尾）にカーソルを移動させる。
+            }
+
+            // =================================================================
+            // 初期化処理
+            // =================================================================
+
+            function init() {
+                // F-01-01: 最初のページを生成してエディタに追加
+                const firstPage = createPage();
+                editorContainer.appendChild(firstPage);
+                
+                // ユーザーがすぐに入力できるよう、最初のページにフォーカスを当てる
+                firstPage.focus();
+
+                // イベント委任: コンテナ要素でイベントを捕捉する
+                // これにより、ページが動的に増減してもイベントリスナーを再設定する必要がない
+                editorContainer.addEventListener('input', handleInput);
+                editorContainer.addEventListener('paste', handlePaste);
+                editorContainer.addEventListener('keydown', handleKeyDown);
+
+                // F-03-06: ドキュメントが空になるのを防ぐための最終チェック
+                // ユーザーが全選択->削除した場合などに対応
+                editorContainer.addEventListener('input', (e) => {
+                    if (editorContainer.children.length === 0) {
+                        const page = createPage();
+                        editorContainer.appendChild(page);
+                        page.focus();
+                    } else if (editorContainer.children.length === 1 && !editorContainer.firstChild.hasChildNodes()) {
+                        // 最後の1ページが空になっても削除しないが、
+                        // 内部にブラウザが自動生成した<br>などが残ることがあるため、
+                        // 確実にカーソルが置けるように空のテキストノードを置くなどのケアも考えられる。
+                        // 現状のcontenteditableの挙動でほとんどのケースは問題ない。
+                    }
+                });
+
+                console.log("Web Document Editor initialized.");
+            }
+
+            // アプリケーションの実行開始
+            init();
+        });
+    </script>
+</body>
+</html>
+</body>
+</html>

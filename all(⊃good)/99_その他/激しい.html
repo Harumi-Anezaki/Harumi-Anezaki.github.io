@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>激しい表現</title>
+  <style>
+    body {
+      background-color: black;
+      overflow: hidden;
+    }
+    .flash {
+      position: absolute;
+      background-color: white;
+      opacity: 0;
+      animation: flashAnimation 0.1s linear infinite;
+    }
+    @keyframes flashAnimation {
+      0% { opacity: 0; }
+      50% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+  <script>
+    const colors = ['red', 'yellow', 'lime'];
+    setInterval(() => {
+      const width = Math.random() * window.innerWidth;
+      const height = Math.random() * window.innerHeight;
+      const x = Math.random() * window.innerWidth;
+      const y = Math.random() * window.innerHeight;
+      const color = colors[Math.floor(Math.random() * colors.length)];
+      const div = document.createElement('div');
+      div.classList.add('flash');
+      div.style.width = width + 'px';
+      div.style.height = height + 'px';
+      div.style.left = x + 'px';
+      div.style.top = y + 'px';
+      div.style.backgroundColor = color;
+      document.body.appendChild(div);
+      setTimeout(() => {
+        document.body.removeChild(div);
+      }, 100);
+    }, 10);
+  </script>
+</body>
+</html>

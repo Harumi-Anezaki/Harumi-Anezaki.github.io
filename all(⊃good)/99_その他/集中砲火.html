@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>集中砲火</title>
+</head>
+<body>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <title>容赦なく撃たれるデモ by three.js</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #000; }
+        #info {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: white;
+            background-color: rgba(0,0,0,0.7);
+            padding: 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            z-index: 10;
+        }
+        #damage-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-color: rgba(255, 0, 0, 0);
+            pointer-events: none; /* マウス操作を透過させる */
+            z-index: 9;
+            transition: background-color 0.05s ease-out;
+        }
+    </style>
+</head>
+<body>
+
+<div id="info">
+    <h1>集中砲火デモ</h1>
+    <p>クリックして開始</p>
+    <p>マウス: 視点操作 / ESC: カーソル解除</p>
+    <p>(注意: 非常に激しい点滅と大きな音を含みます)</p>
+</div>
+<div id="damage-overlay"></div>
+
+<script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+    }
+</script>
+
+<script type="module">
+    import * as THREE from 'three';
+    import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
+
+    let scene, camera, renderer, controls, clock;
+    let listener;
+
+    // --- Scene objects ---
+    const gunMuzzles = [];
+    const bullets = [];
+    const impacts = [];
+    const MAX_BULLETS = 300;
+    const MAX_IMPACTS = 100;
+
+    // --- Effects ---
+    let shakeIntensity = 0;
+    const shakeDecay = 0.9;
+    let damageOverlay;
+
+    // --- Audio ---
+    let gunSound, hitSound, whizzSound;
+
+    init();
+    animate();
+
+    function init() {
+        clock = new THREE.Clock();
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x111111);
+        scene.fog = new THREE.Fog(0x111111, 15, 40);
+
+        camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 1.6, 10);
+
+        renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.shadowMap.enabled = true;
+        document.body.appendChild(renderer.domElement);
+
+        damageOverlay = document.getElementById('damage-overlay');
+
+        // Controls
+        controls = new PointerLockControls(camera, document.body);
+        const info = document.getElementById('info');
+        info.addEventListener('click', () => {
+            controls.lock();
+        });
+        controls.addEventListener('lock', () => {
+            info.style.display = 'none';
+            if (gunSound && !gunSound.isPlaying) gunSound.play();
+        });
+        controls.addEventListener('unlock', () => {
+            info.style.display = 'block';
+            if (gunSound && gunSound.isPlaying) gunSound.pause();
+        });
+        scene.add(controls.getObject());
+
+        // Lights
+        const ambientLight = new THREE.AmbientLight(0x404040, 2);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
+        dirLight.position.set(0, 10, 10);
+        scene.add(dirLight);
+
+        // Environment
+        const floorGeo = new THREE.PlaneGeometry(100, 100);
+        const floorMat = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.9 });
+        const floor = new THREE.Mesh(floorGeo, floorMat);
+        floor.rotation.x = -Math.PI / 2;
+        floor.receiveShadow = true;
+        scene.add(floor);
+
+        const wallGeo = new THREE.BoxGeometry(30, 15, 1);
+        const wallMat = new THREE.MeshStandardMaterial({ color: 0x4a4a4a });
+        const wall = new THREE.Mesh(wallGeo, wallMat);
+        wall.position.z = -10;
+        wall.position.y = 7.5;
+        wall.receiveShadow = true;
+        scene.add(wall);
+
+        // Gun Muzzles
+        const muzzleGeo = new THREE.CylinderGeometry(0.2, 0.2, 0.2, 16);
+        const muzzleMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
+        const muzzleLight = new THREE.PointLight(0xffaa00, 0, 5, 2); // 初期光量は0
+        
+        const muzzlePositions = [
+            new THREE.Vector3(-10, 5, -9.5), new THREE.Vector3(-5, 8, -9.5),
+            new THREE.Vector3(0, 6, -9.5), new THREE.Vector3(5, 9, -9.5),
+            new THREE.Vector3(10, 4, -9.5)
+        ];
+
+        muzzlePositions.forEach(pos => {
+            const muzzle = new THREE.Mesh(muzzleGeo, muzzleMat);
+            muzzle.position.copy(pos);
+            muzzle.rotation.x = Math.PI / 2;
+
+            const light = muzzleLight.clone();
+            muzzle.add(light);
+            
+            const flash = {
+                light: light,
+                intensity: 0
+            };
+
+            const muzzleInfo = {
+                mesh: muzzle,
+                flash: flash,
+                lastFireTime: 0
+            };
+            
+            gunMuzzles.push(muzzleInfo);
+            scene.add(muzzle);
+        });
+
+        // Audio
+        listener = new THREE.AudioListener();
+        camera.add(listener);
+
+        const audioLoader = new THREE.AudioLoader();
+        // マシンガン連射音 (ループ)
+        gunSound = new THREE.Audio(listener);
+        audioLoader.load('https://cdn.pixabay.com/download/audio/2022/05/20/audio_f5d94943f3.mp3', buffer => {
+            gunSound.setBuffer(buffer);
+            gunSound.setLoop(true);
+            gunSound.setVolume(0.3);
+        });
+
+        // 被弾音
+        hitSound = new THREE.Audio(listener);
+        audioLoader.load('https://cdn.pixabay.com/download/audio/2021/08/04/audio_347285a828.mp3', buffer => {
+            hitSound.setBuffer(buffer);
+            hitSound.setVolume(0.8);
+        });
+        
+        // 通過音
+        whizzSound = new THREE.Audio(listener);
+        audioLoader.load('https://cdn.pixabay.com/download/audio/2022/03/24/audio_7313a29a53.mp3', buffer => {
+            whizzSound.setBuffer(buffer);
+            whizzSound.setVolume(0.4);
+        });
+        
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    }
+
+    function fireBullet(muzzleInfo) {
+        if (bullets.length >= MAX_BULLETS) {
+            const b = bullets.shift();
+            scene.remove(b.mesh);
+            b.mesh.geometry.dispose();
+            b.mesh.material.dispose();
+        }
+        
+        // 曳光弾
+        const bulletGeo = new THREE.BoxGeometry(0.05, 0.05, 0.8);
+        const bulletMat = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+        const bulletMesh = new THREE.Mesh(bulletGeo, bulletMat);
+        
+        const muzzlePos = new THREE.Vector3();
+        muzzleInfo.mesh.getWorldPosition(muzzlePos);
+
+        const spread = 0.5;
+        const targetPos = camera.position.clone().add(
+             new THREE.Vector3(
+                (Math.random() - 0.5) * spread,
+                (Math.random() - 0.5) * spread,
+                (Math.random() - 0.5) * spread
+            )
+        );
+
+        const direction = new THREE.Vector3().subVectors(targetPos, muzzlePos).normalize();
+        bulletMesh.position.copy(muzzlePos);
+        bulletMesh.lookAt(targetPos);
+
+        const bullet = {
+            mesh: bulletMesh,
+            velocity: direction.multiplyScalar(80), // 弾速
+            life: 2, // 2秒で消える
+            whizzPlayed: false
+        };
+
+        bullets.push(bullet);
+        scene.add(bulletMesh);
+
+        // Muzzle flash effect
+        muzzleInfo.flash.light.intensity = 50;
+    }
+    
+    function createImpact(position) {
+        // Impactロジックは前回のコードから流用 (簡略化)
+        if (impacts.length >= MAX_IMPACTS) {
+            const oldImpact = impacts.shift();
+            scene.remove(oldImpact.group);
+        }
+        const impact = { group: new THREE.Group(), life: 0.3 };
+        impact.group.position.copy(position);
+        
+        const sparkMat = new THREE.MeshBasicMaterial({ color: 0xffddaa });
+        for(let i=0; i<5; i++){
+            const spark = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.02, 0.02), sparkMat);
+            spark.position.set((Math.random()-0.5)*0.1, (Math.random()-0.5)*0.1, (Math.random()-0.5)*0.1);
+            impact.group.add(spark);
+        }
+        impacts.push(impact);
+        scene.add(impact.group);
+    }
+
+    function handlePlayerHit() {
+        // 1. 画面フラッシュ
+        damageOverlay.style.backgroundColor = 'rgba(255, 0, 0, 0.6)';
+        setTimeout(() => {
+            damageOverlay.style.backgroundColor = 'rgba(255, 0, 0, 0)';
+        }, 60);
+
+        // 2. 画面シェイク
+        shakeIntensity = 0.05;
+
+        // 3. 被弾音
+        if (hitSound && hitSound.buffer) {
+            if (hitSound.isPlaying) hitSound.stop();
+            hitSound.play();
+        }
+    }
+    
+    function animate() {
+        requestAnimationFrame(animate);
+        const delta = clock.getDelta();
+        const time = clock.getElapsedTime();
+
+        if (controls.isLocked) {
+            // Firing logic
+            gunMuzzles.forEach(muzzle => {
+                const fireRate = 0.1 + Math.random() * 0.2; // 銃口ごとに発射レートを少し変える
+                if (time > muzzle.lastFireTime + fireRate) {
+                    fireBullet(muzzle);
+                    muzzle.lastFireTime = time;
+                }
+                // Flash decay
+                muzzle.flash.light.intensity = Math.max(0, muzzle.flash.light.intensity - delta * 500);
+            });
+        }
+        
+        // Update bullets
+        for (let i = bullets.length - 1; i >= 0; i--) {
+            const bullet = bullets[i];
+            bullet.life -= delta;
+
+            if (bullet.life <= 0) {
+                scene.remove(bullet.mesh);
+                bullets.splice(i, 1);
+                continue;
+            }
+
+            bullet.mesh.position.addScaledVector(bullet.velocity, delta);
+
+            // Player collision
+            const distanceToPlayer = bullet.mesh.position.distanceTo(camera.position);
+            if (distanceToPlayer < 0.5) {
+                handlePlayerHit();
+                scene.remove(bullet.mesh);
+                bullets.splice(i, 1);
+                continue;
+            }
+            
+            // Whizz sound
+            if (!bullet.whizzPlayed && distanceToPlayer < 1.5) {
+                if(whizzSound && whizzSound.buffer && !whizzSound.isPlaying){
+                    whizzSound.play();
+                }
+                bullet.whizzPlayed = true;
+            }
+
+            // Environment collision (simplified)
+            if (bullet.mesh.position.y < 0.1 || Math.abs(bullet.mesh.position.z) > 20 || Math.abs(bullet.mesh.position.x) > 20) {
+                createImpact(bullet.mesh.position);
+                scene.remove(bullet.mesh);
+                bullets.splice(i, 1);
+            }
+        }
+
+        // Update impacts
+        for (let i = impacts.length - 1; i >= 0; i--) {
+            const impact = impacts[i];
+            impact.life -= delta;
+            if (impact.life <= 0) {
+                scene.remove(impact.group);
+                impacts.splice(i, 1);
+            }
+        }
+
+        // Screen shake
+        if (shakeIntensity > 0) {
+            controls.getObject().position.x += (Math.random() - 0.5) * shakeIntensity;
+            controls.getObject().position.y += (Math.random() - 0.5) * shakeIntensity;
+            shakeIntensity *= shakeDecay;
+        }
+
+        renderer.render(scene, camera);
+    }
+</script>
+
+</body>
+</html>
+</body>
+</html>

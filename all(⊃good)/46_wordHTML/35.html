@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>35</title>
+</head>
+<body>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>テキストのA4グリッド結合ツール（35行固定版）</title>
+    <style>
+        body { font-family: sans-serif; line-height: 1.6; padding: 20px; background-color: #f4f4f4; color: #333; }
+        h1 { text-align: center; color: #444; }
+        .container { max-width: 800px; margin: 0 auto; background-color: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        textarea { width: 100%; height: 250px; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; box-sizing: border-box; line-height: 1.5; }
+        button { display: block; width: 100%; padding: 15px; margin-top: 20px; background-color: #17a2b8; color: white; border: none; border-radius: 4px; font-size: 18px; cursor: pointer; transition: background-color 0.3s; }
+        button:hover { background-color: #138496; }
+        button:disabled { background-color: #ccc; cursor: not-allowed; }
+        .status-container { margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px; text-align: center; font-size: 1.1em; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>テキストのA4グリッド結合ツール（35行固定版）</h1>
+        <p>テキストを入力しボタンを押すと、1ページ35行で分割され、グリッド状に配置された単一のHTMLファイルとしてダウンロードされます。</p>
+        
+        <textarea id="inputText" placeholder="ここにテキストを貼り付けます..."></textarea>
+        
+        <button id="generateButton">35行で分割してダウンロード</button>
+        
+        <div class="status-container" id="statusContainer">
+            <!-- 処理状況がここに表示されます -->
+        </div>
+    </div>
+
+    <script>
+        const generateButton = document.getElementById('generateButton');
+        const inputText = document.getElementById('inputText');
+        const statusContainer = document.getElementById('statusContainer');
+
+        generateButton.addEventListener('click', () => { // asyncは不要
+            const fullText = inputText.value;
+            
+            if (fullText.trim() === '') {
+                statusContainer.innerHTML = '<p style="color: red;">テキストが入力されていません。</p>';
+                return;
+            }
+
+            generateButton.disabled = true;
+            generateButton.textContent = '処理中...';
+            statusContainer.innerHTML = '<p>ページの分割処理を開始します...</p>';
+
+            // 1. 行数ベースのシンプルなページ分割処理
+            const linesPerPage = 35;
+            const pages = paginateByLines(fullText, linesPerPage);
+            
+            if (pages.length === 0) {
+                statusContainer.innerHTML = '<p>テキストが入力されていません。</p>';
+                generateButton.disabled = false;
+                generateButton.textContent = '35行で分割してダウンロード';
+                return;
+            }
+            
+            statusContainer.innerHTML = `<p>${pages.length} ページに分割しました。HTMLを生成中です。</p>`;
+
+            // 2. グリッドサイズの計算
+            const n = Math.ceil(Math.sqrt(pages.length));
+
+            // 3. グリッドHTMLの生成
+            const combinedHtml = createGridHtml(pages, n);
+
+            // 4. 単一ファイルのダウンロード
+            const blob = new Blob([combinedHtml], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'combined_pages_35lines.html';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+
+            statusContainer.innerHTML = `<p style="color: green; font-weight: bold;">完了: combined_pages_35lines.html をダウンロードしました。</p>`;
+            generateButton.disabled = false;
+            generateButton.textContent = '35行で分割してダウンロード';
+        });
+
+        /**
+         * テキストを指定された行数でページに分割する関数
+         * @param {string} text - 全文テキスト
+         * @param {number} linesPerPage - 1ページあたりの行数
+         * @returns {string[]} - ページごとのテキスト配列
+         */
+        function paginateByLines(text, linesPerPage) {
+            // テキストを改行で区切って配列にする
+            const allLines = text.split('\n');
+            const pages = [];
+
+            // 指定された行数ごとに配列を区切っていく
+            for (let i = 0; i < allLines.length; i += linesPerPage) {
+                const pageLines = allLines.slice(i, i + linesPerPage);
+                pages.push(pageLines.join('\n')); // 再び改行で結合して1ページ分のテキストにする
+            }
+            
+            return pages;
+        }
+        
+        /**
+         * ページ配列とグリッドサイズから、結合された単一のHTML文字列を生成する
+         * （この関数は変更の必要がありません）
+         */
+        function createGridHtml(pages, gridN) {
+            const pageHtmlElements = pages.map((pageText, index) => {
+                const pageNum = index + 1;
+                const sanitizedText = pageText.replace(/&/g, '&').replace(/</g, '<').replace(/>/g, '>');
+                return `<div class="a4-page"><pre>${sanitizedText}</pre><div class="page-number">${pageNum}</div></div>`;
+            }).join('');
+
+            return `<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>結合ページ (${pages.length}ページ, 35行固定)</title>
+    <style>
+        body { background-color: #525659; margin: 0; padding: 40px; }
+        .grid-container { display: grid; grid-template-columns: repeat(${gridN}, 210mm); gap: 20px; justify-content: center; }
+        .a4-page {
+            width: 210mm;
+            height: 297mm;
+            padding: 20mm;
+            box-sizing: border-box;
+            background: white;
+            color: black;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            font-family: 'MS Mincho', 'Hiragino Mincho ProN', serif; /* 明朝体系フォントを指定 */
+            font-size: 12pt;
+            line-height: 1.8; /* 行間を少し広げて読みやすく調整 */
+            overflow: hidden;
+            position: relative;
+        }
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            margin: 0;
+            font-family: inherit;
+            font-size: inherit;
+            line-height: inherit; /* 親の行間を継承 */
+            height: 100%;
+            overflow: hidden;
+        }
+        .page-number { position: absolute; bottom: 15mm; right: 20mm; font-size: 10pt; color: #666; }
+        @media print {
+            body { background-color: white; padding: 0; }
+            .grid-container { display: block; }
+            .a4-page { box-shadow: none; margin: 0; page-break-after: always; line-height: 1.8; }
+            .a4-page:last-child { page-break-after: auto; }
+        }
+    </style>
+</head>
+<body>
+    <div class="grid-container">${pageHtmlElements}</div>
+</body>
+</html>`;
+        }
+    </script>
+
+</body>
+</html>
+</body>
+</html>

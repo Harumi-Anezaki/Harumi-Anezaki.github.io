@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>15</title>
+</head>
+<body>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>シンプルワープロ</title>
+    <style>
+        /* --- 4.1. ページ表示機能 (View) / 4.2. テキスト入力機能 (View部分) --- */
+
+        /* FR-V1-4: 画面の背景色 */
+        body {
+            background-color: #F0F0F0;
+            margin: 0;
+            padding: 40px 0; /* 上下の余白 */
+            font-family: "Helvetica", "Arial", sans-serif; /* FR-V2-2 */
+        }
+
+        /* ページを配置するコンテナ */
+        #editor-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* FR-V1-1, FR-V1-2, FR-V1-3, FR-V1-5, FR-V1-6: ページの視覚的表現 */
+        .page {
+            background-color: white;
+            width: 794px; /* A4-based fixed size */
+            height: 1123px; /* A4-based fixed size */
+            box-shadow: 0 0 10px rgba(0,0,0,0.15);
+            margin-bottom: 20px;
+            overflow: hidden; /* この要素からはみ出たものは表示しない */
+            display: flex; /* 子要素のpaddingをclientHeightに含めるため */
+        }
+
+        /* FR-C1-1, FR-V2-1, FR-V2-2, FR-C3-1: テキスト入力エリア */
+        .content {
+            flex-grow: 1; /* 親(.page)の領域を埋める */
+            padding: 40px; /* マージン（余白） */
+            font-size: 16px;
+            line-height: 1.6;
+            outline: none; /* フォーカス時の枠線を消す */
+            overflow-wrap: break-word; /* 自動折り返し */
+            /* clientHeightがpaddingを含んだ値になるようにbox-sizingを設定 */
+            box-sizing: border-box; 
+        }
+
+        /* --- 4.4. ステータス表示機能 --- */
+
+        /* FR-S1-1, FR-S1-2: ステータスバーのスタイル */
+        #status-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: #333;
+            color: white;
+            padding: 5px 15px;
+            font-size: 14px;
+            box-sizing: border-box;
+            z-index: 100;
+            display: flex;
+            gap: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ページが動的に追加されるコンテナ -->
+    <div id="editor-container">
+        <!-- 初期ページはJavaScriptで生成 -->
+    </div>
+
+    <!-- FR-S1: ステータスバー -->
+    <div id="status-bar">
+        <span id="page-count-display">ページ: 0/0</span>
+        <span id="char-count-display">文字数: 0</span>
+    </div>
+
+    <script>
+    // NF-4: グローバルスコープを汚染しないように即時実行関数(IIFE)で囲む
+    (function() {
+        'use strict';
+
+        // --- DOM要素の取得 ---
+        const editorContainer = document.getElementById('editor-container');
+        const pageCountDisplay = document.getElementById('page-count-display');
+        const charCountDisplay = document.getElementById('char-count-display');
+        
+        // --- 定数定義 ---
+        const PAGE_TEMPLATE = `<div class="page"><div class="content" contenteditable="true"></div></div>`;
+
+        // --- 初期化処理 ---
+        function init() {
+            // FR-P2-1: 最初のページを生成
+            createNewPage();
+            setupEventListeners();
+            updateStatus();
+        }
+        
+        /**
+         * FR-P2-1: 新しいページ要素を生成してDOMに追加する
+         * @param {Node} afterNode - このノードの直後に新しいページを挿入する。未指定の場合は末尾に追加。
+         * @returns {Element} 生成された新しいページの.content要素
+         */
+        function createNewPage(afterNode = null) {
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = PAGE_TEMPLATE;
+            const newPage = tempDiv.firstElementChild;
+
+            if (afterNode && afterNode.parentNode) {
+                afterNode.parentNode.insertBefore(newPage, afterNode.nextSibling);
+            } else {
+                editorContainer.appendChild(newPage);
+            }
+            
+            // 新しく作られたページのcontent要素を返す
+            return newPage.querySelector('.content');
+        }
+
+        // --- イベントリスナー設定 ---
+        function setupEventListeners() {
+            // NF-1-2: パフォーマンスのため、イベントデリゲーションを使用
+            // 個々のページではなく、コンテナでイベントを監視する
+            editorContainer.addEventListener('input', handleContentChange);
+            editorContainer.addEventListener('paste', handlePaste);
+
+            // NF-1-2, FR-P1-1: MutationObserverでDOMの変更を監視するのが最も堅牢
+            const observer = new MutationObserver(handleContentChange);
+            observer.observe(editorContainer, {
+                childList: true, // 子要素（テキストノード含む）の追加/削除
+                subtree: true,   // 子孫要素の監視
+                characterData: true // テキストノードのデータ変更
+            });
+        }
+        
+        /**
+         * FR-C2-5: ペーストイベントのハンドリング
+         * 書式を剥がしたプレーンテキストを貼り付ける
+         */
+        function handlePaste(e) {
+            e.preventDefault();
+            const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+            document.execCommand('insertText', false, text);
+        }
+
+        // --- メインロジック ---
+        
+        // 処理が連続で発生するのを防ぐためのフラグ
+        let isProcessing = false;
+
+        /**
+         * FR-P1, FR-P2, FR-P3: コンテンツ変更時に呼ばれるメインの処理関数
+         */
+        function handleContentChange() {
+            if (isProcessing) return; // 処理中の多重実行を防止
+            
+            isProcessing = true;
+
+            // requestAnimationFrameを使用して、ブラウザの描画サイクルに処理を合わせる
+            // これにより、正確なscrollHeightの取得とパフォーマンス向上が期待できる
+            requestAnimationFrame(() => {
+                checkAndFixPages();
+                updateStatus();
+                isProcessing = false;
+            });
+        }
+
+        /**
+         * 全てのページをチェックし、溢れや空きを修正する
+         */
+        function checkAndFixPages() {
+            const pages = Array.from(editorContainer.querySelectorAll('.page .content'));
+            let reflowNeeded = false;
+
+            // 1. ページ溢れのチェック (FR-P1, FR-P2)
+            for (let i = 0; i < pages.length; i++) {
+                const currentPageContent = pages[i];
+                // FR-P1-2: scrollHeightがclientHeightを超えたらオーバーフロー
+                if (currentPageContent.scrollHeight > currentPageContent.clientHeight) {
+                    reflowContent(currentPageContent, pages[i + 1]);
+                    reflowNeeded = true;
+                }
+            }
+
+            // 2. ページ結合のチェック (FR-P3)
+            // 後ろのページからチェックしていくのが安全
+            for (let i = pages.length - 1; i > 0; i--) {
+                const currentPageContent = pages[i];
+                const prevPageContent = pages[i - 1];
+
+                // FR-P3-1: 現在のページが空なら前のページと結合を試みる
+                // もしくは、前のページに十分な空きがあるかチェック
+                if (isMergeable(prevPageContent, currentPageContent)) {
+                    mergePages(prevPageContent, currentPageContent);
+                    reflowNeeded = true;
+                }
+            }
+            
+            // 再帰的にチェック（例：溢れ処理でさらに溢れた場合などに対応）
+            if (reflowNeeded) {
+                // DOM変更があったので、もう一度全体をチェックする
+                checkAndFixPages();
+            }
+        }
+
+        /**
+         * FR-P2-2: あるページから溢れたコンテンツを次のページへ移動させる
+         * @param {Element} sourceContent - 溢れた元のページの.content要素
+         * @param {Element} [targetPageContent] - 移動先のページの.content要素。なければ新規作成。
+         */
+        function reflowContent(sourceContent, targetPageContent) {
+            let nextContent = targetPageContent;
+            
+            // FR-P2-1: 移動先のページがなければ新規作成
+            if (!nextContent) {
+                const sourcePage = sourceContent.closest('.page');
+                nextContent = createNewPage(sourcePage);
+            }
+            
+            // FR-P2-2: 溢れたノードを特定し移動
+            // ページの末尾からノードを一つずつ次のページへ移動し、溢れが解消されるまで繰り返す
+            while (sourceContent.scrollHeight > sourceContent.clientHeight) {
+                const lastNode = sourceContent.lastChild;
+                if (lastNode) {
+                    // FR-P2-3: 単語単位の分割は非常に複雑なため、ノード単位で移動する
+                    nextContent.prepend(lastNode);
+                } else {
+                    // 子ノードがなくなったらループを抜ける
+                    break;
+                }
+            }
+        }
+        
+        /**
+         * FR-P3-2: 2つのページが結合可能か判定する
+         * @param {Element} prevPageContent - 前のページの.content要素
+         * @param {Element} currentPageContent - 現在のページの.content要素
+         * @returns {boolean} 結合可能ならtrue
+         */
+        function isMergeable(prevPageContent, currentPageContent) {
+            if (currentPageContent.childNodes.length === 0) {
+                 // FR-P3-1: 後のページが空なら常に結合可能
+                return true;
+            }
+
+            // DocumentFragmentを使って、実際にDOMを変更せずに高さをテストする
+            const fragment = document.createDocumentFragment();
+            Array.from(currentPageContent.childNodes).forEach(node => fragment.appendChild(node.cloneNode(true)));
+            
+            // 一時的にテスト用のHTMLを追加
+            prevPageContent.appendChild(fragment);
+            const canMerge = prevPageContent.scrollHeight <= prevPageContent.clientHeight;
+            
+            // テスト用のHTMLを元に戻す
+            while(fragment.firstChild) {
+                prevPageContent.removeChild(prevPageContent.lastChild);
+            }
+            // 元のDOMに戻す（これは不要かもだが念のため）
+            // currentPageContent.appendChild(fragment);
+
+            return canMerge;
+        }
+
+        /**
+         * FR-P3-3: 後ろのページを前のページに結合する
+         * @param {Element} prevPageContent - 前のページの.content要素
+         * @param {Element} currentPageContent - 現在のページの.content要素
+         */
+        function mergePages(prevPageContent, currentPageContent) {
+            const currentNodes = Array.from(currentPageContent.childNodes);
+            const fragment = document.createDocumentFragment();
+            currentNodes.forEach(node => fragment.appendChild(node));
+
+            // カーソル位置を保存（簡易版）
+            const selection = window.getSelection();
+            const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+            let cursorInCurrentPage = range ? currentPageContent.contains(range.startContainer) : false;
+
+            prevPageContent.appendChild(fragment);
+            
+            // FR-P3-3: 空になったページを削除
+            const pageToRemove = currentPageContent.closest('.page');
+            pageToRemove.remove();
+
+            // カーソルを再設定（簡易版）
+            if (cursorInCurrentPage && range) {
+                // 結合後のページの末尾にカーソルを置く
+                const newRange = document.createRange();
+                newRange.selectNodeContents(prevPageContent);
+                newRange.collapse(false); // falseで末尾に
+                selection.removeAllRanges();
+                selection.addRange(newRange);
+            }
+        }
+
+
+        // --- 4.4. ステータス表示機能 (Controller) ---
+
+        /**
+         * FR-S1-3: ページ数と文字数を計算して表示を更新する
+         */
+        function updateStatus() {
+            const pages = editorContainer.querySelectorAll('.page');
+            const totalPages = pages.length;
+            
+            // FR-S1-4: 文字数計算（空白文字を含む）
+            let totalChars = 0;
+            pages.forEach(page => {
+                const content = page.querySelector('.content');
+                totalChars += content.innerText.length;
+            });
+            
+            pageCountDisplay.textContent = `ページ: ${totalPages}/${totalPages}`;
+            charCountDisplay.textContent = `文字数: ${totalChars}`;
+        }
+        
+        // --- アプリケーションの実行 ---
+        init();
+
+    })();
+    </script>
+</body>
+</html>
+</body>
+</html>

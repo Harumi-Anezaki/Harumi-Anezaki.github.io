@@ -1,0 +1,77 @@
+body, html {
+    margin: 0;
+    padding: 0;
+    font-family: sans-serif;
+}
+
+/* Wordの編集画面全体の灰色背景 */
+.word-editor-area {
+    background-color: #f0f1f2; /* UIでよく使われる薄い灰色 */
+    padding: 40px;
+    min-height: 100vh;
+    box-sizing: border-box;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+}
+
+/* 白い「用紙」部分 */
+.document-page {
+    background-color: white;
+    width: 210mm; /* A4用紙の幅 */
+    min-height: 297mm; /* A4用紙の高さ */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15); /* 用紙が浮き上がって見えるように影を付ける */
+    padding: 30mm; /* Wordの標準的な余白 */
+    box-sizing: border-box;
+}
+
+/* テキスト境界のマーカーを配置するための基準となるボックス */
+.text-boundary-box {
+    position: relative;
+    height: 100%;
+}
+
+/* テキスト境界の角マーカーの共通スタイル */
+.corner {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    border-color: #cccccc; /* 薄い灰色のマーカー */
+    border-style: solid;
+}
+
+/* 各角マーカーの位置と線の指定 */
+.corner.top-left {
+    top: -6px;
+    left: -6px;
+    border-width: 1px 0 0 1px; /* 上と左の枠線のみ表示 */
+}
+.corner.top-right {
+    top: -6px;
+    right: -6px;
+    border-width: 1px 1px 0 0; /* 上と右の枠線のみ表示 */
+}
+.corner.bottom-left {
+    bottom: -6px;
+    left: -6px;
+    border-width: 0 0 1px 1px; /* 下と左の枠線のみ表示 */
+}
+.corner.bottom-right {
+    bottom: -6px;
+    right: -6px;
+    border-width: 0 1px 1px 0; /* 下と右の枠線のみ表示 */
+}
+
+/* メインのテキストコンテンツ */
+.text-content {
+    font-family: 'Times New Roman', Times, serif; /* Wordの標準的なフォント */
+    font-size: 12pt;
+    line-height: 1.15; /* Wordの1行設定に近い行間 */
+    color: #000000;
+    text-align: justify; /* 両端揃え */
+    word-break: break-all; /* 'a'が連続しても行末で折り返すようにする */
+}
+.text-content p {
+    margin: 0;
+    padding: 0;
+}

@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>05</title>
+</head>
+<body>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>テキストをページ毎のHTMLに自動分割するアプリ</title>
+    <style>
+        body { font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif; background-color: #f4f4f9; color: #333; margin: 0; padding: 20px; display: flex; justify-content: center; }
+        .container { width: 100%; max-width: 800px; background-color: #fff; padding: 25px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: #4a4a4a; border-bottom: 2px solid #0078d4; padding-bottom: 10px; margin-top: 0; }
+        .instructions { background-color: #eef2ff; border-left: 4px solid #0078d4; padding: 15px; margin-bottom: 20px; border-radius: 4px; }
+        .instructions code { background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; }
+        .warning { background-color: #fff4e5; border-left: 4px solid #ff9800; padding: 10px; margin-bottom: 20px; font-size: 0.9em; }
+        textarea { width: 100%; height: 40vh; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; line-height: 1.6; box-sizing: border-box; resize: vertical; }
+        .controls { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
+        .controls label { font-weight: bold; }
+        .controls input[type="text"], .controls input[type="number"] { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+        .controls .input-group { display: flex; align-items: center; gap: 10px; }
+        button { display: block; width: 100%; padding: 15px; font-size: 18px; font-weight: bold; color: #fff; background-color: #0078d4; border: none; border-radius: 5px; cursor: pointer; transition: background-color 0.3s ease; }
+        button:hover:not(:disabled) { background-color: #005a9e; }
+        button:disabled { background-color: #a0a0a0; cursor: not-allowed; }
+        #status { margin-top: 15px; padding: 10px; background-color: #f0f0f0; border-radius: 4px; text-align: center; font-weight: bold; color: #333; min-height: 20px; word-break: break-all; }
+        #status.error { color: red; background-color: #ffebee; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>テキストをページ毎のHTMLに自動分割</h1>
+        <div class="instructions">
+            <p><strong>使い方:</strong></p>
+            <ol>
+                <li>下のテキストエリアに文章を貼り付けます。</li>
+                <li>「1ページあたりの目安文字数」を設定します。（例: Wordの40字×36行設定なら <code>1440</code>）</li>
+                <li>「生成してダウンロード」ボタンを押すと、HTMLファイルが連続でダウンロードされます。</li>
+            </ol>
+        </div>
+        <div class="warning">
+            <strong>注意:</strong> ブラウザによっては、複数ファイルのダウンロード許可を求めるダイアログが表示されます。その場合は「許可」してください。
+        </div>
+
+        <div class="controls">
+            <div class="input-group">
+                <label for="baseNameInput">ファイル名の接頭辞:</label>
+                <input type="text" id="baseNameInput" value="document">
+            </div>
+            <div class="input-group">
+                <label for="charsPerPageInput">1ページの目安文字数:</label>
+                <input type="number" id="charsPerPageInput" value="1440" min="100" step="10">
+            </div>
+        </div>
+
+        <textarea id="textInput" placeholder="ここにWordに貼り付けたい文章などを入力してください..."></textarea>
+
+        <button id="generateBtn">HTMLを生成してダウンロード</button>
+
+        <div id="status"></div>
+    </div>
+
+    <style id="pageStyleTemplate" class="page-template-style">
+        body { background: #e0e0e0; font-family: 'Times New Roman', "游明朝", YuMincho, "ヒラギノ明朝 ProN W3", "Hiragino Mincho ProN", serif; margin: 0; padding: 0; }
+        .page { width: 210mm; min-height: 297mm; padding: 30mm; margin: 1cm auto; border: 1px #D3D3D3 solid; border-radius: 5px; background: white; box-shadow: 0 0 5px rgba(0, 0, 0, 0.1); box-sizing: border-box; font-size: 10.5pt; line-height: 1.7; white-space: pre-wrap; word-wrap: break-word; }
+        @page { size: A4; margin: 0; }
+        @media print { html, body { width: 210mm; height: 297mm; } .page { margin: 0; border: initial; border-radius: initial; width: initial; min-height: initial; box-shadow: initial; background: initial; page-break-after: always; } }
+    </style>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+
+            function splitTextIntoPages(text, idealChars) {
+                const pages = [];
+                let currentPos = 0;
+                const textLength = text.length;
+                const margin = Math.floor(idealChars * 0.3);
+                const minChars = idealChars - margin;
+                const maxChars = idealChars + margin;
+
+                while (currentPos < textLength) {
+                    let searchRangeEnd = Math.min(currentPos + maxChars, textLength);
+                    if (textLength - currentPos < maxChars) {
+                        pages.push(text.substring(currentPos));
+                        break;
+                    }
+                    let splitPos = -1;
+                    const delimiters = ['\n\n', '。', '、', '\n'];
+                    for (const delimiter of delimiters) {
+                        let tempPos = text.lastIndexOf(delimiter, searchRangeEnd);
+                        if (tempPos !== -1 && tempPos >= currentPos + minChars) {
+                            splitPos = tempPos + delimiter.length;
+                            break;
+                        }
+                    }
+                    if (splitPos === -1) {
+                        splitPos = searchRangeEnd;
+                    }
+                    pages.push(text.substring(currentPos, splitPos));
+                    currentPos = splitPos;
+                }
+                return pages.map(p => p.trim()).filter(p => p.length > 0);
+            }
+
+            function sleep(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
+            
+            function escapeHtml(text) {
+                const map = { '&': '&', '<': '<', '>': '>', '"': '"', "'": ''' };
+                return text.replace(/[&<>"']/g, m => map[m]);
+            }
+
+            const generateBtn = document.getElementById('generateBtn');
+            const statusDiv = document.getElementById('status');
+
+            generateBtn.addEventListener('click', async function() {
+                statusDiv.textContent = 'ボタンがクリックされました。処理を開始します...';
+                statusDiv.classList.remove('error');
+
+                try {
+                    const textInput = document.getElementById('textInput').value;
+                    const baseName = document.getElementById('baseNameInput').value || 'document';
+                    const charsPerPage = parseInt(document.getElementById('charsPerPageInput').value, 10);
+                    
+                    if (textInput.trim() === '') {
+                        statusDiv.textContent = 'エラー: テキストが入力されていません。';
+                        statusDiv.classList.add('error');
+                        return;
+                    }
+                    if (isNaN(charsPerPage) || charsPerPage < 50) {
+                        statusDiv.textContent = 'エラー: 目安文字数は50以上の数値を入力してください。';
+                        statusDiv.classList.add('error');
+                        return;
+                    }
+                    
+                    generateBtn.disabled = true;
+                    statusDiv.textContent = 'ページの分割処理を開始します...';
+
+                    const pages = splitTextIntoPages(textInput, charsPerPage);
+                    
+                    if (pages.length === 0) {
+                        statusDiv.textContent = 'エラー: 分割できるページが見つかりませんでした。';
+                        statusDiv.classList.add('error');
+                        generateBtn.disabled = false;
+                        return;
+                    }
+
+                    const pageStyle = document.getElementById('pageStyleTemplate').innerHTML;
+                    
+                    for (let i = 0; i < pages.length; i++) {
+                        const pageContent = pages[i];
+                        const pageNum = i + 1;
+                        statusDiv.textContent = `ページ ${pageNum} / ${pages.length} を生成・ダウンロード中...`;
+
+                        const fileName = `${baseName}_page_${pageNum}.html`;
+                        const htmlContent = `<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><title>${escapeHtml(baseName)} - Page ${pageNum}</title><style>${pageStyle}</style></head><body><div class="page">${escapeHtml(pageContent)}</div></body></html>`;
+                        
+                        const dataUri = 'data:text/html;charset=utf-8,' + encodeURIComponent(htmlContent);
+                        
+                        const a = document.createElement('a');
+                        a.href = dataUri;
+                        a.download = fileName;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+
+                        await sleep(500);
+                    }
+                    
+                    statusDiv.textContent = `完了: ${pages.length}ページ分のHTMLファイルをダウンロードしました。`;
+                    generateBtn.disabled = false;
+
+                } catch (e) {
+                    console.error("エラーが発生しました:", e);
+                    statusDiv.textContent = `致命的なエラーが発生しました: ${e.message}`;
+                    statusDiv.classList.add('error');
+                    generateBtn.disabled = false;
+                }
+            });
+        });
+    </script>
+
+</body>
+</html>
+</body>
+</html>

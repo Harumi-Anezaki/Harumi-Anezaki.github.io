@@ -1,0 +1,95 @@
+/* style.css */
+
+/* ページ全体の基本設定 */
+body {
+    background-color: #e0e0e0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 0;
+    margin: 0;
+}
+
+/* ツールバー */
+.toolbar {
+    margin-bottom: 20px;
+    padding: 10px;
+    background-color: #f7f7f7;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.toolbar button {
+    padding: 8px 12px;
+    font-size: 14px;
+    border: 1px solid #aaa;
+    border-radius: 3px;
+    background-color: #fff;
+    cursor: pointer;
+}
+.toolbar button:hover {
+    background-color: #f0f0f0;
+}
+
+/* 用紙のコンテナ（A4サイズ、影など） */
+.page-container {
+    width: 210mm;
+    min-height: 297mm; /* 最初の1ページ分の高さを確保 */
+    background-color: white;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+    padding: 2cm; /* Wordの余白 */
+    box-sizing: border-box;
+}
+
+/* 編集エリア */
+#editor {
+    width: 100%;
+    height: 100%;
+    outline: none; /* フォーカス時の枠線を消す */
+
+    /* Wordのようなフォントと行間 */
+    font-family: "游明朝", YuMincho, "ヒラギノ明朝 ProN W3", "Hiragino Mincho ProN", "ＭＳ Ｐ明朝", "MS PMincho", serif;
+    font-size: 11pt;
+    line-height: 1.8;
+
+    /* ★★★ ここがポイント！背景にページ区切り線を描画 ★★★ */
+    /* A4のコンテンツ領域の高さ(297mm - 40mm)ごとに点線を引く */
+    background-image: linear-gradient(to bottom, transparent 256.5mm, #ccc 256.5mm, #ccc 257mm, transparent 257mm);
+    background-size: 100% 257mm; /* 297mm(A4縦) - 20mm*2(上下余白) = 257mm */
+    background-repeat: repeat-y;
+}
+
+/* 手動で挿入した改ページ線のスタイル */
+hr.manual-page-break {
+    border: 0;
+    border-top: 1px dashed #0078d4; /* 青い破線 */
+    margin: 2em 0;
+}
+
+/* 印刷用のスタイル */
+@media print {
+    /* 印刷時は不要な要素を非表示に */
+    body {
+        background-color: white;
+        padding: 0;
+    }
+    .toolbar, .page-container {
+        box-shadow: none;
+        margin: 0;
+        padding: 0;
+    }
+
+    #editor {
+        /* 背景の区切り線は印刷しない */
+        background-image: none;
+        padding: 1.5cm; /* 実際の印刷マージン */
+    }
+
+    /* 手動改ページ要素で、実際に改ページを行う */
+    hr.manual-page-break {
+        page-break-before: always;
+        border: none; /* 印刷時には線自体は不要 */
+        margin: 0;
+        height: 0;
+    }
+}

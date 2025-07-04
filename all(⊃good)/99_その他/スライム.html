@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Three.js スライム</title>
+    <style>
+        body { margin: 0; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // シーン、カメラ、レンダラーの設定
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // スライムの作成
+        const slimeGeometry = new THREE.SphereGeometry(1, 64, 64); // より滑らかな形状に
+        const slimeMaterial = new THREE.MeshPhysicalMaterial({ // よりリアルな材質に
+            color: 0x00ff00,
+            transparent: true,
+            opacity: 0.9,
+            clearcoat: 1.0,
+            clearcoatRoughness: 0.1,
+            metalness: 0.0,
+            roughness: 0.2,
+            transmission: 0.5
+        });
+        const slime = new THREE.Mesh(slimeGeometry, slimeMaterial);
+        slime.position.y = 5;
+        scene.add(slime);
+
+        // 床の追加
+        const floorGeometry = new THREE.PlaneGeometry(20, 20); // より広い床
+        const floorMaterial = new THREE.MeshPhongMaterial({ 
+            color: 0xa0a0a0,
+            shininess: 100
+        });
+        const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+        floor.rotation.x = -Math.PI / 2;
+        floor.position.y = -2;
+        scene.add(floor);
+
+        // 環境光の追加
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.8); // より明るく
+        scene.add(ambientLight);
+
+        // メインライトの追加
+        const light = new THREE.DirectionalLight(0xffffff, 1.2);
+        light.position.set(5, 5, 5);
+        scene.add(light);
+
+        // 補助ライトの追加
+        const backLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        backLight.position.set(-5, 3, -5);
+        scene.add(backLight);
+
+        // カメラの位置設定
+        camera.position.z = 8;
+        camera.position.y = 3;
+        camera.lookAt(0, 0, 0);
+
+        // 物理パラメータ
+        let velocity = 0;
+        const gravity = 0.015;
+        const bounce = 0.7;
+        let phase = 0;
+
+        // アニメーション
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // 重力と跳ね返りの計算
+            velocity -= gravity;
+            slime.position.y += velocity;
+
+            // 床との衝突判定
+            if (slime.position.y <= -1) {
+                slime.position.y = -1;
+                velocity = Math.abs(velocity) * bounce;
+            }
+
+            // スライムの変形
+            phase += 0.1;
+            const verticalSquish = 1 - Math.abs(velocity) * 0.15;
+            const wobble = Math.sin(phase) * 0.1 * Math.abs(velocity);
+            
+            // Y軸方向の圧縮
+            slime.scale.y = verticalSquish;
+            
+            // X/Z軸方向の膨張（質量保存の法則に基づく）
+            const horizontalScale = 1 / Math.sqrt(verticalSquish);
+            slime.scale.x = horizontalScale * (1 + wobble);
+            slime.scale.z = horizontalScale * (1 - wobble);
+
+            // スライムの回転（着地時の変形表現）
+            if (slime.position.y <= -0.9) {
+                slime.rotation.y += wobble * 0.1;
+            }
+
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        // ウィンドウリサイズ対応
+        window.addEventListener('resize', onWindowResize, false);
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+    </script>
+</body>
+</html>

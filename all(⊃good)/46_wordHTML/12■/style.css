@@ -1,0 +1,55 @@
+/* style.css */
+
+body {
+    background-color: #e0e0e0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 20px;
+    box-sizing: border-box;
+}
+
+.page {
+    background-color: white;
+    width: 210mm;
+    height: 297mm;
+    padding: 2cm;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+    box-sizing: border-box;
+    margin-bottom: 30px;
+    display: flex;
+    overflow: hidden; /* 内部のtextareaがはみ出さないように */
+}
+
+.page:last-child {
+    margin-bottom: 40px;
+}
+
+textarea {
+    width: 100%;
+    height: 100%;
+    border: none;
+    outline: none;
+    resize: none;
+    background: none;
+    padding: 0;
+    font-family: "游明朝", YuMincho, "ヒラギノ明朝 ProN W3", "Hiragino Mincho ProN", "ＭＳ Ｐ明朝", "MS PMincho", serif;
+    font-size: 11pt;
+    line-height: 1.8;
+    overflow: hidden; /* ★★★★★ スクロールバーを常に非表示にする ★★★★★ */
+}
+
+@media print {
+    body { background-color: white; padding: 0; margin: 0; }
+    .page {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        box-shadow: none;
+        padding: 1.5cm;
+        page-break-after: always;
+        overflow: visible;
+    }
+    .page:last-child { page-break-after: auto; }
+    textarea { overflow: visible; }
+}

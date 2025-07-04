@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>25</title>
+</head>
+<body>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>テキストのA4ページ分割ツール</title>
+    <style>
+        /* ページ全体のスタイル */
+        body {
+            font-family: sans-serif;
+            line-height: 1.6;
+            padding: 20px;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        h1 {
+            text-align: center;
+            color: #444;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        textarea {
+            width: 100%;
+            height: 250px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+            box-sizing: border-box; /* paddingを含めて幅を計算 */
+        }
+        button {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            margin-top: 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #outputLinks {
+            margin-top: 30px;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+        #outputLinks h2 {
+            margin-top: 0;
+        }
+        #outputLinks a {
+            display: block;
+            margin-bottom: 10px;
+            padding: 10px;
+            background-color: #e9ecef;
+            border-radius: 4px;
+            text-decoration: none;
+            color: #007bff;
+        }
+        #outputLinks a:hover {
+            background-color: #dee2e6;
+        }
+
+        /* 生成されるHTMLファイル内のA4ページを定義するスタイル */
+        /* このスタイルはJavaScriptによって各HTMLファイルに埋め込まれます */
+        .a4-page {
+            width: 210mm;
+            height: 297mm;
+            padding: 20mm; /* 上下左右の余白 */
+            box-sizing: border-box;
+            background: white;
+            color: black;
+            font-family: 'Times New Roman', serif;
+            font-size: 12pt;
+            line-height: 1.5;
+            overflow: hidden; /* はみ出した部分は表示しない */
+            /* 印刷時にきれいに見えるように */
+            page-break-after: always;
+            border: 1px solid #ccc; /* 画面上で見やすくするための枠線 */
+            margin: 20px auto;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>テキストのA4ページ分割ツール</h1>
+        <p>ここにテキストを入力または貼り付けてください。下のボタンを押すと、A4サイズで1ページずつに分割されたHTMLファイルのダウンロードリンクが生成されます。</p>
+        
+        <textarea id="inputText" placeholder="ここに長文テキストを貼り付けます..."></textarea>
+        
+        <button id="generateButton">ページ分割してHTMLを生成</button>
+        
+        <div id="outputLinks">
+            <!-- 生成されたダウンロードリンクがここに表示されます -->
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('generateButton').addEventListener('click', async () => {
+            const fullText = document.getElementById('inputText').value;
+            const outputLinksDiv = document.getElementById('outputLinks');
+            
+            // 以前の結果をクリア
+            outputLinksDiv.innerHTML = '<h2>生成中...</h2>';
+
+            if (fullText.trim() === '') {
+                outputLinksDiv.innerHTML = '<h2>テキストが入力されていません。</h2>';
+                return;
+            }
+
+            // ページ分割処理
+            const pages = await paginateText(fullText);
+
+            // 結果の表示を更新
+            outputLinksDiv.innerHTML = '<h2>ダウンロードリンク</h2>';
+            if (pages.length === 0) {
+                outputLinksDiv.innerHTML += '<p>テキストが短いため、ページは生成されませんでした。</p>';
+                return;
+            }
+
+            pages.forEach((pageText, index) => {
+                const pageNum = index + 1;
+                const blob = new Blob([createPageHtml(pageText, pageNum)], { type: 'text/html' });
+                const url = URL.createObjectURL(blob);
+                
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `page_${pageNum}.html`;
+                link.textContent = `ページ ${pageNum} をダウンロード`;
+                
+                outputLinksDiv.appendChild(link);
+            });
+        });
+
+        /**
+         * テキストをA4ページに分割する非同期関数
+         * @param {string} text - 分割対象の全文テキスト
+         * @returns {Promise<string[]>} - ページごとのテキストの配列
+         */
+        async function paginateText(text) {
+            const pages = [];
+            let remainingText = text;
+
+            // 計測用の非表示divを作成
+            const measureDiv = document.createElement('div');
+            // A4ページのスタイルを適用
+            measureDiv.style.width = '210mm';
+            measureDiv.style.height = '297mm';
+            measureDiv.style.padding = '20mm';
+            measureDiv.style.boxSizing = 'border-box';
+            measureDiv.style.fontFamily = "'Times New Roman', serif";
+            measureDiv.style.fontSize = '12pt';
+            measureDiv.style.lineHeight = '1.5';
+            
+            // 画面外に配置して見えなくする
+            measureDiv.style.position = 'absolute';
+            measureDiv.style.left = '-9999px';
+            measureDiv.style.top = '-9999px';
+            measureDiv.style.whiteSpace = 'pre-wrap'; // 改行やスペースを維持
+            measureDiv.style.wordBreak = 'break-word'; // 単語の途中でも改行
+
+            document.body.appendChild(measureDiv);
+
+            // 計測用の高さを取得
+            const pageHeight = measureDiv.clientHeight;
+
+            // テキストがなくなるまでループ
+            while (remainingText.length > 0) {
+                let currentPageText = '';
+                // 1文字ずつ追加して高さをチェックする
+                for (let i = 0; i < remainingText.length; i++) {
+                    const testText = currentPageText + remainingText[i];
+                    measureDiv.innerText = testText;
+
+                    if (measureDiv.scrollHeight > pageHeight) {
+                        // 高さを超えたら、この文字を含めずにループを抜ける
+                        break;
+                    }
+                    currentPageText = testText;
+                }
+                
+                pages.push(currentPageText);
+                remainingText = remainingText.substring(currentPageText.length);
+                
+                // 無限ループ防止
+                if (currentPageText.length === 0 && remainingText.length > 0) {
+                    console.error("無限ループを検出しました。分割を中止します。");
+                    break;
+                }
+            }
+
+            // 計測用のdivを削除
+            document.body.removeChild(measureDiv);
+
+            return pages;
+        }
+
+        /**
+         * 1ページ分のHTMLコンテンツを生成する関数
+         * @param {string} textContent - ページに表示するテキスト
+         * @param {number} pageNum - ページ番号
+         * @returns {string} - 完全なHTML文字列
+         */
+        function createPageHtml(textContent, pageNum) {
+            // preタグを使うと、入力された改行やスペースがそのまま反映されて便利
+            const sanitizedText = textContent.replace(/&/g, '&').replace(/</g, '<').replace(/>/g, '>');
+
+            return `<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>ページ ${pageNum}</title>
+    <style>
+        body {
+            margin: 0;
+            background-color: #eee; /* 印刷プレビューで見やすいように背景色を設定 */
+        }
+        .a4-page {
+            width: 210mm;
+            min-height: 297mm; /* テキストが少なくても高さを維持 */
+            padding: 20mm;
+            margin: 20px auto; /* 中央に表示 */
+            box-sizing: border-box;
+            background: white;
+            color: black;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            font-family: 'Times New Roman', serif;
+            font-size: 12pt;
+            line-height: 1.5;
+        }
+        pre {
+            white-space: pre-wrap; /* 自動で折り返す */
+            word-wrap: break-word; /* 長い単語も折り返す */
+            margin: 0;
+            font-family: inherit; /* 親のフォントを継承 */
+            font-size: inherit;   /* 親のフォントサイズを継承 */
+        }
+    </style>
+</head>
+<body>
+    <div class="a4-page">
+        <pre>${sanitizedText}</pre>
+    </div>
+</body>
+</html>`;
+        }
+    </script>
+
+</body>
+</html>
+</body>
+</html>

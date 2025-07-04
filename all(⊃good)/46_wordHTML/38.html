@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>38</title>
+</head>
+<body>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>テキストA4グリッド結合（最終版）</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            line-height: 1.6;
+            padding: 20px;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        h1 {
+            text-align: center;
+            color: #444;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        textarea {
+            width: 100%;
+            height: 250px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        button {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            margin-top: 20px;
+            background-color: #fd7e14;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #e86a02;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .status-container {
+            margin-top: 30px;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+            text-align: center;
+            font-size: 1.1em;
+        }
+        #progress-bar {
+            width: 100%;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 10px;
+        }
+        #progress-bar::-webkit-progress-bar {
+            background-color: #eee;
+            border-radius: 5px;
+        }
+        #progress-bar::-webkit-progress-value {
+            background-color: #007bff;
+            border-radius: 5px;
+            transition: width 0.1s linear;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>テキストA4グリッド結合（最終版）</h1>
+        <p>テキストを入力すると、1ページ35行で分割し、ウィンドウサイズに自動で収まるグリッド状のHTMLとしてダウンロードします。</p>
+        
+        <textarea id="inputText" placeholder="ここに長文テキストを貼り付けます..."></textarea>
+        
+        <button id="generateButton">35行で分割してダウンロード</button>
+        
+        <div class="status-container" id="statusContainer">
+            <!-- 進捗状況がここに表示されます -->
+        </div>
+    </div>
+
+    <script>
+        const generateButton = document.getElementById('generateButton');
+        const inputText = document.getElementById('inputText');
+        const statusContainer = document.getElementById('statusContainer');
+        
+        const MAX_LINES = 35;
+
+        // 生成されるHTMLページのデザイン設定
+        const pageStyles = {
+            fontFamily: "'Yu Mincho', '游明朝', 'Hiragino Mincho ProN', 'MS PMincho', serif",
+            fontSize: '10.5pt',
+            lineHeight: '1.7',
+            padding: '25mm 20mm'
+        };
+
+        generateButton.addEventListener('click', async () => {
+            const fullText = inputText.value;
+            if (fullText.trim() === '') {
+                statusContainer.innerHTML = '<p style="color: red;">テキストが入力されていません。</p>';
+                return;
+            }
+
+            generateButton.disabled = true;
+            generateButton.textContent = '処理中...';
+            statusContainer.innerHTML = `
+                <p id="statusText">ページの分割処理を開始します...</p>
+                <progress id="progressBar" value="0" max="100"></progress>
+            `;
+            const statusText = document.getElementById('statusText');
+            const progressBar = document.getElementById('progressBar');
+
+            const pages = await paginateByLines(fullText, MAX_LINES, (progress) => {
+                const percent = Math.round(progress * 100);
+                statusText.textContent = `ページ分割中... (${percent}%)`;
+                progressBar.value = percent;
+            });
+            
+            if (pages.length === 0) {
+                statusContainer.innerHTML = '<p>テキストが短いため、ページは生成されませんでした。</p>';
+            } else {
+                statusText.textContent = `${pages.length} ページに分割しました。HTMLを生成中...`;
+                progressBar.value = 100;
+
+                const n = Math.ceil(Math.sqrt(pages.length));
+                const combinedHtml = createGridHtml(pages, n);
+
+                const blob = new Blob([combinedHtml], { type: 'text/html' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = 'combined_pages.html';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+
+                statusText.innerHTML = `<p style="color: green; font-weight: bold;">完了: combined_pages.html をダウンロードしました。</p>`;
+            }
+
+            generateButton.disabled = false;
+            generateButton.textContent = `${MAX_LINES}行で分割してダウンロード`;
+        });
+
+        async function paginateByLines(text, maxLines, onProgress) {
+            const pages = [];
+            let remainingText = text;
+
+            const measureDiv = document.createElement('div');
+            measureDiv.style.width = `calc(210mm - ${pageStyles.padding.split(' ')[1]} * 2)`;
+            measureDiv.style.fontFamily = pageStyles.fontFamily;
+            measureDiv.style.fontSize = pageStyles.fontSize;
+            measureDiv.style.lineHeight = pageStyles.lineHeight;
+            measureDiv.style.position = 'absolute';
+            measureDiv.style.left = '-9999px';
+            measureDiv.style.top = '-9999px';
+            measureDiv.style.whiteSpace = 'pre-wrap';
+            measureDiv.style.wordBreak = 'break-word';
+            document.body.appendChild(measureDiv);
+            
+            measureDiv.innerText = 'あ';
+            const singleLineHeight = measureDiv.scrollHeight;
+            
+            const totalLength = text.length;
+
+            while (remainingText.length > 0) {
+                let low = 0;
+                let high = remainingText.length;
+                let bestFitIndex = 0;
+
+                while (low <= high) {
+                    const mid = Math.floor((low + high) / 2);
+                    if (mid === 0) { break; }
+                    measureDiv.innerText = remainingText.substring(0, mid);
+                    
+                    const currentLines = Math.round(measureDiv.scrollHeight / singleLineHeight);
+                    
+                    if (currentLines <= maxLines) {
+                        bestFitIndex = mid;
+                        low = mid + 1;
+                    } else {
+                        high = mid - 1;
+                    }
+                }
+                
+                if (bestFitIndex === 0 && remainingText.length > 0) { bestFitIndex = 1; }
+                
+                const currentPageText = remainingText.substring(0, bestFitIndex);
+                pages.push(currentPageText);
+                remainingText = remainingText.substring(bestFitIndex);
+
+                onProgress((totalLength - remainingText.length) / totalLength);
+                await new Promise(resolve => setTimeout(resolve, 0)); 
+            }
+
+            document.body.removeChild(measureDiv);
+            return pages;
+        }
+        
+        function createGridHtml(pages, gridN) {
+            const pageHtmlElements = pages.map((pageText, index) => {
+                const pageNum = index + 1;
+                const sanitizedText = pageText.replace(/&/g, '&').replace(/</g, '<').replace(/>/g, '>');
+                return `<div class="a4-page"><pre>${sanitizedText}</pre><div class="page-number">${pageNum}</div></div>`;
+            }).join('');
+
+            return `<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>結合ページ (${pages.length}ページ)</title>
+    <style>
+        body {
+            background-color: #323639;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+        .grid-wrapper {
+            transform-origin: center center;
+            transition: transform 0.2s ease-out;
+        }
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(${gridN}, 210mm);
+            gap: 20px;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .a4-page {
+            width: 210mm;
+            height: 297mm;
+            padding: ${pageStyles.padding};
+            box-sizing: border-box;
+            background: white;
+            color: black;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            font-family: ${pageStyles.fontFamily};
+            font-size: ${pageStyles.fontSize};
+            line-height: ${pageStyles.lineHeight};
+            position: relative;
+            overflow: hidden;
+        }
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            margin: 0;
+            font-family: inherit;
+            font-size: inherit;
+            height: 100%;
+            overflow: hidden;
+        }
+        .page-number {
+            position: absolute;
+            bottom: 15mm;
+            right: 20mm;
+            font-size: 10pt;
+            color: #666;
+        }
+        @media print {
+            body {
+                background-color: white;
+                padding: 0;
+                display: block;
+                overflow: visible;
+                min-height: auto;
+            }
+            .grid-wrapper {
+                transform: none !important;
+            }
+            .grid-container {
+                display: block;
+                padding: 0;
+            }
+            .a4-page {
+                box-shadow: none;
+                margin: 0;
+                page-break-after: always;
+            }
+            .a4-page:last-child {
+                page-break-after: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="grid-wrapper">
+        <div class="grid-container">
+            ${pageHtmlElements}
+        </div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const wrapper = document.querySelector('.grid-wrapper');
+            const grid = document.querySelector('.grid-container');
+            function adjustScale() {
+                if (!grid) return;
+                const idealWidth = grid.offsetWidth;
+                const idealHeight = grid.offsetHeight;
+                const windowWidth = window.innerWidth;
+                const windowHeight = window.innerHeight;
+                const scale = Math.min(windowWidth / idealWidth, windowHeight / idealHeight);
+                wrapper.style.transform = \`scale(\${scale})\`;
+            }
+            adjustScale();
+            window.addEventListener('resize', adjustScale);
+        });
+    <\/script>
+</body>
+</html>`;
+        }
+    </script>
+
+</body>
+</html>
+</body>
+</html>

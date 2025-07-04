@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>パーティクル</title>
+</head>
+<body>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>激しいパーティクルアート | three.js</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #000000;
+        }
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+        // === シェーダーコード ==============================================
+        // 頂点シェーダー: 各パーティクルの位置やサイズを計算する
+        const vertexShader = `
+            uniform float uTime;
+            uniform float uPixelRatio;
+            uniform vec2 uMouse;
+
+            attribute vec3 aRandom; // 各パーティクル固有のランダム値
+
+            varying float vDistance; // フラグメントシェーダーに渡す距離
+
+            void main() {
+                // 3D空間での位置を計算
+                vec3 pos = position;
+
+                // 時間とランダム値を使って、サイン波・コサイン波で有機的な動きを生成
+                pos.x += sin(uTime * aRandom.x + pos.y * 2.0) * 2.5;
+                pos.y += cos(uTime * aRandom.y + pos.x * 2.0) * 2.5;
+                pos.z += sin(uTime * aRandom.z + pos.y * 2.0) * 2.5;
+
+                // マウスからの反発効果
+                vec2 mouseNDC = uMouse * 2.0 - 1.0;
+                vec2 posNDC = vec2(pos.x / 10.0, pos.y / 10.0); // 簡易的な正規化
+                float mouseDist = distance(posNDC, mouseNDC);
+
+                // マウスに近いほど強く反発する
+                float repulsionStrength = smoothstep(0.3, 0.0, mouseDist) * 3.0;
+                vec3 repulsionDir = normalize(pos - vec3(mouseNDC.x * 10.0, mouseNDC.y * 10.0, pos.z));
+                pos += repulsionDir * repulsionStrength;
+
+                // 最終的な頂点位置
+                vec4 modelPosition = modelMatrix * vec4(pos, 1.0);
+                vec4 viewPosition = viewMatrix * modelPosition;
+                vec4 projectedPosition = projectionMatrix * viewPosition;
+
+                gl_Position = projectedPosition;
+
+                // パーティクルのサイズを計算
+                // 遠くのパーティクルは小さく、近くは大きく
+                gl_PointSize = 20.0 * aRandom.z * uPixelRatio;
+                gl_PointSize *= (1.0 / -viewPosition.z);
+                
+                vDistance = mouseDist;
+            }
+        `;
+
+        // フラグメントシェーダー: 各パーティクルの色を計算する
+        const fragmentShader = `
+            uniform float uTime;
+            varying float vDistance;
+
+            // HSLをRGBに変換する関数
+            vec3 hsl2rgb(vec3 c) {
+                vec3 rgb = clamp(abs(mod(c.x*6.0+vec3(0.0,4.0,2.0), 6.0)-3.0)-1.0, 0.0, 1.0);
+                return c.z + c.y * (rgb-0.5)*(1.0-abs(2.0*c.z-1.0));
+            }
+
+            void main() {
+                // 円形のパーティクルを描画
+                float dist = distance(gl_PointCoord, vec2(0.5));
+                if (dist > 0.5) {
+                    discard;
+                }
+
+                // 色を時間とマウスからの距離で変化させる
+                float hue = mod(uTime * 0.05 + vDistance * 0.5, 1.0);
+                float saturation = 0.8;
+                float lightness = 0.6;
+                
+                // マウスに近いほど白く光る
+                lightness = mix(lightness, 1.0, smoothstep(0.2, 0.0, vDistance));
+                
+                vec3 color = hsl2rgb(vec3(hue, saturation, lightness));
+                
+                // 円の中心を明るく、縁を暗くして立体感を出す
+                float strength = 1.0 - dist * 2.0;
+
+                gl_FragColor = vec4(color, strength);
+            }
+        `;
+
+        // === Three.jsの初期化 ==============================================
+        class Sketch {
+            constructor() {
+                this.scene = new THREE.Scene();
+                this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+                this.camera.position.z = 20;
+
+                this.renderer = new THREE.WebGLRenderer({ antialias: true });
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+                this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                document.body.appendChild(this.renderer.domElement);
+
+                this.clock = new THREE.Clock();
+                this.mouse = new THREE.Vector2(0.5, 0.5);
+
+                this.init();
+                this.addEventListeners();
+                this.animate();
+            }
+
+            init() {
+                this.createParticles();
+                this.initPostProcessing();
+            }
+            
+            createParticles() {
+                const particleCount = 50000;
+                const geometry = new THREE.BufferGeometry();
+
+                const positions = new Float32Array(particleCount * 3);
+                const randoms = new Float32Array(particleCount * 3);
+
+                for (let i = 0; i < particleCount; i++) {
+                    // 初期位置を球状にランダム配置
+                    const i3 = i * 3;
+                    const radius = Math.random() * 15;
+                    const theta = Math.random() * Math.PI * 2;
+                    const phi = Math.acos(Math.random() * 2 - 1);
+                    positions[i3 + 0] = radius * Math.sin(phi) * Math.cos(theta);
+                    positions[i3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
+                    positions[i3 + 2] = radius * Math.cos(phi);
+
+                    // 動きの多様性を出すためのランダム値
+                    randoms[i3 + 0] = (Math.random() - 0.5) * 2.0; // 速度係数
+                    randoms[i3 + 1] = (Math.random() - 0.5) * 2.0; // 速度係数
+                    randoms[i3 + 2] = Math.random() * 0.5 + 0.5;   // サイズ係数
+                }
+
+                geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                geometry.setAttribute('aRandom', new THREE.BufferAttribute(randoms, 3));
+
+                this.particleMaterial = new THREE.ShaderMaterial({
+                    vertexShader: vertexShader,
+                    fragmentShader: fragmentShader,
+                    uniforms: {
+                        uTime: { value: 0.0 },
+                        uPixelRatio: { value: Math.min(window.devicePixelRatio, 2) },
+                        uMouse: { value: this.mouse },
+                    },
+                    blending: THREE.AdditiveBlending, // 加算合成で光っているように見せる
+                    depthTest: false,
+                    transparent: true,
+                });
+
+                this.particles = new THREE.Points(geometry, this.particleMaterial);
+                this.scene.add(this.particles);
+            }
+
+            initPostProcessing() {
+                this.composer = new EffectComposer(this.renderer);
+                this.composer.addPass(new RenderPass(this.scene, this.camera));
+
+                const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
+                bloomPass.threshold = 0.1;
+                bloomPass.strength = 1.2; // 光の強さ
+                bloomPass.radius = 0.5;
+                this.composer.addPass(bloomPass);
+            }
+
+            addEventListeners() {
+                window.addEventListener('resize', this.onWindowResize.bind(this));
+                window.addEventListener('mousemove', this.onMouseMove.bind(this));
+            }
+
+            onWindowResize() {
+                this.camera.aspect = window.innerWidth / window.innerHeight;
+                this.camera.updateProjectionMatrix();
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+                this.composer.setSize(window.innerWidth, window.innerHeight);
+                this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                this.particleMaterial.uniforms.uPixelRatio.value = Math.min(window.devicePixelRatio, 2);
+            }
+
+            onMouseMove(event) {
+                this.mouse.x = event.clientX / window.innerWidth;
+                this.mouse.y = 1.0 - (event.clientY / window.innerHeight); // Y軸を反転
+            }
+
+            animate() {
+                requestAnimationFrame(this.animate.bind(this));
+
+                const elapsedTime = this.clock.getElapsedTime();
+                this.particleMaterial.uniforms.uTime.value = elapsedTime;
+
+                // パーティクル全体をゆっくり回転させる
+                this.particles.rotation.y = elapsedTime * 0.05;
+                this.particles.rotation.x = elapsedTime * 0.05;
+
+                // renderer.render(this.scene, this.camera);
+                // ポストプロセッシングを有効にするため、composerでレンダリング
+                this.composer.render();
+            }
+        }
+
+        new Sketch();
+
+    </script>
+</body>
+</html>
+</body>
+</html>

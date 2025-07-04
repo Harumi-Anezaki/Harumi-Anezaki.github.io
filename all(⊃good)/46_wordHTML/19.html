@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>19</title>
+</head>
+<body>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web版シンプルワープロ</title>
+    <style>
+        /* NF-4: CSSはBEMを意識した命名規則を採用 */
+
+        /* 基本スタイル */
+        :root {
+            --a4-aspect-ratio: 210 / 297;
+            --page-width-vw: 70; /* ビューポート幅に対するページの幅 */
+            --page-margin: 20px; /* ページ間のマージン */
+            
+            /* FR-1-2: A4用紙の余白設定 (mmをpxに近似) */
+            /* 96DPI換算: 1mm = 3.78px */
+            --margin-top: 25mm;
+            --margin-bottom: 25mm;
+            --margin-left: 20mm;
+            --margin-right: 20mm;
+        }
+
+        body {
+            margin: 0;
+            background-color: #f0f2f5;
+            font-family: 'Hiragino Kaku Gothic ProN', 'ヒラギノ角ゴ ProN W3', 'Meiryo', 'メイリオ', sans-serif;
+            font-size: 16px;
+            line-height: 1.7;
+        }
+        
+        /* アプリケーション全体 */
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        header {
+            background-color: #fff;
+            padding: 10px 20px;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        header h1 {
+            font-size: 1.2em;
+            margin: 0;
+        }
+        
+        /* FR-4-2: 印刷ボタン */
+        #print-button {
+            padding: 8px 16px;
+            border: 1px solid #ccc;
+            background-color: #fff;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        #print-button:hover {
+            background-color: #f5f5f5;
+        }
+
+        main {
+            flex-grow: 1;
+            padding: 20px 0;
+        }
+
+        /* FR-1-1: ページコンテナとページレイアウト */
+        .pages-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: var(--page-margin);
+        }
+
+        .page {
+            width: calc(var(--page-width-vw) * 1vw);
+            max-width: 794px; /* A4 210mm @ 96DPI */
+            aspect-ratio: var(--a4-aspect-ratio);
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden; /* ページ外のレンダリングを防ぐ */
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* FR-1-2: ページ内部の余白 */
+        /* FR-2-1: contenteditableな入力領域 */
+        .page .content {
+            flex-grow: 1;
+            padding: var(--margin-top) var(--margin-right) var(--margin-bottom) var(--margin-left);
+            outline: none; /* フォーカス時の枠線を消す */
+            overflow-y: hidden; /* スクロールバーを非表示に */
+            word-wrap: break-word;
+        }
+
+        /* FR-4-1: ステータスバー */
+        .status-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: #333;
+            color: white;
+            padding: 5px 20px;
+            font-size: 0.9em;
+            display: flex;
+            justify-content: flex-end;
+            gap: 20px;
+            z-index: 1000;
+            box-sizing: border-box;
+        }
+
+        /* FR-4-2: 印刷用スタイル */
+        @media print {
+            body {
+                background-color: white;
+            }
+            header, .status-bar, #print-button {
+                display: none;
+            }
+            main {
+                padding: 0;
+            }
+            .pages-container {
+                gap: 0;
+            }
+            .page {
+                width: 210mm;
+                height: 297mm;
+                box-shadow: none;
+                margin: 0;
+                page-break-after: always; /* 各ページの後で改ページ */
+            }
+            .page:last-child {
+                page-break-after: auto;
+            }
+            .page .content {
+                 /* 印刷時の内部余白を再設定 */
+                padding: var(--margin-top) var(--margin-right) var(--margin-bottom) var(--margin-left);
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <header>
+            <h1>Web版シンプルワープロ</h1>
+            <!-- FR-4-2: 印刷ボタン -->
+            <button id="print-button">印刷</button>
+        </header>
+
+        <main>
+            <!-- FR-1-1: ページコンテナ -->
+            <div id="pages-container" class="pages-container">
+                <!-- ページはJavaScriptによって動的に生成されます -->
+            </div>
+        </main>
+        
+        <!-- FR-4-1: ステータスバー -->
+        <footer class="status-bar">
+            <span id="page-counter">ページ: 1 / 1</span>
+            <span id="char-counter">文字数: 0</span>
+        </footer>
+    </div>
+    
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+
+        const pagesContainer = document.getElementById('pages-container');
+        const printButton = document.getElementById('print-button');
+        const pageCounter = document.getElementById('page-counter');
+        const charCounter = document.getElementById('char-counter');
+        
+        const PAGE_BREAK_SEPARATOR = '---PAGE_BREAK---';
+        let debounceTimer = null;
+
+        // ======================================================================
+        // 初期化処理
+        // ======================================================================
+
+        /**
+         * アプリケーションを初期化する
+         */
+        function initialize() {
+            // FR-5-2: データ復元
+            const savedContent = localStorage.getItem('editorContent');
+            if (savedContent) {
+                restoreContent(savedContent);
+            } else {
+                // 保存されたデータがない場合、最初のページを作成
+                createNewPage();
+            }
+            
+            updateStatus();
+            addEventListeners();
+
+            // 最初のページにフォーカスを当てる
+            const firstPageContent = pagesContainer.querySelector('.content');
+            if (firstPageContent) {
+                firstPageContent.focus();
+            }
+        }
+
+
+        // ======================================================================
+        // ページ管理 (FR-1, FR-3)
+        // ======================================================================
+
+        /**
+         * 新しいページ要素を作成してDOMに追加する (FR-3-2)
+         * @param {string} [initialHTML=''] - ページに初期設定するHTMLコンテンツ
+         * @returns {HTMLElement} 作成されたページ要素
+         */
+        function createNewPage(initialHTML = '') {
+            const page = document.createElement('div');
+            page.className = 'page';
+            
+            const content = document.createElement('div');
+            content.className = 'content';
+            content.contentEditable = true; // FR-2-1
+            content.innerHTML = initialHTML;
+            
+            page.appendChild(content);
+            pagesContainer.appendChild(page);
+            
+            addContentEventListeners(content); // 新しいページにもイベントリスナーを追加
+            return page;
+        }
+
+        /**
+         * 指定されたページのオーバーフローをチェックし、必要に応じて改ページ処理を実行する
+         * @param {HTMLElement} contentEl - チェック対象のcontent要素
+         */
+        function checkAndHandleOverflow(contentEl) {
+            // FR-3-1: オーバーフロー検知
+            if (contentEl.scrollHeight <= contentEl.clientHeight) {
+                return; // オーバーフローしていない
+            }
+
+            const pageEl = contentEl.closest('.page');
+            let nextPage = pageEl.nextElementSibling;
+            
+            // FR-3-2: 新規ページ生成
+            if (!nextPage) {
+                nextPage = createNewPage();
+            }
+            const nextPageContent = nextPage.querySelector('.content');
+            
+            const selection = window.getSelection();
+            const range = selection.getRangeAt(0);
+            const originalCaretPosition = { container: range.startContainer, offset: range.startOffset };
+
+            // FR-3-2: コンテンツ移動
+            // オーバーフローが解消されるまで、末尾のノードを次のページに移動する
+            while (contentEl.scrollHeight > contentEl.clientHeight) {
+                const lastNode = contentEl.lastChild;
+                if (!lastNode) break;
+
+                // 末尾のノードを次のページの先頭に移動
+                nextPageContent.insertBefore(lastNode, nextPageContent.firstChild);
+            }
+            
+            // カーソル位置の再設定
+            // 元のカーソルが移動したノード内にあったかなどを考慮するのは複雑なため、
+            // ここではシンプルに現在のページの末尾にフォーカスを移動する
+            // 実際には、より洗練されたカーソル管理が必要 (NF-3)
+            moveCaretToEnd(contentEl);
+
+            updateStatus();
+            saveContentWithDebounce();
+
+            // 移動後、次のページもオーバーフローしている可能性があるので再帰的にチェック
+            checkAndHandleOverflow(nextPageContent);
+        }
+
+        /**
+         * ページの結合処理 (リフロー) (FR-3-3)
+         * @param {HTMLElement} contentEl - チェック対象のcontent要素
+         */
+        function checkAndHandleMerge(contentEl) {
+            const pageEl = contentEl.closest('.page');
+            const nextPage = pageEl.nextElementSibling;
+
+            if (!nextPage) return; // 次のページがない
+
+            const nextPageContent = nextPage.querySelector('.content');
+
+            // 次のページのコンテンツを現在のページに移動してもオーバーフローしないかチェック
+            // 簡易的なチェック: 現在の空きスペース > 次のページコンテンツの高さ
+            const currentContentHeight = contentEl.scrollHeight;
+            const nextContentHeight = nextPageContent.scrollHeight;
+            const pageClientHeight = contentEl.clientHeight;
+
+            if (pageClientHeight - currentContentHeight > nextContentHeight) {
+                const selection = window.getSelection();
+                const range = selection.getRangeAt(0);
+                const caretContainer = range.startContainer;
+                const caretOffset = range.startOffset;
+
+                // 次のページの子ノードをすべて現在のページの末尾に移動
+                while(nextPageContent.firstChild) {
+                    contentEl.appendChild(nextPageContent.firstChild);
+                }
+                
+                // 次のページをDOMから削除
+                nextPage.remove();
+
+                // カーソル位置を復元
+                try {
+                   const newRange = document.createRange();
+                   newRange.setStart(caretContainer, caretOffset);
+                   selection.removeAllRanges();
+                   selection.addRange(newRange);
+                } catch(e) {
+                    // 復元に失敗した場合は末尾に移動
+                    moveCaretToEnd(contentEl);
+                }
+
+                updateStatus();
+                saveContentWithDebounce();
+            }
+        }
+
+
+        // ======================================================================
+        // イベントハンドリング (FR-2, FR-3)
+        // ======================================================================
+        
+        function addEventListeners() {
+            // FR-4-2: 印刷
+            printButton.addEventListener('click', () => window.print());
+        }
+
+        function addContentEventListeners(contentEl) {
+            // FR-2-2, FR-3-1: 文字入力・削除時の処理
+            contentEl.addEventListener('input', (e) => {
+                checkAndHandleOverflow(e.target);
+                checkAndHandleMerge(e.target);
+                updateStatus();
+                saveContentWithDebounce();
+            });
+
+            // FR-2-3: ペースト処理
+            contentEl.addEventListener('paste', (e) => {
+                e.preventDefault();
+                const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+                document.execCommand('insertText', false, text);
+            });
+            
+            // FR-3-4: ページ間カーソル移動とBackspaceによるページ結合
+            contentEl.addEventListener('keydown', (e) => {
+                const selection = window.getSelection();
+                if (!selection.rangeCount) return;
+
+                const range = selection.getRangeAt(0);
+                const atStart = range.startOffset === 0 && range.endOffset === 0;
+
+                // ページの先頭でBackspaceキーが押された場合
+                if (e.key === 'Backspace' && atStart) {
+                    const page = contentEl.closest('.page');
+                    const prevPage = page.previousElementSibling;
+
+                    if (prevPage) {
+                        e.preventDefault(); // デフォルトの削除動作をキャンセル
+                        const prevPageContent = prevPage.querySelector('.content');
+
+                        // カーソルを前のページの末尾に移動
+                        moveCaretToEnd(prevPageContent);
+                        
+                        // 現在のページの内容を前のページの末尾に追加
+                        while (contentEl.firstChild) {
+                            prevPageContent.appendChild(contentEl.firstChild);
+                        }
+                        
+                        // 空になった現在のページを削除
+                        page.remove();
+                        
+                        updateStatus();
+                        saveContentWithDebounce();
+                        
+                        // 結合後にオーバーフローする可能性があるのでチェック
+                        checkAndHandleOverflow(prevPageContent);
+                    }
+                }
+            });
+        }
+
+
+        // ======================================================================
+        // UI/UX & データ永続化 (FR-4, FR-5)
+        // ======================================================================
+
+        /**
+         * ステータスバーの表示を更新する (FR-4-1)
+         */
+        function updateStatus() {
+            const pages = document.querySelectorAll('.page');
+            const totalPages = pages.length;
+            let totalChars = 0;
+            let currentPageNum = 0;
+
+            const currentSelection = document.getSelection();
+            const activeEl = document.activeElement;
+
+            pages.forEach((page, index) => {
+                const content = page.querySelector('.content');
+                totalChars += content.innerText.replace(/\n/g, '').length;
+
+                if (activeEl && content.contains(activeEl)) {
+                    currentPageNum = index + 1;
+                }
+            });
+            
+            if (currentPageNum === 0 && totalPages > 0) currentPageNum = 1;
+
+            pageCounter.textContent = `ページ: ${currentPageNum} / ${totalPages}`;
+            charCounter.textContent = `文字数: ${totalChars}`;
+        }
+        
+        /**
+         * コンテンツをlocalStorageに保存する（デバウンス付き） (FR-5-1)
+         */
+        function saveContentWithDebounce() {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                const allPages = Array.from(document.querySelectorAll('.page .content'));
+                const contentToSave = allPages.map(content => content.innerHTML).join(PAGE_BREAK_SEPARATOR);
+                localStorage.setItem('editorContent', contentToSave);
+                console.log('Content saved.');
+            }, 2000); // 2秒間入力がなければ保存
+        }
+        
+        /**
+         * 保存されたコンテンツを復元する (FR-5-2)
+         * @param {string} savedContent - 保存されていたコンテンツ文字列
+         */
+        function restoreContent(savedContent) {
+            pagesContainer.innerHTML = ''; // 既存のページをクリア
+            const pageContents = savedContent.split(PAGE_BREAK_SEPARATOR);
+            pageContents.forEach(html => {
+                createNewPage(html);
+            });
+        }
+        
+
+        // ======================================================================
+        // ユーティリティ関数
+        // ======================================================================
+
+        /**
+         * contenteditable要素の末尾にカーソルを移動する
+         * @param {HTMLElement} el - 対象の要素
+         */
+        function moveCaretToEnd(el) {
+            const range = document.createRange();
+            const sel = window.getSelection();
+            range.selectNodeContents(el);
+            range.collapse(false); // falseで末尾に移動
+            sel.removeAllRanges();
+            sel.addRange(range);
+            el.focus();
+        }
+
+        // ======================================================================
+        // アプリケーション実行
+        // ======================================================================
+        initialize();
+
+    });
+    </script>
+</body>
+</html>
+</body>
+</html>

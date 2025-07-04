@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>23</title>
+</head>
+<body>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Document Editor (Strict Version)</title>
+    <style>
+        /* F-01-04: ページを際立たせるための背景設定 */
+        body {
+            background-color: #F0F0F0;
+            margin: 0;
+            padding: 24px 0;
+            /* F-4.2: デフォルトのフォントスタイル */
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 12pt;
+            line-height: 1.7;
+        }
+
+        /* 4.1: アプリケーション全体のコンテナ */
+        #editor-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* 4.2 / F-01: ページ要素のスタイル */
+        .page {
+            /* F-01-02: A4用紙の物理サイズ */
+            width: 210mm;
+            min-height: 297mm; /* F-4.2: heightではなくmin-heightを使用 */
+            
+            /* F-01-03: 印刷領域を模した余白 */
+            padding: 25mm;
+
+            /* F-01-04: ページ間の間隔と影 */
+            margin: 16px 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+
+            background: white;
+            box-sizing: border-box; /* paddingを含めてサイズ計算 */
+            
+            /* F-03-07: 単語の途中での改行（禁則処理） */
+            overflow-wrap: break-word;
+            word-wrap: break-word;
+
+            /* F-4.2 / NF-02-02: contenteditableのフォーカス枠線を非表示に */
+            outline: none;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 4.1: アプリケーションのコンテナ -->
+    <main id="editor-container"></main>
+
+    <script>
+    class WebDocumentEditor {
+        /**
+         * NF-04: 保守性・拡張性のためのクラスベース設計
+         * @param {string} containerId - エディタのコンテナ要素のID
+         */
+        constructor(containerId) {
+            this.container = document.getElementById(containerId);
+            if (!this.container) {
+                throw new Error(`Editor container with id "${containerId}" not found.`);
+            }
+
+            // NF-01-03: 過剰な計算を防ぐためのDebounce処理
+            this.debouncedReflow = this.debounce(this.reflowPages.bind(this), 150);
+            
+            this.init();
+        }
+
+        /**
+         * エディタの初期化処理
+         */
+        init() {
+            // F-01-01: 最初のページを生成してエディタに追加
+            const firstPage = this.createPage();
+            this.container.appendChild(firstPage);
+
+            // ユーザーがすぐに入力できるよう、最初のページにフォーカス
+            this.placeCursorAt(firstPage, 'start');
+
+            // イベント委任: コンテナ要素でイベントを効率的に捕捉
+            this.container.addEventListener('input', this.handleInput.bind(this));
+            this.container.addEventListener('paste', this.handlePaste.bind(this));
+            this.container.addEventListener('keydown', this.handleKeyDown.bind(this));
+            
+            console.log("Web Document Editor initialized (Strict Version).");
+        }
+
+        /**
+         * F-03-03: 新しいページ要素を生成する
+         * @returns {HTMLElement} 新しいページ要素
+         */
+        createPage() {
+            const page = document.createElement('div');
+            page.className = 'page';
+            page.setAttribute('contenteditable', 'true');
+            // 空のページでもクリックしてフォーカスできるようにする
+            page.addEventListener('click', (e) => {
+                if (e.target === page && !page.hasChildNodes()) {
+                    this.placeCursorAt(page, 'start');
+                }
+            });
+            return page;
+        }
+
+        /**
+         * F-03: 自動改ページ処理（リフローとプルアップ）
+         */
+        reflowPages() {
+            const pages = Array.from(this.container.querySelectorAll('.page'));
+            let reflowNeeded = true;
+
+            // 安定するまで複数パスを実行することがある
+            while(reflowNeeded) {
+                reflowNeeded = false;
+
+                for (let i = 0; i < pages.length; i++) {
+                    const currentPage = pages[i];
+                    
+                    // F-03-01 & F-03-02: オーバーフロー処理（内容の繰り下げ）
+                    while (currentPage.scrollHeight > currentPage.clientHeight && currentPage.lastChild) {
+                        reflowNeeded = true;
+                        let nextPage = currentPage.nextElementSibling;
+                        if (!nextPage) {
+                            nextPage = this.createPage();
+                            this.container.insertBefore(nextPage, currentPage.nextSibling);
+                            pages.push(nextPage); // 配列にも追加
+                        }
+                        nextPage.prepend(currentPage.lastChild);
+                    }
+                    
+                    // F-03-04 & F-03-05: アンダーフロー処理（内容の繰り上げ）
+                    const nextPage = currentPage.nextElementSibling;
+                    if (nextPage && nextPage.hasChildNodes()) {
+                        while (nextPage.hasChildNodes()) {
+                            const nodeToMove = nextPage.firstChild;
+                            // テスト的に移動させてみて、はみ出ないか確認
+                            currentPage.appendChild(nodeToMove);
+                            if (currentPage.scrollHeight > currentPage.clientHeight) {
+                                // はみ出るので元に戻す
+                                nextPage.prepend(nodeToMove);
+                                break;
+                            }
+                            reflowNeeded = true;
+                        }
+                    }
+                }
+
+                // F-03-06: 不要になった空のページを削除
+                const allPages = Array.from(this.container.querySelectorAll('.page'));
+                for (let i = 0; i < allPages.length; i++) {
+                    const page = allPages[i];
+                    if (!page.hasChildNodes() && allPages.length > 1) {
+                         // フォーカスが当たっているページは削除しない
+                        if(document.activeElement !== page) {
+                           page.remove();
+                           reflowNeeded = true; // DOMが変更されたので再チェックが必要
+                        }
+                    }
+                }
+            }
+
+             // F-03-06: 編集によって全ページが消えてしまった場合のセーフガード
+            if (this.container.children.length === 0) {
+                const newPage = this.createPage();
+                this.container.appendChild(newPage);
+                this.placeCursorAt(newPage, 'start');
+            }
+        }
+        
+        /**
+         * F-02: テキスト入力・編集イベントのハンドリング
+         * @param {InputEvent} event
+         */
+        handleInput(event) {
+            // NF-01-01, NF-01-03: Debounceを適用し、入力応答性を維持
+            this.debouncedReflow();
+        }
+
+        /**
+         * F-04: クリップボード（ペースト）機能のハンドリング
+         * @param {ClipboardEvent} event
+         */
+        handlePaste(event) {
+            // F-04-02: デフォルトのHTMLリッチペーストをキャンセル
+            event.preventDefault();
+
+            // F-04-03: クリップボードからプレーンテキストのみを抽出
+            const text = (event.clipboardData || window.clipboardData).getData('text/plain');
+
+            if (text) {
+                // F-04-04: 抽出したテキストを現在のカーソル位置に挿入
+                document.execCommand('insertText', false, text);
+            }
+            
+            // NF-01-02: 大量ペースト後、即座にリフローを実行
+            requestAnimationFrame(() => this.reflowPages());
+        }
+
+        /**
+         * NF-02-03: フォーカス管理（ページ間のカーソル移動）
+         * @param {KeyboardEvent} event
+         */
+        handleKeyDown(event) {
+            const selection = window.getSelection();
+            if (!selection.rangeCount > 0) return;
+
+            const currentPage = selection.focusNode?.parentElement.closest('.page');
+            if (!currentPage) return;
+
+            const moveCursor = (direction) => {
+                const targetPage = direction === 'down' 
+                    ? currentPage.nextElementSibling 
+                    : currentPage.previousElementSibling;
+                
+                if (targetPage) {
+                    event.preventDefault();
+                    this.placeCursorAt(targetPage, direction === 'down' ? 'start' : 'end');
+                }
+            };
+            
+            if (event.key === 'ArrowDown') {
+                const range = selection.getRangeAt(0);
+                const cursorRect = range.getBoundingClientRect();
+                const pageRect = currentPage.getBoundingClientRect();
+                const computedStyle = window.getComputedStyle(currentPage);
+                const lineHeight = parseFloat(computedStyle.lineHeight);
+                const pageContentBottom = pageRect.top + currentPage.clientHeight - parseFloat(computedStyle.paddingBottom);
+                
+                // カーソルが最終行（またはその近く）にあるか判定
+                if (cursorRect.bottom > pageContentBottom - (lineHeight * 1.5)) {
+                    moveCursor('down');
+                }
+            } else if (event.key === 'ArrowUp') {
+                const range = selection.getRangeAt(0);
+                const cursorRect = range.getBoundingClientRect();
+                const pageRect = currentPage.getBoundingClientRect();
+                const computedStyle = window.getComputedStyle(currentPage);
+                const lineHeight = parseFloat(computedStyle.lineHeight);
+                const pageContentTop = pageRect.top + parseFloat(computedStyle.paddingTop);
+
+                // カーソルが最初の行（またはその近く）にあるか判定
+                if (cursorRect.top < pageContentTop + (lineHeight * 1.5)) {
+                    moveCursor('up');
+                }
+            }
+        }
+        
+        /**
+         * 指定した要素の指定した位置にカーソルを配置するヘルパー関数
+         * @param {HTMLElement} element - カーソルを置く要素
+         * @param {'start'|'end'} position - 'start' (先頭) または 'end' (末尾)
+         */
+        placeCursorAt(element, position) {
+            element.focus();
+            const selection = window.getSelection();
+            const range = document.createRange();
+            
+            if (element.hasChildNodes()) {
+                range.selectNodeContents(element);
+                range.collapse(position === 'start');
+            } else {
+                // 子ノードがない場合は、要素自体を範囲に設定
+                range.setStart(element, 0);
+                range.collapse(true);
+            }
+
+            selection.removeAllRanges();
+            selection.addRange(range);
+        }
+        
+        /**
+         * Debounce（間引き）ユーティリティ関数
+         * @param {Function} func - 実行する関数
+         * @param {number} delay - 遅延時間(ms)
+         * @returns {Function} デバウンスされた関数
+         */
+        debounce(func, delay) {
+            let timeout;
+            return function(...args) {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(this, args), delay);
+            };
+        }
+    }
+
+    // DOMの読み込みが完了したらエディタを起動
+    document.addEventListener('DOMContentLoaded', () => {
+        new WebDocumentEditor('editor-container');
+    });
+    </script>
+</body>
+</html>
+</body>
+</html>

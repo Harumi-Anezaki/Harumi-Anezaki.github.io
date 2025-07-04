@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>21</title>
+</head>
+<body>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Document Editor</title>
+    <style>
+        /* F-01-04, NF-02-02: 基本的なページ外観と背景 */
+        body {
+            margin: 0;
+            background-color: #F0F0F0;
+            font-family: serif; /* F-04-02: 文書として読みやすいフォント */
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        /* NF-04-02: BEM記法に準じた命名 */
+        /* 4.1. HTML構造 */
+        #editor-container {
+            padding-top: 32px;
+            padding-bottom: 32px;
+        }
+
+        /* 4.2. CSSスタイリング */
+        .page {
+            /* F-01-02: A4用紙の物理サイズ */
+            width: 210mm;
+            min-height: 297mm; /* heightではなくmin-heightでオーバーフローを検知 */
+            
+            /* F-01-03: 印刷領域を模した余白 */
+            padding: 25mm;
+            
+            /* F-01-04: ページ間の間隔と影 */
+            margin: 16px auto;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            
+            background: white;
+            box-sizing: border-box; /* paddingを含めてサイズ計算 */
+
+            /* F-03-07: 禁則処理 */
+            overflow-wrap: break-word;
+            
+            /* contenteditableのデフォルトの枠線を消す */
+            outline: none;
+
+            /* F-04-02: 基本的なテキストスタイル */
+            font-size: 12pt;
+            line-height: 1.7;
+        }
+    </style>
+</head>
+<body>
+    <!-- 4.1. HTML構造 -->
+    <main id="editor-container">
+        <!-- ページはJavaScriptによって動的に生成されます -->
+    </main>
+
+    <script>
+    /**
+     * Web Document Editor
+     * 要件定義に基づき、Vanilla JSで実装されたエディタクラス
+     * @class
+     */
+    class Editor {
+        /**
+         * @constructor
+         * @param {string} containerId - エディタのコンテナ要素のID
+         */
+        constructor(containerId) {
+            this.container = document.getElementById(containerId);
+            if (!this.container) {
+                throw new Error(`Editor container with id "${containerId}" not found.`);
+            }
+            // NF-01-03: イベント処理の間引き
+            this.debouncedUpdate = this.debounce(this.updateLayout, 100);
+            this.init();
+        }
+
+        /**
+         * エディタの初期化処理
+         */
+        init() {
+            // F-01-01: 初期ページの生成
+            this.addPage();
+            
+            // イベントリスナーをコンテナに設定（イベント委譲）
+            this.container.addEventListener('input', this.onInput.bind(this));
+            this.container.addEventListener('paste', this.onPaste.bind(this));
+            this.container.addEventListener('keydown', this.onKeyDown.bind(this));
+        }
+
+        /**
+         * 新しいページを生成してコンテナに追加する
+         * @param {HTMLElement} [afterElement=null] - この要素の後にページを挿入する
+         * @returns {HTMLElement} 生成されたページ要素
+         */
+        addPage(afterElement = null) {
+            const page = document.createElement('div');
+            page.className = 'page';
+            // F-02-02: contenteditable属性で編集を可能にする
+            page.setAttribute('contenteditable', 'true');
+
+            if (afterElement && afterElement.parentNode === this.container) {
+                afterElement.insertAdjacentElement('afterend', page);
+            } else {
+                this.container.appendChild(page);
+            }
+            return page;
+        }
+
+        /**
+         * inputイベントのハンドラ
+         * @param {InputEvent} e 
+         */
+        onInput(e) {
+            if (e.target.classList.contains('page')) {
+                this.debouncedUpdate(e.target);
+            }
+        }
+
+        /**
+         * pasteイベントのハンドラ (F-04)
+         * @param {ClipboardEvent} e
+         */
+        onPaste(e) {
+            if (!e.target.classList.contains('page')) return;
+
+            // F-04-02: デフォルトのペースト動作をキャンセル
+            e.preventDefault();
+            
+            // F-04-03: クリップボードからプレーンテキストのみを抽出
+            const text = e.clipboardData.getData('text/plain');
+
+            // F-04-04: 抽出したテキストをカーソル位置に挿入
+            // execCommandは非推奨だが、このユースケースでは最もシンプルで信頼性が高い
+            document.execCommand('insertText', false, text);
+        }
+        
+        /**
+         * keydownイベントのハンドラ
+         * カーソルキーによるページ間移動を制御 (F-02-06, NF-02-03)
+         * @param {KeyboardEvent} e 
+         */
+        onKeyDown(e) {
+            const selection = window.getSelection();
+            if (!selection.rangeCount) return;
+
+            const range = selection.getRangeAt(0);
+            const currentPage = range.startContainer.nodeType === Node.ELEMENT_NODE 
+                ? range.startContainer 
+                : range.startContainer.parentElement;
+
+            if (!currentPage.classList.contains('page')) return;
+
+            if (e.key === 'ArrowDown') {
+                if (this.isCursorAtBottom(currentPage, range)) {
+                    e.preventDefault();
+                    this.moveCursorToNextPage(currentPage);
+                }
+            } else if (e.key === 'ArrowUp') {
+                 if (this.isCursorAtTop(currentPage, range)) {
+                    e.preventDefault();
+                    this.moveCursorToPrevPage(currentPage);
+                }
+            }
+        }
+        
+        /**
+         * レイアウト更新のメインロジック
+         * @param {HTMLElement} activePage - 現在編集中のページ
+         */
+        updateLayout(activePage) {
+            this.reflow(activePage);
+            this.pullUp(activePage);
+        }
+        
+        /**
+         * リフロー処理（オーバーフローした内容を次ページに送る） (F-03-01, F-03-02, F-03-03)
+         * @param {HTMLElement} page - チェック対象のページ
+         */
+        reflow(page) {
+            // F-03-01: オーバーフロー検知
+            while (page.scrollHeight > page.clientHeight) {
+                let nextPage = page.nextElementSibling;
+                // F-03-03: 次ページがなければ新規作成
+                if (!nextPage) {
+                    nextPage = this.addPage(page);
+                }
+
+                if (page.lastChild) {
+                    // F-03-02: 内容の繰り下げ
+                    nextPage.prepend(page.lastChild);
+                } else {
+                    // ページが空なのにオーバーフローしている異常事態
+                    break;
+                }
+            }
+        }
+
+        /**
+         * プルアップ処理（後続ページの内容を繰り上げる）(F-03-04, F-03-05, F-03-06)
+         * @param {HTMLElement} page - チェック対象のページ
+         */
+        pullUp(page) {
+            const nextPage = page.nextElementSibling;
+            if (!nextPage) return;
+            
+            // F-03-04: アンダーフロー処理のトリガー
+            while (nextPage.hasChildNodes()) {
+                // 試しに次のページからノードを移動
+                page.appendChild(nextPage.firstChild);
+                
+                // 移動した結果、現在のページがオーバーフローしたら元に戻して終了
+                if (page.scrollHeight > page.clientHeight) {
+                    nextPage.prepend(page.lastChild);
+                    break;
+                }
+            }
+            
+            // F-03-06: 不要ページの削除
+            if (!nextPage.hasChildNodes() && this.container.children.length > 1) {
+                nextPage.remove();
+            }
+        }
+
+        // --- ユーティリティ & ヘルパー関数 ---
+
+        /**
+         * イベント発火を間引くためのdebounce関数 (NF-01-03)
+         * @param {Function} func - 実行したい関数
+         * @param {number} delay - 遅延時間(ms)
+         * @returns {Function}
+         */
+        debounce(func, delay) {
+            let timeout;
+            return function(...args) {
+                const context = this;
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(context, args), delay);
+            };
+        }
+
+        /**
+         * カーソルがページ最下部にあるか判定 (NF-02-03)
+         * @param {HTMLElement} page 
+         * @param {Range} range
+         * @returns {boolean}
+         */
+        isCursorAtBottom(page, range) {
+            if (!range.collapsed) return false;
+            const cursorRect = range.getClientRects()[0];
+            const pageRect = page.getBoundingClientRect();
+            // カーソルのY座標が、ページの表示可能領域の下端に非常に近いか判定
+            return cursorRect.bottom >= pageRect.bottom - (parseFloat(getComputedStyle(page).lineHeight) * 1.5);
+        }
+        
+        /**
+         * カーソルがページ最上部にあるか判定 (NF-02-03)
+         * @param {HTMLElement} page 
+         * @param {Range} range
+         * @returns {boolean}
+         */
+        isCursorAtTop(page, range) {
+            if (!range.collapsed) return false;
+            const cursorRect = range.getClientRects()[0];
+            const pageRect = page.getBoundingClientRect();
+             // カーソルのY座標が、ページの表示可能領域の上端に非常に近いか判定
+            return cursorRect.top <= pageRect.top + (parseFloat(getComputedStyle(page).lineHeight) * 1.5);
+        }
+
+        /**
+         * カーソルを次のページの先頭に移動 (NF-02-03)
+         * @param {HTMLElement} currentPage 
+         */
+        moveCursorToNextPage(currentPage) {
+            const nextPage = currentPage.nextElementSibling;
+            if (nextPage) {
+                nextPage.focus();
+                const selection = window.getSelection();
+                const range = document.createRange();
+                // ページに子ノードがあればその先頭に、なければページ自体を選択
+                if (nextPage.hasChildNodes()) {
+                    range.setStart(nextPage.firstChild, 0);
+                } else {
+                    range.setStart(nextPage, 0);
+                }
+                range.collapse(true);
+                selection.removeAllRanges();
+                selection.addRange(range);
+            }
+        }
+
+        /**
+         * カーソルを前のページの末尾に移動 (NF-02-03)
+         * @param {HTMLElement} currentPage 
+         */
+        moveCursorToPrevPage(currentPage) {
+            const prevPage = currentPage.previousElementSibling;
+            if (prevPage) {
+                prevPage.focus();
+                const selection = window.getSelection();
+                const range = document.createRange();
+                
+                let lastNode = prevPage.lastChild;
+                let offset = lastNode ? (lastNode.nodeType === Node.TEXT_NODE ? lastNode.length : 1) : 0;
+                
+                // テキストノードの最後にカーソルを置く
+                if (lastNode && lastNode.nodeType === Node.TEXT_NODE) {
+                    range.setStart(lastNode, lastNode.textContent.length);
+                } else if (lastNode) { // BRタグなどの場合
+                    range.setStartAfter(lastNode);
+                } else { // 空のページの場合
+                    range.setStart(prevPage, 0);
+                }
+                
+                range.collapse(true);
+                selection.removeAllRanges();
+                selection.addRange(range);
+            }
+        }
+    }
+
+    // DOMの読み込みが完了したらエディタを初期化
+    document.addEventListener('DOMContentLoaded', () => {
+        new Editor('editor-container');
+    });
+    </script>
+</body>
+</html>
+</body>
+</html>

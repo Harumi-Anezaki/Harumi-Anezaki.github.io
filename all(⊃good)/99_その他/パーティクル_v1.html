@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>パーティクル_v1</title>
+</head>
+<body>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>激しいパーティクルアート | Three.js</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #000000;
+        }
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <!-- Three.jsのライブラリをES Moduleとして読み込み -->
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+        }
+    }
+    </script>
+
+    <!-- メインのスクリプト -->
+    <script type="module">
+        import * as THREE from 'three';
+
+        let scene, camera, renderer, particles;
+        let originalPositions, velocities;
+        const mouse = new THREE.Vector3(10000, 10000, 10000); // マウス座標 (最初は画面外)
+
+        // --- 設定値 ---
+        const PARTICLE_COUNT = 80000;   // パーティクルの数 (多いほど高負荷)
+        const MOUSE_RADIUS = 1.5;         // マウスの影響範囲
+        const REPEL_STRENGTH = 0.1;     // マウスからの反発力
+        const RETURN_STRENGTH = 0.01;   // 元の位置に戻る力
+        const DAMPING = 0.95;           // 速度の減衰率（動きの収まりやすさ）
+
+        function init() {
+            // 1. シーンの作成
+            scene = new THREE.Scene();
+
+            // 2. カメラの作成
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.z = 10;
+
+            // 3. レンダラーの作成
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            document.body.appendChild(renderer.domElement);
+
+            // 4. パーティクルの作成
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(PARTICLE_COUNT * 3);
+            originalPositions = new Float32Array(PARTICLE_COUNT * 3);
+            velocities = new Float32Array(PARTICLE_COUNT * 3);
+
+            const sphereRadius = 5;
+            for (let i = 0; i < PARTICLE_COUNT; i++) {
+                // 球体状にランダムな点を生成
+                const u = Math.random();
+                const v = Math.random();
+                const theta = 2 * Math.PI * u;
+                const phi = Math.acos(2 * v - 1);
+                const x = sphereRadius * Math.sin(phi) * Math.cos(theta);
+                const y = sphereRadius * Math.sin(phi) * Math.sin(theta);
+                const z = sphereRadius * Math.cos(phi);
+                
+                const index = i * 3;
+                positions[index] = x;
+                positions[index + 1] = y;
+                positions[index + 2] = z;
+
+                originalPositions[index] = x;
+                originalPositions[index + 1] = y;
+                originalPositions[index + 2] = z;
+
+                velocities[index] = 0;
+                velocities[index + 1] = 0;
+                velocities[index + 2] = 0;
+            }
+
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+            const material = new THREE.PointsMaterial({
+                color: 0x00aaff,
+                size: 0.03,
+                blending: THREE.AdditiveBlending, // 加算合成で光っているように見せる
+                transparent: true,
+                opacity: 0.8
+            });
+
+            particles = new THREE.Points(geometry, material);
+            scene.add(particles);
+
+            // 5. イベントリスナーの設定
+            window.addEventListener('resize', onWindowResize);
+            window.addEventListener('mousemove', onMouseMove);
+            window.addEventListener('mouseout', onMouseOut);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+        
+        function onMouseMove(event) {
+            // マウス座標を-1から1の範囲に正規化
+            const mouseX = (event.clientX / window.innerWidth) * 2 - 1;
+            const mouseY = -(event.clientY / window.innerHeight) * 2 + 1;
+
+            // 3D空間内のマウス位置を計算
+            const vector = new THREE.Vector3(mouseX, mouseY, 0.5);
+            vector.unproject(camera);
+            const dir = vector.sub(camera.position).normalize();
+            const distance = -camera.position.z / dir.z;
+            mouse.copy(camera.position).add(dir.multiplyScalar(distance));
+        }
+        
+        function onMouseOut() {
+            // マウスが画面外に出たら、影響をなくす
+            mouse.set(10000, 10000, 10000);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const positions = particles.geometry.attributes.position.array;
+            
+            // 各パーティクルの位置を更新
+            for (let i = 0; i < PARTICLE_COUNT; i++) {
+                const index = i * 3;
+
+                const currentPos = new THREE.Vector3(positions[index], positions[index + 1], positions[index + 2]);
+                const originalPos = new THREE.Vector3(originalPositions[index], originalPositions[index + 1], originalPositions[index + 2]);
+                const velocity = new THREE.Vector3(velocities[index], velocities[index + 1], velocities[index + 2]);
+
+                // 1. マウスからの反発力
+                const distToMouse = currentPos.distanceTo(mouse);
+                if (distToMouse < MOUSE_RADIUS) {
+                    const repelForce = new THREE.Vector3().subVectors(currentPos, mouse).normalize();
+                    // 近いほど強く反発する
+                    repelForce.multiplyScalar((1 - distToMouse / MOUSE_RADIUS) * REPEL_STRENGTH);
+                    velocity.add(repelForce);
+                }
+
+                // 2. 元の位置に戻る力 (スプリングのような動き)
+                const returnForce = new THREE.Vector3().subVectors(originalPos, currentPos);
+                returnForce.multiplyScalar(RETURN_STRENGTH);
+                velocity.add(returnForce);
+                
+                // 3. 速度の減衰
+                velocity.multiplyScalar(DAMPING);
+                
+                // 4. 速度を位置に適用
+                currentPos.add(velocity);
+
+                // 更新した値を配列に戻す
+                positions[index] = currentPos.x;
+                positions[index + 1] = currentPos.y;
+                positions[index + 2] = currentPos.z;
+                
+                velocities[index] = velocity.x;
+                velocities[index + 1] = velocity.y;
+                velocities[index + 2] = velocity.z;
+            }
+
+            // ジオメトリの更新をThree.jsに伝える（非常に重要）
+            particles.geometry.attributes.position.needsUpdate = true;
+
+            // 全体をゆっくり回転させる
+            particles.rotation.y += 0.0005;
+            particles.rotation.x += 0.0002;
+            
+            renderer.render(scene, camera);
+        }
+
+        init();
+        animate();
+
+    </script>
+</body>
+</html>
+</body>
+</html>

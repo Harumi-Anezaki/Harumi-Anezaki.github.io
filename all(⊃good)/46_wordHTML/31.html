@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>31</title>
+</head>
+<body>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>テキストのA4グリッド結合ツール（最終改良版）</title>
+    <style>
+        body { font-family: sans-serif; line-height: 1.6; padding: 20px; background-color: #f4f4f4; color: #333; }
+        h1 { text-align: center; color: #444; }
+        .container { max-width: 800px; margin: 0 auto; background-color: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        textarea { width: 100%; height: 250px; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; box-sizing: border-box; }
+        button { display: block; width: 100%; padding: 15px; margin-top: 20px; background-color: #fd7e14; color: white; border: none; border-radius: 4px; font-size: 18px; cursor: pointer; transition: background-color 0.3s; }
+        button:hover { background-color: #e86a02; }
+        button:disabled { background-color: #ccc; cursor: not-allowed; }
+        .status-container { margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px; text-align: center; font-size: 1.1em; }
+        #progress-bar { width: 100%; -webkit-appearance: none; appearance: none; height: 10px; }
+        #progress-bar::-webkit-progress-bar { background-color: #eee; border-radius: 5px; }
+        #progress-bar::-webkit-progress-value { background-color: #007bff; border-radius: 5px; transition: width 0.1s linear; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>テキストのA4グリッド結合ツール（最終改良版）</h1>
+        <p>アルゴリズムを刷新し、超高速化と見切れ防止を両立しました。数十万文字でも快適に動作します。</p>
+        
+        <textarea id="inputText" placeholder="ここに長文テキストを貼り付けます..."></textarea>
+        
+        <button id="generateButton">ページをグリッドに結合してダウンロード</button>
+        
+        <div class="status-container" id="statusContainer">
+            <!-- 進捗状況がここに表示されます -->
+        </div>
+    </div>
+
+    <script>
+        const generateButton = document.getElementById('generateButton');
+        const inputText = document.getElementById('inputText');
+        const statusContainer = document.getElementById('statusContainer');
+
+        generateButton.addEventListener('click', async () => {
+            const fullText = inputText.value;
+            
+            if (fullText.trim() === '') {
+                statusContainer.innerHTML = '<p style="color: red;">テキストが入力されていません。</p>';
+                return;
+            }
+
+            generateButton.disabled = true;
+            generateButton.textContent = '処理中...';
+            statusContainer.innerHTML = `
+                <p id="statusText">ページの分割処理を開始します...</p>
+                <progress id="progressBar" value="0" max="100"></progress>
+            `;
+            const statusText = document.getElementById('statusText');
+            const progressBar = document.getElementById('progressBar');
+
+            const pages = await paginateTextFinal(fullText, (progress) => {
+                const percent = Math.round(progress * 100);
+                statusText.textContent = `ページ分割中... (${percent}%)`;
+                progressBar.value = percent;
+            });
+            
+            if (pages.length === 0) {
+                statusContainer.innerHTML = '<p>テキストが短いため、ページは生成されませんでした。</p>';
+            } else {
+                statusText.textContent = `${pages.length} ページに分割しました。HTMLを生成中...`;
+                progressBar.value = 100;
+
+                const n = Math.ceil(Math.sqrt(pages.length));
+                const combinedHtml = createGridHtml(pages, n);
+
+                const blob = new Blob([combinedHtml], { type: 'text/html' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = 'combined_pages.html';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+
+                statusText.innerHTML = `<p style="color: green; font-weight: bold;">完了: combined_pages.html をダウンロードしました。</p>`;
+            }
+
+            generateButton.disabled = false;
+            generateButton.textContent = 'ページをグリッドに結合してダウンロード';
+        });
+
+        /**
+         * 最終改良版：超高速ページ分割関数
+         */
+        async function paginateTextFinal(text, onProgress) {
+            const pages = [];
+            let remainingText = text;
+
+            const measureDiv = document.createElement('div');
+            // ... (スタイル設定は以前と同じ)
+            measureDiv.style.width = '210mm';
+            measureDiv.style.height = '297mm';
+            measureDiv.style.padding = '20mm';
+            measureDiv.style.boxSizing = 'border-box';
+            measureDiv.style.fontFamily = "'Times New Roman', serif";
+            measureDiv.style.fontSize = '12pt';
+            measureDiv.style.lineHeight = '1.5';
+            measureDiv.style.position = 'absolute';
+            measureDiv.style.left = '-9999px';
+            measureDiv.style.top = '-9999px';
+            measureDiv.style.whiteSpace = 'pre-wrap';
+            measureDiv.style.wordBreak = 'break-word';
+            document.body.appendChild(measureDiv);
+            
+            const pageHeight = measureDiv.clientHeight;
+            
+            measureDiv.innerText = 'M\nM';
+            const safetyMargin = measureDiv.scrollHeight;
+            measureDiv.innerText = '';
+            const targetHeight = pageHeight - safetyMargin;
+
+            const totalLength = text.length;
+            let estimatedCharsPerPage = 3000; // 妥当な初期値
+
+            while (remainingText.length > 0) {
+                // ★★★★★ 修正点 ★★★★★
+                // 検索範囲を限定する
+                let low = 0;
+                // 推定値の1.2倍を上限とするが、残りのテキスト長を超えないようにする
+                let high = Math.min(remainingText.length, Math.floor(estimatedCharsPerPage * 1.2));
+                let bestFitIndex = 0;
+
+                // 限定された範囲で二分探索
+                while (low <= high) {
+                    const mid = Math.floor((low + high) / 2);
+                    if (mid === 0) { break; }
+                    measureDiv.innerText = remainingText.substring(0, mid);
+                    
+                    if (measureDiv.scrollHeight <= targetHeight) {
+                        bestFitIndex = mid;
+                        low = mid + 1;
+                    } else {
+                        high = mid - 1;
+                    }
+                }
+                
+                // 無限ループ防止
+                if (bestFitIndex === 0 && remainingText.length > 0) {
+                    bestFitIndex = 1; 
+                }
+                
+                const currentPageText = remainingText.substring(0, bestFitIndex);
+                pages.push(currentPageText);
+                remainingText = remainingText.substring(bestFitIndex);
+
+                // ★★★★★ 修正点 ★★★★★
+                // 次回の推定のために、今回の結果を反映させる（移動平均で急な変動を抑える）
+                if (bestFitIndex > 0) {
+                    estimatedCharsPerPage = Math.floor((estimatedCharsPerPage * 0.5) + (bestFitIndex * 0.5));
+                }
+
+                // UI更新
+                onProgress((totalLength - remainingText.length) / totalLength);
+                await new Promise(resolve => setTimeout(resolve, 0)); 
+            }
+
+            document.body.removeChild(measureDiv);
+            return pages;
+        }
+        
+        function createGridHtml(pages, gridN) {
+            const pageHtmlElements = pages.map((pageText, index) => {
+                const pageNum = index + 1;
+                const sanitizedText = pageText.replace(/&/g, '&').replace(/</g, '<').replace(/>/g, '>');
+                return `<div class="a4-page"><pre>${sanitizedText}</pre><div class="page-number">${pageNum}</div></div>`;
+            }).join('');
+
+            return `<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><title>結合ページ (${pages.length}ページ)</title><style>body{background-color:#525659;margin:0;padding:40px;}.grid-container{display:grid;grid-template-columns:repeat(${gridN},210mm);gap:20px;justify-content:center;}.a4-page{width:210mm;height:297mm;padding:20mm;box-sizing:border-box;background:white;color:black;box-shadow:0 5px 15px rgba(0,0,0,0.5);font-family:'Times New Roman',serif;font-size:12pt;line-height:1.5;overflow:hidden;position:relative;}pre{white-space:pre-wrap;word-wrap:break-word;margin:0;font-family:inherit;font-size:inherit;height:100%;overflow:hidden;}.page-number{position:absolute;bottom:15mm;right:20mm;font-size:10pt;color:#666;}@media print{body{background-color:white;padding:0;}.grid-container{display:block;}.a4-page{box-shadow:none;margin:0;page-break-after:always;}.a-page:last-child{page-break-after:auto;}}</style></head><body><div class="grid-container">${pageHtmlElements}</div></body></html>`;
+        }
+    </script>
+
+</body>
+</html>
+</body>
+</html>

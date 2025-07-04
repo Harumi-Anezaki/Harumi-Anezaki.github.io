@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>01</title>
+</head>
+<body>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>テキストをページ毎のHTMLに変換するアプリ</title>
+    <!-- JSZipライブラリをCDNから読み込み -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <style>
+        /* アプリ全体のスタイル */
+        body {
+            font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            width: 100%;
+            max-width: 800px;
+            background-color: #fff;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #4a4a4a;
+            border-bottom: 2px solid #6c63ff;
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+        .instructions {
+            background-color: #eef2ff;
+            border-left: 4px solid #6c63ff;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        textarea {
+            width: 100%;
+            height: 40vh; /* 画面の高さの40% */
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+            line-height: 1.6;
+            box-sizing: border-box; /* paddingを含めた幅計算 */
+            resize: vertical;
+        }
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .controls label {
+            font-weight: bold;
+        }
+        .controls input[type="text"] {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            flex-grow: 1;
+        }
+        button {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #fff;
+            background-color: #6c63ff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #574b90;
+        }
+        #status {
+            margin-top: 15px;
+            text-align: center;
+            font-weight: bold;
+            color: #28a745;
+        }
+
+        /* ----- ↓ここから下は出力されるHTMLのスタイル（Word風のページ） ----- */
+        .page-template-style {
+            /* このスタイルはJavaScript内でHTMLテンプレートとして使用されます */
+            display: none; /* 画面上には表示しない */
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>テキストをページ毎のHTMLに変換</h1>
+        <div class="instructions">
+            <p><strong>使い方:</strong></p>
+            <ol>
+                <li>下のテキストエリアに文章を貼り付けます。</li>
+                <li>ページを区切りたい箇所に、改行して <strong><code>---</code></strong> (半角ハイフン3つ)だけを入力します。</li>
+                <li>「生成してダウンロード」ボタンを押すと、ページ毎に分かれたHTMLファイルを含むZIPファイルがダウンロードされます。</li>
+            </ol>
+        </div>
+
+        <div class="controls">
+            <label for="baseNameInput">ファイル名の接頭辞:</label>
+            <input type="text" id="baseNameInput" value="document">
+        </div>
+
+        <textarea id="textInput" placeholder="ここにテキストを貼り付けてください。
+
+---
+
+↑のように、ページの区切りには半角ハイフン3つを独立した行に入力します。
+
+---
+
+3ページ目はここから始まります。"></textarea>
+
+        <button id="generateBtn">HTMLを生成してダウンロード</button>
+
+        <div id="status"></div>
+    </div>
+
+    <!-- 生成するHTMLのテンプレートとなるスタイル -->
+    <style id="pageStyleTemplate" class="page-template-style">
+        body {
+            background: #e0e0e0;
+            font-family: 'Times New Roman', Times, serif; /* Wordの標準的なフォント */
+            margin: 0;
+            padding: 0;
+        }
+        .page {
+            width: 210mm;
+            min-height: 297mm;
+            padding: 2cm;
+            margin: 1cm auto;
+            border: 1px #D3D3D3 solid;
+            border-radius: 5px;
+            background: white;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+            box-sizing: border-box;
+            font-size: 12pt;
+            line-height: 1.5;
+            /* テキストエリアの改行やスペースをそのまま表示するための設定 */
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        @page {
+            size: A4;
+            margin: 0;
+        }
+        @media print {
+            html, body {
+                width: 210mm;
+                height: 297mm;
+            }
+            .page {
+                margin: 0;
+                border: initial;
+                border-radius: initial;
+                width: initial;
+                min-height: initial;
+                box-shadow: initial;
+                background: initial;
+                page-break-after: always;
+            }
+        }
+    </style>
+
+    <script>
+        document.getElementById('generateBtn').addEventListener('click', function() {
+            const textInput = document.getElementById('textInput').value;
+            const baseName = document.getElementById('baseNameInput').value || 'document';
+            const statusDiv = document.getElementById('status');
+            
+            if (textInput.trim() === '') {
+                statusDiv.textContent = 'テキストが入力されていません。';
+                statusDiv.style.color = 'red';
+                return;
+            }
+            
+            statusDiv.textContent = 'HTMLを生成し、ZIPファイルを作成中です...';
+            statusDiv.style.color = 'orange';
+
+            // --- を区切り文字としてテキストをページごとに分割
+            // 前後の空白や改行も含めて分割し、空の要素をフィルタリング
+            const pages = textInput.split(/\n\s*---\s*\n/).filter(p => p.trim() !== '');
+            
+            if (pages.length === 0) {
+                statusDiv.textContent = '有効なページが見つかりませんでした。「---」で区切ってください。';
+                statusDiv.style.color = 'red';
+                return;
+            }
+
+            const zip = new JSZip();
+            const pageStyle = document.getElementById('pageStyleTemplate').innerHTML;
+
+            // HTML特殊文字をエスケープする関数
+            function escapeHtml(text) {
+                return text
+                    .replace(/&/g, "&")
+                    .replace(/</g, "<")
+                    .replace(/>/g, ">")
+                    .replace(/"/g, """)
+                    .replace(/'/g, "'");
+            }
+
+            pages.forEach((pageContent, index) => {
+                const pageNum = index + 1;
+                const fileName = `${baseName}_page_${pageNum}.html`;
+                
+                // HTMLテンプレート
+                const htmlContent = `<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>${escapeHtml(baseName)} - Page ${pageNum}</title>
+    <style>
+        ${pageStyle}
+    </style>
+</head>
+<body>
+    <div class="page">${escapeHtml(pageContent.trim())}</div>
+</body>
+</html>`;
+                
+                zip.file(fileName, htmlContent);
+            });
+
+            // ZIPファイルを生成してダウンロード
+            zip.generateAsync({ type: "blob" })
+                .then(function(content) {
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(content);
+                    link.download = `${baseName}.zip`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    
+                    statusDiv.textContent = `${pages.length}ページ分のHTMLを含むZIPファイルをダウンロードしました。`;
+                    statusDiv.style.color = '#28a745';
+                })
+                .catch(function(err) {
+                    statusDiv.textContent = 'エラーが発生しました: ' + err.message;
+                    statusDiv.style.color = 'red';
+                });
+        });
+    </script>
+
+</body>
+</html>
+
+</body>
+</html>
