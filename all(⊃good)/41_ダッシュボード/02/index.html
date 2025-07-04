@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AIダッシュボード・クリエイター (Gemini版)</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Open+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1><i class="fas fa-chart-pie"></i> AIダッシュボード・クリエイター (Gemini版)</h1>
+        <button id="settingsButton" class="icon-button" title="設定"><i class="fas fa-cog"></i></button>
+    </header>
+
+    <main>
+        <div class="controls-panel">
+            <h2>コントロールパネル</h2>
+            <div class="control-group">
+                <label for="fileInputTrigger" class="file-input-label">
+                    <input type="file" id="fileInput" accept=".xlsx, .xls, .csv" style="display: none;">
+                    <button id="fileInputTrigger" class="icon-button" title="ファイルアップロード"><i class="fas fa-upload"></i> ファイル選択</button>
+                </label>
+                <p id="fileNameDisplay">ファイルが選択されていません</p>
+            </div>
+            <div class="control-group">
+                <button id="generateDashboardButton" class="icon-button" title="ダッシュボード生成" disabled><i class="fas fa-magic"></i> 生成</button>
+                <button id="downloadDashboardButton" class="icon-button" title="ダッシュボードダウンロード" disabled><i class="fas fa-download"></i> ダウンロード</button>
+            </div>
+        </div>
+
+        <div class="dashboard-area">
+            <div class="preview-container">
+                <h2>プレビュー</h2>
+                <iframe id="dashboardPreviewFrame" title="Dashboard Preview"></iframe>
+            </div>
+            <div class="chat-container">
+                <h2>AIチャット (修正依頼)</h2>
+                <div id="chatMessages" class="chat-messages">
+                    <!-- Chat messages will appear here -->
+                </div>
+                <div class="chat-input-area">
+                    <textarea id="chatInput" placeholder="例: 売上グラフを棒グラフに変更して..."></textarea>
+                    <button id="chatSendButton" class="icon-button" title="送信"><i class="fas fa-paper-plane"></i></button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>© 2023 AI Dashboard Creator</p>
+    </footer>
+
+    <!-- Modals -->
+    <div id="apiKeyModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" id="closeApiKeyModal">×</span>
+            <h2>Gemini APIキー設定</h2>
+            <p>Gemini APIキーを入力してください。</p>
+            <input type="password" id="apiKeyInput" placeholder="API Key">
+            <button id="saveApiKeyButton" class="icon-button modal-button" title="保存"><i class="fas fa-save"></i> 保存</button>
+        </div>
+    </div>
+
+    <div id="sheetSelectModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" id="closeSheetSelectModal">×</span>
+            <h2>シート選択</h2>
+            <p id="modalFileName">ファイル名: </p>
+            <p>処理するシートを選択してください:</p>
+            <div id="sheetListContainer">
+                <!-- Radio buttons for sheets will be injected here -->
+            </div>
+            <button id="confirmSheetButton" class="icon-button modal-button" title="確定"><i class="fas fa-check"></i> 確定</button>
+        </div>
+    </div>
+
+    <div id="dataRangeModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" id="closeDataRangeModal">×</span>
+            <h2>データ範囲指定</h2>
+            <p>ダッシュボード作成に使用するデータの範囲を指定してください (例: A1:D10)。</p>
+            <p>ヘッダー行を含む範囲を指定してください。</p>
+            <input type="text" id="dataRangeInput" placeholder="A1:D10">
+            <button id="confirmDataRangeButton" class="icon-button modal-button" title="確定"><i class="fas fa-check"></i> 確定</button>
+        </div>
+    </div>
+
+    <div id="loadingModal" class="modal">
+        <div class="modal-content">
+            <h2>処理中...</h2>
+            <p id="loadingMessage">AIがダッシュボードを生成中です。しばらくお待ちください。</p>
+            <div class="spinner"></div>
+        </div>
+    </div>
+
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

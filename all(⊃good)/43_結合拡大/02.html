@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>SVG Zoom App</title>
+    <!-- Tailwind CSSのCDNを読み込み -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Tailwindでカバーしない、または基本的なスタイルを定義 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5; /* 背景に少し色を付ける */
+        }
+        #container {
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            touch-action: none; 
+        }
+        #contentWrapper {
+            transform-origin: 0 0;
+            user-select: text;
+            position: relative;
+        }
+        /* デフォルトのファイル入力は非表示 */
+        #fileInput {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <input type="file" id="fileInput" accept=".html" />
+    <div id="container">
+        <div id="contentWrapper">
+            <!-- 選択したHTMLファイルの内容がここに挿入されます -->
+        </div>
+    </div>
+    <!-- 右下に配置するボタン群 (Tailwind CSSでスタイリング) -->
+    <div id="zoomControls" class="fixed bottom-8 right-8 flex flex-col items-center gap-4">
+        <!-- ファイル選択ボタン -->
+        <label for="fileInput" id="fileLabel" 
+               class="flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-full shadow-lg cursor-pointer transform transition-all duration-200 ease-in-out hover:scale-110 hover:shadow-xl active:scale-100">
+            <span class="text-3xl">📁</span>
+        </label>
+        
+        <!-- リセットボタン -->
+        <button id="resetBtn" 
+                class="w-14 h-14 bg-gradient-to-br from-gray-500 to-gray-600 text-white text-2xl font-bold rounded-full shadow-lg transform transition-all duration-200 ease-in-out hover:scale-110 hover:shadow-xl active:scale-100">
+            ↺
+        </button>
+
+        <!-- 縮小ボタン -->
+        <button id="zoomOutBtn" 
+                class="w-14 h-14 bg-gradient-to-br from-gray-500 to-gray-600 text-white text-4xl font-light rounded-full shadow-lg transform transition-all duration-200 ease-in-out hover:scale-110 hover:shadow-xl active:scale-100 flex items-center justify-center pb-1">
+            -
+        </button>
+
+        <!-- 拡大ボタン -->
+        <button id="zoomInBtn" 
+                class="w-14 h-14 bg-gradient-to-br from-gray-500 to-gray-600 text-white text-4xl font-light rounded-full shadow-lg transform transition-all duration-200 ease-in-out hover:scale-110 hover:shadow-xl active:scale-100 flex items-center justify-center pb-1">
+            +
+        </button>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const fileInput = document.getElementById('fileInput');
+            const contentWrapper = document.getElementById('contentWrapper');
+            const container = document.getElementById('container');
+            const zoomInBtn = document.getElementById('zoomInBtn');
+            const zoomOutBtn = document.getElementById('zoomOutBtn');
+            const resetBtn = document.getElementById('resetBtn');
+
+            let scale = 1;
+            let translateX = 0;
+            let translateY = 0;
+            let isPanning = false;
+            let startX = 0;
+            let startY = 0;
+
+            // ローカルストレージからHTMLファイルを選択
+            fileInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    contentWrapper.innerHTML = event.target.result;
+                    // インポートしたHTMLの横幅と画面の横幅を合わせる
+                    if (contentWrapper.firstElementChild) {
+                        contentWrapper.firstElementChild.style.width = '100%';
+                    }
+                };
+                reader.readAsText(file);
+            });
+
+            // 拡大ボタン
+            zoomInBtn.addEventListener('click', () => {
+                zoom(1.4, container.clientWidth / 2, container.clientHeight / 2);
+            });
+
+            // 縮小ボタン
+            zoomOutBtn.addEventListener('click', () => {
+                zoom(1 / 1.4, container.clientWidth / 2, container.clientHeight / 2);
+            });
+
+            // リセットボタン
+            resetBtn.addEventListener('click', () => {
+                scale = 1;
+                translateX = 0;
+                translateY = 0;
+                updateTransform();
+            });
+
+            // 拡大縮小の関数
+            function zoom(factor, centerX, centerY) {
+                const rect = contentWrapper.getBoundingClientRect();
+                const dx = centerX - rect.left;
+                const dy = centerY - rect.top;
+
+                scale *= factor;
+                translateX -= dx * (factor - 1);
+                translateY -= dy * (factor - 1);
+
+                updateTransform();
+            }
+
+            // transformの更新
+            function updateTransform() {
+                contentWrapper.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+            }
+
+            // マウスホイール操作
+            container.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                if (e.ctrlKey) {
+                    // Ctrl + ホイールでズーム
+                    const factor = e.deltaY < 0 ? 1.4 : 1 / 1.4;
+                    zoom(factor, e.clientX, e.clientY);
+                } else {
+                    // ホイールのみでパン（上下）
+                    translateY -= e.deltaY;
+                    translateX -= e.deltaX; // 横スクロールにも対応
+                    updateTransform();
+                }
+            }, { passive: false });
+
+            // マウス・タッチでのパン操作
+            container.addEventListener('pointerdown', (e) => {
+                if (e.isPrimary && e.button === 0) {
+                    isPanning = true;
+                    startX = e.clientX - translateX;
+                    startY = e.clientY - translateY;
+                    container.style.cursor = 'grabbing';
+                }
+            });
+
+            container.addEventListener('pointermove', (e) => {
+                if (isPanning) {
+                    translateX = e.clientX - startX;
+                    translateY = e.clientY - startY;
+                    updateTransform();
+                }
+            });
+
+            const stopPanning = () => {
+                isPanning = false;
+                container.style.cursor = 'default';
+            };
+
+            container.addEventListener('pointerup', stopPanning);
+            container.addEventListener('pointerleave', stopPanning);
+        });
+    </script>
+</body>
+</html>

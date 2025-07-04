@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI ダッシュボードジェネレーター</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- React and ReactDOM -->
+    <script src="https://unpkg.com/react@17/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js" crossorigin></script>
+    <!-- Babel for JSX ( transpiles JSX in script.js ) -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- SheetJS (xlsx) for Excel file parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Chart.js for charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>AI ダッシュボードジェネレーター 📊</h1>
+            <p>Excelファイルをアップロードし、Google AI Studio APIキーを入力すると、AIがデータに基づいたダッシュボードを生成します。</p>
+        </header>
+
+        <section class="settings-section">
+            <h2>設定</h2>
+            <div class="input-group">
+                <label for="apiKey">Google AI Studio APIキー:</label>
+                <input type="password" id="apiKey" placeholder="APIキーを入力してください">
+                <button id="saveApiKeyBtn">APIキーを保存 (セッション中)</button>
+            </div>
+            <p class="api-key-info">APIキーはブラウザのセッションストレージにのみ保存され、サーバーには送信されません。ブラウザを閉じるとAPIキーは削除されます。</p>
+        </section>
+
+        <section class="upload-section">
+            <h2>データアップロード</h2>
+            <div class="input-group">
+                <label for="excelFile">Excelファイル (.xlsx, .xls):</label>
+                <input type="file" id="excelFile" accept=".xlsx, .xls">
+            </div>
+            <button id="generateDashboardBtn" disabled>ダッシュボードを生成</button>
+        </section>
+
+        <section class="status-section">
+            <div id="loadingIndicator" style="display:none;">
+                <div class="spinner"></div>
+                <p>AIがダッシュボードを賢く生成中です... しばらくお待ちください。</p>
+            </div>
+            <div id="errorMessage" class="error-message" style="display:none;"></div>
+        </section>
+
+        <main id="dashboard-container">
+            <!-- ダッシュボードはここにレンダリングされます -->
+        </main>
+
+        <footer>
+            <p>AIによるダッシュボード生成デモ</p>
+        </footer>
+    </div>
+
+    <!-- Main application script (JSX will be transpiled by Babel) -->
+    <script type="text/babel" src="script.js"></script>
+</body>
+</html>

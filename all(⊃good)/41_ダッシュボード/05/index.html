@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Dashboard Generator</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+
+    <!-- React, ReactDOM, Babel -->
+    <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Charting Library (Recharts) -->
+    <script src="https://unpkg.com/recharts/umd/Recharts.min.js"></script>
+
+    <!-- SheetJS (for Excel/CSV parsing) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <h1>AI Dashboard Generator</h1>
+            <div class="toolbar">
+                <button id="open-settings-modal" aria-label="設定を開く" title="設定"><i class="fas fa-cog"></i></button>
+                <button id="upload-file-button" aria-label="ファイルを開く" title="データファイルを開く"><i class="fas fa-folder-open"></i></button>
+                <button id="open-log-modal" aria-label="ログを開く" title="AI対話ログ"><i class="fas fa-history"></i></button>
+                <button id="open-preview-modal" aria-label="プレビューを開く" title="ダッシュボードプレビュー"><i class="fas fa-eye"></i></button>
+                <button id="download-dashboard-button" aria-label="ダウンロード" title="ダッシュボードをダウンロード"><i class="fas fa-download"></i></button>
+            </div>
+        </header>
+
+        <main class="app-main">
+            <div id="status-area">
+                <p id="file-status-message">データファイルをアップロードしてください。</p>
+                <p id="generation-status-message"></p>
+            </div>
+            <div id="initial-help" class="help-text">
+                <p><i class="fas fa-cog"></i> アイコンからGemini APIキーを設定してください。</p>
+                <p><i class="fas fa-folder-open"></i> アイコンからExcel (.xlsx) または CSV (.csv) ファイルをアップロードして開始します。</p>
+            </div>
+        </main>
+    </div>
+
+    <input type="file" id="file-input-hidden" accept=".xlsx, .csv" style="display: none;">
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close-button" aria-label="閉じる"><i class="fas fa-times"></i></button>
+            <h2>設定</h2>
+            <div class="form-group">
+                <label for="gemini-api-key-input">Gemini APIキー:</label>
+                <input type="password" id="gemini-api-key-input">
+            </div>
+            <div class="form-group">
+                <label for="gemini-model-name-input">Gemini モデル名:</label>
+                <input type="text" id="gemini-model-name-input">
+            </div>
+            <button id="save-settings-button" aria-label="保存"><i class="fas fa-save"></i> 保存</button>
+            <p id="settings-save-status" class="status-message"></p>
+        </div>
+    </div>
+
+    <!-- Log Modal -->
+    <div id="log-modal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close-button" aria-label="閉じる"><i class="fas fa-times"></i></button>
+            <h2>AI 対話ログ</h2>
+            <div id="ai-log-container"></div>
+        </div>
+    </div>
+
+    <!-- Preview Modal -->
+    <div id="preview-modal" class="modal modal-large">
+        <div class="modal-content">
+            <button class="modal-close-button" aria-label="閉じる"><i class="fas fa-times"></i></button>
+            <h2>ダッシュボードプレビュー</h2>
+            <div id="dashboard-preview-root"></div>
+            <div class="correction-area">
+                <input type="text" id="user-correction-input" placeholder="AIに修正を指示...">
+                <button id="send-correction-button" aria-label="修正指示を送信"><i class="fas fa-paper-plane"></i></button>
+            </div>
+            <p id="correction-status" class="status-message"></p>
+        </div>
+    </div>
+    
+    <!-- Generic Error Modal -->
+    <div id="error-modal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close-button" aria-label="閉じる"><i class="fas fa-times"></i></button>
+            <h2>エラー</h2>
+            <p id="error-message-content"></p>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

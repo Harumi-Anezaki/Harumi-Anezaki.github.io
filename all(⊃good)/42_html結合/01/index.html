@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTML File Merger</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 flex items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-2xl mx-auto bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden p-6 md:p-10">
+        <div class="text-center">
+            <h1 class="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white mb-2">HTMLファイル結合ツール</h1>
+            <p class="text-gray-500 dark:text-gray-400 mb-8">複数のHTMLファイルを選択し、一つのファイルに結合してダウンロードします。</p>
+        </div>
+        
+        <!-- File Input and Merge Button Section -->
+        <div class="flex flex-col items-center justify-center gap-4 mb-6">
+            <label for="file-upload" class="cursor-pointer w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-transform transform hover:scale-105">
+                <svg class="w-5 h-5 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                </svg>
+                ファイルを選択 (複数可)
+            </label>
+            <input id="file-upload" name="file-upload" type="file" class="sr-only" accept=".html, .htm" multiple>
+            
+            <button id="merge-button" class="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-transform transform hover:scale-105 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:transform-none" disabled>
+                <svg class="w-5 h-5 mr-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M5.5 13a3.5 3.5 0 01-.369-6.98 4.002 4.002 0 017.739 0A3.5 3.5 0 0114.5 13H11v-2.117a.5.5 0 00-.293-.447l-4-2a.5.5 0 00-.414 0l-4 2A.5.5 0 003 10.883V13h2.5z" />
+                    <path d="M9 13h2v5H9v-5z" />
+                </svg>
+                結合してダウンロード
+            </button>
+        </div>
+        
+        <!-- Selected Files List -->
+        <div id="file-list-container" class="mt-4 space-y-2 hidden">
+            <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300 text-center">選択されたファイル:</h3>
+            <ul id="file-list" class="list-disc list-inside bg-gray-50 dark:bg-gray-700 p-4 rounded-md text-sm text-gray-600 dark:text-gray-300 max-h-40 overflow-y-auto">
+            </ul>
+        </div>
+
+        <!-- Custom Alert/Message Box -->
+        <div id="message-box" class="hidden mt-4 p-4 text-center text-sm rounded-md"></div>
+
+    </div>
+
+    <script>
+        // DOM要素を取得
+        const fileUpload = document.getElementById('file-upload');
+        const mergeButton = document.getElementById('merge-button');
+        const fileListContainer = document.getElementById('file-list-container');
+        const fileList = document.getElementById('file-list');
+        const messageBox = document.getElementById('message-box');
+
+        let selectedFiles = [];
+
+        /**
+         * ユーザーにメッセージを表示する関数
+         * @param {string} message - 表示するメッセージ
+         * @param {'info'|'success'|'error'} type - メッセージの種類
+         */
+        function showMessage(message, type = 'info') {
+            messageBox.textContent = message;
+            messageBox.classList.remove('hidden', 'bg-blue-100', 'text-blue-700', 'bg-green-100', 'text-green-700', 'bg-red-100', 'text-red-700');
+            
+            if (type === 'success') {
+                messageBox.classList.add('bg-green-100', 'text-green-700');
+            } else if (type === 'error') {
+                messageBox.classList.add('bg-red-100', 'text-red-700');
+            } else {
+                messageBox.classList.add('bg-blue-100', 'text-blue-700');
+            }
+            
+            messageBox.classList.remove('hidden');
+        }
+
+        // ファイル入力が変更されたときのイベントリスナー
+        fileUpload.addEventListener('change', (event) => {
+            selectedFiles = Array.from(event.target.files);
+            messageBox.classList.add('hidden'); // メッセージを隠す
+
+            if (selectedFiles.length > 0) {
+                fileList.innerHTML = '';
+                const htmlFiles = selectedFiles.filter(file => file.type.match('text/html'));
+                
+                htmlFiles.forEach(file => {
+                    const listItem = document.createElement('li');
+                    listItem.textContent = file.name;
+                    fileList.appendChild(listItem);
+                });
+                
+                if (htmlFiles.length > 0) {
+                    fileListContainer.classList.remove('hidden');
+                } else {
+                    fileListContainer.classList.add('hidden');
+                }
+
+                mergeButton.disabled = htmlFiles.length < 2;
+
+                if (selectedFiles.length !== htmlFiles.length) {
+                    showMessage('HTML以外のファイルは無視されます。', 'info');
+                }
+
+            } else {
+                fileListContainer.classList.add('hidden');
+                mergeButton.disabled = true;
+            }
+        });
+
+        // 結合ボタンがクリックされたときのイベントリスナー
+        mergeButton.addEventListener('click', async () => {
+            const htmlFiles = selectedFiles.filter(file => file.type.match('text/html'));
+            
+            if (htmlFiles.length < 2) {
+                showMessage('結合するには、2つ以上のHTMLファイルを選択してください。', 'error');
+                return;
+            }
+
+            mergeButton.disabled = true;
+            mergeButton.innerHTML = `
+                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                結合中...`;
+            messageBox.classList.add('hidden');
+
+            const fileReadPromises = htmlFiles.map(file => {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => resolve({ name: file.name, content: e.target.result });
+                    reader.onerror = (e) => reject(e);
+                    reader.readAsText(file, 'UTF-8');
+                });
+            });
+
+            try {
+                const filesData = await Promise.all(fileReadPromises);
+                const mergedContent = filesData.map(data => 
+                    `<!-- ===== Start of ${data.name} ===== -->\n\n${data.content}\n\n<!-- ===== End of ${data.name} ===== -->`
+                ).join('\n\n\n');
+
+                downloadFile(mergedContent, 'merged.html', 'text/html');
+                showMessage(`${htmlFiles.length}個のファイルを結合し、ダウンロードを開始しました。`, 'success');
+
+            } catch (error) {
+                console.error('ファイルの結合中にエラーが発生しました:', error);
+                showMessage('ファイルの結合中にエラーが発生しました。', 'error');
+            } finally {
+                mergeButton.disabled = false;
+                mergeButton.innerHTML = `
+                    <svg class="w-5 h-5 mr-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M5.5 13a3.5 3.5 0 01-.369-6.98 4.002 4.002 0 017.739 0A3.5 3.5 0 0114.5 13H11v-2.117a.5.5 0 00-.293-.447l-4-2a.5.5 0 00-.414 0l-4 2A.5.5 0 003 10.883V13h2.5z" />
+                        <path d="M9 13h2v5H9v-5z" />
+                    </svg>
+                    結合してダウンロード`;
+            }
+        });
+
+        /**
+         * テキストコンテンツからファイルを作成してダウンロードをトリガーする関数
+         * @param {string} content - ファイルの内容
+         * @param {string} fileName - ダウンロードするファイル名
+         * @param {string} contentType - ファイルのMIMEタイプ
+         */
+        function downloadFile(content, fileName, contentType) {
+            const blob = new Blob([content], { type: contentType });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(a.href);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,317 @@
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    margin: 0;
+    background-color: #f4f7f9;
+    color: #333;
+    line-height: 1.6;
+}
+
+.app-container {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.app-header {
+    background-color: #fff;
+    padding: 15px 30px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.app-header h1 {
+    margin: 0;
+    font-size: 1.8em;
+    color: #2c3e50;
+}
+
+.toolbar button {
+    background: none;
+    border: 1px solid #d1d8dd;
+    color: #566573;
+    padding: 10px 15px;
+    margin-left: 10px;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.toolbar button i {
+    font-size: 1.3em;
+}
+
+.toolbar button:hover {
+    background-color: #e9ecef;
+    color: #34495e;
+}
+
+.app-main {
+    flex-grow: 1;
+    padding: 30px;
+    text-align: center;
+}
+
+#status-area {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+#status-area p {
+    margin: 5px 0;
+    font-size: 0.95em;
+}
+#file-status-message {
+    color: #2980b9;
+}
+#generation-status-message {
+    color: #27ae60;
+    font-weight: bold;
+}
+
+
+.help-text {
+    margin-top: 40px;
+    color: #566573;
+    font-size: 1.1em;
+}
+.help-text p {
+    margin: 10px 0;
+}
+.help-text i {
+    margin-right: 8px;
+    color: #3498db;
+}
+
+
+/* Modal Styles */
+.modal {
+    display: none; /* Hidden by default */
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.6);
+    align-items: center;
+    justify-content: center;
+}
+
+.modal.is-active {
+    display: flex;
+}
+
+.modal-content {
+    background-color: #fff;
+    margin: auto;
+    padding: 30px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 500px;
+    position: relative;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    animation: modal-appear 0.3s ease-out;
+}
+
+.modal.modal-large .modal-content {
+    max-width: 90%;
+    width: 800px; /* Adjust for wider modals like preview */
+}
+
+
+@keyframes modal-appear {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.modal-close-button {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    background: none;
+    border: none;
+    font-size: 1.8em;
+    color: #aaa;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+}
+.modal-close-button:hover {
+    color: #777;
+}
+
+.modal h2 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    color: #2c3e50;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+    color: #495057;
+}
+
+.form-group input[type="text"],
+.form-group input[type="password"] {
+    width: calc(100% - 22px);
+    padding: 10px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    font-size: 1em;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+}
+
+#save-settings-button {
+    background-color: #28a745;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1em;
+}
+#save-settings-button i {
+    margin-right: 5px;
+}
+#save-settings-button:hover {
+    background-color: #218838;
+}
+
+.status-message {
+    margin-top: 15px;
+    font-size: 0.9em;
+}
+#settings-save-status.success { color: green; }
+#settings-save-status.error { color: red; }
+
+
+/* Log Modal Specific */
+#ai-log-container {
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid #eee;
+    padding: 15px;
+    border-radius: 4px;
+    background-color: #f8f9fa;
+}
+
+.log-entry {
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 4px;
+    word-wrap: break-word;
+    font-size: 0.9em;
+}
+.log-entry .timestamp {
+    display: block;
+    font-size: 0.8em;
+    color: #888;
+    margin-bottom: 5px;
+}
+.log-entry.user {
+    background-color: #e9f5ff;
+    border-left: 3px solid #007bff;
+    text-align: left; /* Changed from right for consistency */
+}
+.log-entry.ai {
+    background-color: #f0fff0;
+    border-left: 3px solid #28a745;
+}
+.log-entry.system {
+    background-color: #fdf8e2;
+    border-left: 3px solid #ffc107;
+    font-style: italic;
+}
+
+
+/* Preview Modal Specific */
+#dashboard-preview-root {
+    width: 100%;
+    min-height: 400px; /* Minimum height */
+    height: 70vh; /* Adjust as needed, viewport height based */
+    max-height: 70vh;
+    overflow: auto;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin-bottom: 15px;
+    background-color: #fdfdfd; /* Slight off-white for contrast */
+}
+
+.correction-area {
+    display: flex;
+    margin-top: 15px;
+}
+#user-correction-input {
+    flex-grow: 1;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px 0 0 4px;
+    font-size: 1em;
+}
+#send-correction-button {
+    padding: 10px 15px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 0 4px 4px 0;
+    cursor: pointer;
+    font-size: 1em;
+}
+#send-correction-button i {
+    font-size: 1.1em;
+}
+#send-correction-button:hover {
+    background-color: #0056b3;
+}
+
+#correction-status {
+    margin-top: 10px;
+    font-size: 0.9em;
+}
+#correction-status.success { color: green; }
+#correction-status.error { color: red; }
+
+
+/* Loading spinner (simple example) */
+.loading-spinner {
+    border: 4px solid #f3f3f3; /* Light grey */
+    border-top: 4px solid #3498db; /* Blue */
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    animation: spin 1s linear infinite;
+    display: inline-block;
+    margin-left: 10px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Button disabling */
+button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
