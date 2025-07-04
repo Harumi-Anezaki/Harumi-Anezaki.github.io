@@ -1,0 +1,47 @@
+body {
+    margin 0;
+    padding 0;
+    font-family 'Helvetica Neue', Arial, sans-serif;
+    background-color #f0f8ff;
+}
+
+.container {
+    max-width 600px;
+    margin 50px auto;
+    text-align center;
+}
+
+h1 {
+    color #333;
+    font-size 2.5em;
+    margin-bottom 20px;
+}
+
+#generate-button {
+    background-color #008CBA;
+    color white;
+    padding 15px 30px;
+    font-size 1.2em;
+    border none;
+    border-radius 5px;
+    cursor pointer;
+}
+
+#generate-buttonhover {
+    background-color #006F98;
+}
+
+#output {
+    margin-top 30px;
+}
+
+#pun {
+    font-size 1.8em;
+    color #555;
+}
+
+#random-image {
+    margin-top 20px;
+    max-width 100%;
+    border-radius 10px;
+}
