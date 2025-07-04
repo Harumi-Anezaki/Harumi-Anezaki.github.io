@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>文字数カウンター</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="theme-switch">
+        <input type="checkbox" id="themeToggle">
+        <label for="themeToggle">ダークモード</label>
+    </div>
+    <h1>文字数カウンター</h1>
+    <div class="container">
+        <textarea id="textInput" placeholder="ここにテキストを入力してください..." rows="10"></textarea>
+        <div class="stats">
+            <div><strong>文字数（スペース含む）:</strong> <span id="charCountWithSpaces">0</span></div>
+            <div><strong>文字数（スペース除く）:</strong> <span id="charCountWithoutSpaces">0</span></div>
+            <div><strong>単語数:</strong> <span id="wordCount">0</span></div>
+            <div><strong>文の数:</strong> <span id="sentenceCount">0</span></div>
+            <div><strong>段落の数:</strong> <span id="paragraphCount">0</span></div>
+            <div><strong>平均単語数/文:</strong> <span id="avgWordsPerSentence">0</span></div>
+            <div><strong>読み時間:</strong> <span id="readingTime">0.0</span> 分</div>
+            <div><strong>話し時間:</strong> <span id="speakingTime">0.0</span> 分</div>
+        </div>
+        <div class="keyword-density">
+            <h2>キーワード密度</h2>
+            <ul id="keywordDensityList"></ul>
+        </div>
+        <div class="buttons">
+            <button id="copyButton">コピー</button>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
