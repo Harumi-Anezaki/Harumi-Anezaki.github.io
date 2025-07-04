@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>東京タワーからの視点</title>
+    <style>
+        body { margin: 0; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script>
+        // シーン、カメラ、レンダラーの設定
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x87CEEB); // 空色の背景
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        document.body.appendChild(renderer.domElement);
+
+        // カメラコントロールの追加
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+
+        // 地面の作成（より詳細なテクスチャ）
+        const textureLoader = new THREE.TextureLoader();
+        const groundGeometry = new THREE.PlaneGeometry(2000, 2000, 100, 100);
+        const groundMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0x555555,
+            roughness: 0.8,
+            metalness: 0.2
+        });
+        const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+        ground.rotation.x = -Math.PI / 2;
+        ground.position.y = -20;
+        ground.receiveShadow = true;
+        scene.add(ground);
+
+        // 道路ネットワークの作成
+        const roads = new THREE.Group();
+        
+        // メイン道路の作成
+        function createMainRoads() {
+            // 南北方向の道路
+            for(let x = -400; x <= 400; x += 100) {
+                const roadGeometry = new THREE.PlaneGeometry(20, 2000);
+                const roadMaterial = new THREE.MeshStandardMaterial({ color: 0x333333 });
+                const road = new THREE.Mesh(roadGeometry, roadMaterial);
+                road.rotation.x = -Math.PI / 2;
+                road.position.set(x, -19.5, 0);
+                roads.add(road);
+
+                // 道路の白線
+                const lineGeometry = new THREE.PlaneGeometry(0.5, 10);
+                const lineMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+                for(let z = -1000; z < 1000; z += 30) {
+                    const line = new THREE.Mesh(lineGeometry, lineMaterial);
+                    line.rotation.x = -Math.PI / 2;
+                    line.position.set(x, -19.4, z);
+                    roads.add(line);
+                }
+            }
+
+            // 東西方向の道路
+            for(let z = -400; z <= 400; z += 100) {
+                const roadGeometry = new THREE.PlaneGeometry(2000, 20);
+                const roadMaterial = new THREE.MeshStandardMaterial({ color: 0x333333 });
+                const road = new THREE.Mesh(roadGeometry, roadMaterial);
+                road.rotation.x = -Math.PI / 2;
+                road.position.set(0, -19.5, z);
+                roads.add(road);
+
+                // 道路の白線
+                const lineGeometry = new THREE.PlaneGeometry(10, 0.5);
+                const lineMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+                for(let x = -1000; x < 1000; x += 30) {
+                    const line = new THREE.Mesh(lineGeometry, lineMaterial);
+                    line.rotation.x = -Math.PI / 2;
+                    line.position.set(x, -19.4, z);
+                    roads.add(line);
+                }
+            }
+        }
+        createMainRoads();
+        scene.add(roads);
+
+        // 車の作成
+        function createCar() {
+            const car = new THREE.Group();
+            
+            // 車体
+            const bodyGeometry = new THREE.BoxGeometry(4, 2, 8);
+            const bodyMaterial = new THREE.MeshPhongMaterial({ 
+                color: Math.random() * 0xffffff,
+                shininess: 80 
+            });
+            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            body.position.y = 1;
+            car.add(body);
+
+            // 屋根
+            const roofGeometry = new THREE.BoxGeometry(3.5, 1.5, 4);
+            const roof = new THREE.Mesh(roofGeometry, bodyMaterial);
+            roof.position.set(0, 2.75, -0.5);
+            car.add(roof);
+
+            // タイヤ
+            const wheelGeometry = new THREE.CylinderGeometry(0.75, 0.75, 0.5, 8);
+            const wheelMaterial = new THREE.MeshPhongMaterial({ color: 0x333333 });
+            const wheelPositions = [
+                [-2, 0.75, -2.5],
+                [2, 0.75, -2.5],
+                [-2, 0.75, 2.5],
+                [2, 0.75, 2.5]
+            ];
+            
+            wheelPositions.forEach(position => {
+                const wheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
+                wheel.rotation.z = Math.PI / 2;
+                wheel.position.set(...position);
+                car.add(wheel);
+            });
+
+            car.castShadow = true;
+            return car;
+        }
+
+        // 車をランダムに配置
+        const cars = [];
+        for(let i = 0; i < 50; i++) {
+            const car = createCar();
+            // 道路上にのみ配置
+            const roadIndex = Math.floor(Math.random() * 8) - 4;
+            const isVertical = Math.random() > 0.5;
+            if(isVertical) {
+                car.position.set(roadIndex * 100, -18, Math.random() * 800 - 400);
+                car.rotation.y = Math.PI / 2;
+            } else {
+                car.position.set(Math.random() * 800 - 400, -18, roadIndex * 100);
+            }
+            cars.push(car);
+            scene.add(car);
+        }
+
+        // より詳細なビルの作成
+        function createBuilding(x, z, height, type) {
+            // 道路との重なりをチェック
+            if(Math.abs(x % 100) < 30 || Math.abs(z % 100) < 30) {
+                return null; // 道路と重なる場合はnullを返す
+            }
+
+            const building = new THREE.Group();
+            
+            // ビルの本体
+            const bodyGeometry = new THREE.BoxGeometry(20, height, 20);
+            const bodyMaterial = new THREE.MeshPhongMaterial({ 
+                color: Math.random() > 0.5 ? 0x808080 : 0xa0a0a0,
+                shininess: 30
+            });
+            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            
+            // 窓の追加
+            const windowGeometry = new THREE.PlaneGeometry(2, 2);
+            const windowMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0x88ccff,
+                shininess: 100,
+                emissive: 0x112233
+            });
+            
+            for(let y = 5; y < height; y += 10) {
+                for(let x = -8; x <= 8; x += 4) {
+                    const window = new THREE.Mesh(windowGeometry, windowMaterial);
+                    window.position.set(x, y - height/2, 10.1);
+                    body.add(window);
+                    
+                    const windowBack = window.clone();
+                    windowBack.rotation.y = Math.PI;
+                    windowBack.position.z = -10.1;
+                    body.add(windowBack);
+                    
+                    const windowLeft = window.clone();
+                    windowLeft.rotation.y = -Math.PI/2;
+                    windowLeft.position.set(-10.1, y - height/2, x);
+                    body.add(windowLeft);
+                    
+                    const windowRight = window.clone();
+                    windowRight.rotation.y = Math.PI/2;
+                    windowRight.position.set(10.1, y - height/2, x);
+                    body.add(windowRight);
+                }
+            }
+            
+            building.add(body);
+            building.position.set(x, height/2 - 20, z);
+            building.castShadow = true;
+            building.receiveShadow = true;
+            return building;
+        }
+
+        // より多くのビルを配置（道路を避けて）
+        for(let i = 0; i < 200; i++) {
+            const x = Math.random() * 800 - 400;
+            const z = Math.random() * 800 - 400;
+            const height = Math.random() * 150 + 50;
+            const building = createBuilding(x, z, height);
+            if(building) {
+                scene.add(building);
+            }
+        }
+
+        // より詳細な東京タワーの作成
+        function createTokyoTower() {
+            const tower = new THREE.Group();
+
+            // タワーの脚部（より詳細な形状）
+            const baseGeometry = new THREE.CylinderGeometry(15, 20, 40, 8);
+            const baseMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0xff0000,
+                shininess: 50
+            });
+            const base = new THREE.Mesh(baseGeometry, baseMaterial);
+            base.castShadow = true;
+            tower.add(base);
+
+            // 装飾的な要素の追加
+            const decorGeometry = new THREE.TorusGeometry(17, 1, 8, 20);
+            const decorMaterial = new THREE.MeshPhongMaterial({ color: 0xffffff });
+            const decor = new THREE.Mesh(decorGeometry, decorMaterial);
+            decor.position.y = 15;
+            tower.add(decor);
+
+            // タワーの主塔
+            const mainTowerGeometry = new THREE.CylinderGeometry(5, 15, 150, 8);
+            const mainTower = new THREE.Mesh(mainTowerGeometry, baseMaterial);
+            mainTower.position.y = 95;
+            mainTower.castShadow = true;
+            tower.add(mainTower);
+
+            // タワーの先端部
+            const topTowerGeometry = new THREE.CylinderGeometry(0, 5, 50, 8);
+            const topTower = new THREE.Mesh(topTowerGeometry, baseMaterial);
+            topTower.position.y = 195;
+            topTower.castShadow = true;
+            tower.add(topTower);
+
+            return tower;
+        }
+
+        // 光源の追加（より自然な照明）
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+        scene.add(ambientLight);
+
+        const sunLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        sunLight.position.set(100, 100, 50);
+        sunLight.castShadow = true;
+        sunLight.shadow.mapSize.width = 2048;
+        sunLight.shadow.mapSize.height = 2048;
+        scene.add(sunLight);
+
+        // 霧の追加
+        scene.fog = new THREE.Fog(0x87CEEB, 100, 1000);
+
+        // 東京タワーをシーンに追加
+        const tokyoTower = createTokyoTower();
+        tokyoTower.position.y = 200;
+        scene.add(tokyoTower);
+
+        // カメラの初期位置を東京タワーの上部に設定
+        camera.position.set(0, 220, 0);
+        let cameraRotation = 0;
+
+        let isFalling = false;
+        let velocity = 0;
+        const gravity = 0.3;
+
+        // スペースキーの検出
+        document.addEventListener('keydown', (event) => {
+            if (event.code === 'Space' && !isFalling) {
+                isFalling = true;
+                cameraRotation = Math.random() * Math.PI * 2;
+            }
+        });
+
+        // アニメーションループ
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // 車のアニメーション
+            cars.forEach((car, index) => {
+                if(car.rotation.y === 0) {
+                    car.position.z += 0.5;
+                    if(car.position.z > 400) car.position.z = -400;
+                } else {
+                    car.position.x += 0.5;
+                    if(car.position.x > 400) car.position.x = -400;
+                }
+            });
+
+            if (isFalling) {
+                velocity += gravity;
+                camera.position.y -= velocity;
+                
+                cameraRotation += 0.02;
+                camera.rotation.y = cameraRotation;
+                camera.rotation.x = -Math.PI / 2 + (velocity * 0.01);
+
+                if (camera.position.y <= 10) {
+                    camera.position.y = 10;
+                    isFalling = false;
+                    velocity = 0;
+                }
+            }
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        // ウィンドウリサイズ対応
+        window.addEventListener('resize', onWindowResize, false);
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+    </script>
+</body>
+</html>

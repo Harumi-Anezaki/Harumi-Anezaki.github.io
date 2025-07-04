@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>文字列分割ツール</title>
+    <style>
+        .result {
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            display: inline-block;
+            vertical-align: top;
+            margin-right: 10px;
+            width: 300px;
+            position: relative;
+            padding-top: 40px;
+            height: fit-content;
+            min-width: 300px; /* 追加: 最小幅を設定 */
+            max-width: 300px; /* 追加: 最大幅を設定 */
+        }
+        .copy-btn {
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+        #result-container {
+            display: flex;
+            flex-wrap: nowrap;
+            gap: 10px;
+            overflow-x: auto;
+            padding-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>文字列分割ツール</h1>
+    <div>
+        <p>分割したい文字列を入力してください：</p>
+        <textarea id="input-text" rows="5" cols="50"></textarea>
+    </div>
+    <button onclick="splitText()">分割する</button>
+    <div id="result-container"></div>
+
+    <script>
+        function splitText() {
+            const inputText = document.getElementById('input-text').value;
+            const container = document.getElementById('result-container');
+            container.innerHTML = '';
+
+            // 文字数が5000未満の場合は分割しない
+            if (inputText.length < 5000) {
+                const div = document.createElement('div');
+                div.className = 'result';
+                div.textContent = inputText;
+                
+                const copyBtn = document.createElement('button');
+                copyBtn.className = 'copy-btn';
+                copyBtn.textContent = 'コピー';
+                copyBtn.onclick = () => {
+                    try {
+                        const textArea = document.createElement('textarea');
+                        textArea.value = inputText;
+                        document.body.appendChild(textArea);
+                        textArea.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(textArea);
+                        
+                        copyBtn.textContent = 'コピー完了！';
+                        setTimeout(() => {
+                            copyBtn.textContent = 'コピー';
+                        }, 1000);
+                    } catch (err) {
+                        alert('コピーに失敗しました: ' + err);
+                    }
+                };
+
+                div.appendChild(copyBtn);
+                container.appendChild(div);
+                return;
+            }
+
+            // 文字数が5000以上の場合、4000文字以下になるように分割
+            const totalLength = inputText.length;
+            let divisions = Math.ceil(totalLength / 4000); // 4000文字以下になる最小の分割数
+            const splitLength = Math.ceil(totalLength / divisions);
+
+            for (let i = 0; i < totalLength; i += splitLength) {
+                const chunk = inputText.substr(i, splitLength);
+                const div = document.createElement('div');
+                div.className = 'result';
+                div.textContent = chunk;
+                
+                const copyBtn = document.createElement('button');
+                copyBtn.className = 'copy-btn';
+                copyBtn.textContent = 'コピー';
+                copyBtn.onclick = () => {
+                    try {
+                        const textArea = document.createElement('textarea');
+                        textArea.value = chunk;
+                        document.body.appendChild(textArea);
+                        textArea.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(textArea);
+                        
+                        copyBtn.textContent = 'コピー完了！';
+                        setTimeout(() => {
+                            copyBtn.textContent = 'コピー';
+                        }, 1000);
+                    } catch (err) {
+                        alert('コピーに失敗しました: ' + err);
+                    }
+                };
+
+                div.appendChild(copyBtn);
+                container.appendChild(div);
+            }
+        }
+    </script>
+</body>
+</html>

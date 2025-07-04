@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>爆発する人形</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+    <script>
+        // シーンの作成
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f0f0); // 背景を明るく
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true }); // アンチエイリアスを有効化
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // ライトの追加
+        const light = new THREE.DirectionalLight(0xffffff, 1.5); // ライトを強く
+        light.position.set(1, 1, 1);
+        scene.add(light);
+        
+        // 環境光を追加
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        scene.add(ambientLight);
+
+        // 人形を作成する関数
+        function createDoll() {
+            const doll = new THREE.Group();
+
+            // 頭部
+            const head = new THREE.Mesh(
+                new THREE.SphereGeometry(0.5, 32, 32),
+                new THREE.MeshPhongMaterial({ color: 0xffe0bd })
+            );
+            head.position.y = 1.2;
+            doll.add(head);
+
+            // 胴体
+            const body = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.3, 0.5, 1.2, 32),
+                new THREE.MeshPhongMaterial({ color: 0xff0000 })
+            );
+            body.position.y = 0.6;
+            doll.add(body);
+
+            // ランダムな位置に配置
+            doll.position.set(
+                (Math.random() - 0.5) * 8,
+                (Math.random() - 0.5) * 8,
+                (Math.random() - 0.5) * 8
+            );
+
+            // 各人形に個別の動きパラメータを設定
+            doll.moveParams = {
+                speedX: Math.random() * 0.1,
+                speedY: Math.random() * 0.1,
+                speedZ: Math.random() * 0.1,
+                rotX: Math.random() * 0.02,
+                rotY: Math.random() * 0.02
+            };
+
+            return doll;
+        }
+
+        // 人形の配列を管理
+        let dolls = [];
+
+        // 初期の人形を10体作成
+        function createInitialDolls() {
+            for(let i = 0; i < 10; i++) {
+                const doll = createDoll();
+                dolls.push(doll);
+                scene.add(doll);
+            }
+        }
+
+        createInitialDolls();
+
+        // カメラの位置設定
+        camera.position.z = 10;
+
+        let time = 0;
+
+        // アニメーション
+        const explode = (doll) => {
+            const pieces = [];
+            // 人形を小さな破片に分解
+            for(let i = 0; i < 60; i++) {
+                const geometry = new THREE.BoxGeometry(0.2, 0.2, 0.2);
+                const material = new THREE.MeshPhongMaterial({
+                    color: Math.random() * 0xffffff,
+                    emissive: 0x444444 // 発光効果を追加
+                });
+                const piece = new THREE.Mesh(geometry, material);
+                
+                piece.position.copy(doll.position);
+                piece.position.x += (Math.random() - 0.5) * 0.3;
+                piece.position.y += (Math.random() - 0.5) * 0.3;
+                piece.position.z += (Math.random() - 0.5) * 0.3;
+                
+                piece.velocity = new THREE.Vector3(
+                    (Math.random() - 0.5) * 1.0,
+                    Math.random() * 1.0,
+                    (Math.random() - 0.5) * 1.0
+                );
+                
+                pieces.push(piece);
+                scene.add(piece);
+            }
+            
+            // 破片のアニメーション
+            const animate = () => {
+                pieces.forEach(piece => {
+                    piece.position.add(piece.velocity);
+                    piece.velocity.y -= 0.02;
+                    piece.rotation.x += 0.2;
+                    piece.rotation.y += 0.2;
+                });
+                
+                renderer.render(scene, camera);
+                requestAnimationFrame(animate);
+            };
+            
+            // 3秒後に破片を削除
+            setTimeout(() => {
+                pieces.forEach(piece => {
+                    scene.remove(piece);
+                });
+            }, 3000);
+            
+            // 人形を削除して新しい人形を追加
+            scene.remove(doll);
+            dolls = dolls.filter(d => d !== doll);
+            const newDoll = createDoll();
+            dolls.push(newDoll);
+            scene.add(newDoll);
+            
+            // 新しい人形に対して爆発タイマーを設定
+            setExplosionTimer(newDoll);
+            
+            animate();
+        };
+
+        // メインのレンダリングループ
+        function render() {
+            time += 0.02;
+            dolls.forEach(doll => {
+                // 各人形の個別パラメータで動かす
+                doll.position.x += Math.sin(time * 2) * doll.moveParams.speedX;
+                doll.position.y += Math.cos(time * 3) * doll.moveParams.speedY;
+                doll.position.z += Math.sin(time * 1.5) * doll.moveParams.speedZ;
+                
+                doll.rotation.x += doll.moveParams.rotX;
+                doll.rotation.y += doll.moveParams.rotY;
+            });
+
+            renderer.render(scene, camera);
+            requestAnimationFrame(render);
+        }
+        render();
+
+        // 個別の人形に爆発タイマーを設定する関数
+        function setExplosionTimer(doll) {
+            const explosionDelay = Math.random() * 9000 + 1000;
+            setTimeout(() => explode(doll), explosionDelay);
+        }
+
+        // 初期の人形に爆発タイマーを設定
+        function setExplosions() {
+            dolls.forEach(doll => {
+                setExplosionTimer(doll);
+            });
+        }
+        setExplosions();
+    </script>
+</body>
+</html>

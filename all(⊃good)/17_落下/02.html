@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>東京タワーからの視点</title>
+    <style>
+        body { margin: 0; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // シーン、カメラ、レンダラーの設定
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x87CEEB); // 空色の背景
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // 地面の作成
+        const groundGeometry = new THREE.PlaneGeometry(1000, 1000);
+        const groundMaterial = new THREE.MeshPhongMaterial({ color: 0x808080 });
+        const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+        ground.rotation.x = -Math.PI / 2;
+        ground.position.y = -20;
+        scene.add(ground);
+
+        // ビルの作成
+        function createBuilding(x, z, height) {
+            const building = new THREE.Mesh(
+                new THREE.BoxGeometry(20, height, 20),
+                new THREE.MeshPhongMaterial({ color: 0x808080 })
+            );
+            building.position.set(x, height/2 - 20, z);
+            scene.add(building);
+        }
+
+        // 複数のビルを配置
+        for(let i = 0; i < 20; i++) {
+            const x = Math.random() * 400 - 200;
+            const z = Math.random() * 400 - 200;
+            const height = Math.random() * 100 + 50;
+            createBuilding(x, z, height);
+        }
+
+        // 東京タワーの作成
+        function createTokyoTower() {
+            const tower = new THREE.Group();
+
+            // タワーの脚部
+            const baseGeometry = new THREE.CylinderGeometry(15, 20, 40, 4);
+            const baseMaterial = new THREE.MeshPhongMaterial({ color: 0xff0000 });
+            const base = new THREE.Mesh(baseGeometry, baseMaterial);
+            tower.add(base);
+
+            // タワーの主塔
+            const mainTowerGeometry = new THREE.CylinderGeometry(5, 15, 150, 4);
+            const mainTower = new THREE.Mesh(mainTowerGeometry, baseMaterial);
+            mainTower.position.y = 95;
+            tower.add(mainTower);
+
+            // タワーの先端部
+            const topTowerGeometry = new THREE.CylinderGeometry(0, 5, 50, 4);
+            const topTower = new THREE.Mesh(topTowerGeometry, baseMaterial);
+            topTower.position.y = 195;
+            tower.add(topTower);
+
+            return tower;
+        }
+
+        // 光源の追加
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        scene.add(ambientLight);
+
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight.position.set(1, 1, 1);
+        scene.add(directionalLight);
+
+        // 東京タワーをシーンに追加
+        const tokyoTower = createTokyoTower();
+        tokyoTower.position.y = 200; // 初期位置を高くする
+        scene.add(tokyoTower);
+
+        // カメラの位置設定
+        camera.position.y = 400;
+        camera.rotation.x = -Math.PI / 3; // 地面に向ける
+
+        let isFalling = false;
+        let velocity = 0;
+        const gravity = 0.5;
+
+        // スペースキーの検出
+        document.addEventListener('keydown', (event) => {
+            if (event.code === 'Space' && !isFalling) {
+                isFalling = true;
+            }
+        });
+
+        // アニメーションループ
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (isFalling) {
+                velocity += gravity;
+                tokyoTower.position.y -= velocity;
+
+                // 地面に到達したら停止
+                if (tokyoTower.position.y <= 0) {
+                    tokyoTower.position.y = 0;
+                    isFalling = false;
+                    velocity = 0;
+                }
+            }
+
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        // ウィンドウリサイズ対応
+        window.addEventListener('resize', onWindowResize, false);
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+    </script>
+</body>
+</html>

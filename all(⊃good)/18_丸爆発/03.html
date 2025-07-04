@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>爆発する丸</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: black;
+        }
+        .circle {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: white;
+            transition: transform 0.5s;
+        }
+        .explode {
+            transform: scale(20) rotate(720deg);
+            background: orange;
+            opacity: 0;
+            transition: all 0.2s cubic-bezier(.17,.67,.83,.67);
+            box-shadow: 0 0 100px red;
+        }
+        .particle {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: yellow;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <script>
+        // 画面を9分割して丸を配置
+        function createCircles() {
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            
+            // 3x3のグリッドを作成
+            for (let y = 0; y < 3; y++) {
+                for (let x = 0; x < 3; x++) {
+                    const circle = document.createElement('div');
+                    circle.className = 'circle';
+                    // 均等に配置
+                    circle.style.left = (width * (x + 0.5) / 3 - 30) + 'px';
+                    circle.style.top = (height * (y + 0.5) / 3 - 30) + 'px';
+                    document.body.appendChild(circle);
+                }
+            }
+        }
+
+        // パーティクルを作成
+        function createParticle(x, y) {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            particle.style.left = x + 'px';
+            particle.style.top = y + 'px';
+            
+            const angle = Math.random() * Math.PI * 2;
+            const velocity = 20 + Math.random() * 30;
+            const vx = Math.cos(angle) * velocity;
+            const vy = Math.sin(angle) * velocity;
+            
+            document.body.appendChild(particle);
+            
+            let posX = x;
+            let posY = y;
+            
+            function animate() {
+                posX += vx;
+                posY += vy;
+                particle.style.left = posX + 'px';
+                particle.style.top = posY + 'px';
+                
+                if (posX < 0 || posX > window.innerWidth || posY < 0 || posY > window.innerHeight) {
+                    particle.remove();
+                } else {
+                    requestAnimationFrame(animate);
+                }
+            }
+            
+            animate();
+        }
+
+        // ランダムな丸を爆発させる
+        function explodeRandom() {
+            const circles = document.getElementsByClassName('circle');
+            const randomCircle = circles[Math.floor(Math.random() * circles.length)];
+            const rect = randomCircle.getBoundingClientRect();
+            
+            // パーティクルを生成（数を増やす）
+            for (let i = 0; i < 40; i++) {
+                createParticle(rect.left + rect.width/2, rect.top + rect.height/2);
+            }
+            
+            randomCircle.classList.add('explode');
+            
+            // アニメーション後に元に戻す
+            setTimeout(() => {
+                randomCircle.classList.remove('explode');
+            }, 500);
+        }
+
+        // 初期化
+        window.onload = createCircles;
+        
+        // スペースキーで爆発
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                explodeRandom();
+            }
+        });
+    </script>
+</body>
+</html>

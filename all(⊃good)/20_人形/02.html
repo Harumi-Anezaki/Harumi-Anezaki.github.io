@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>爆発する人形</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+    <script>
+        // シーンの作成
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // ライトの追加
+        const light = new THREE.DirectionalLight(0xffffff, 1);
+        light.position.set(1, 1, 1);
+        scene.add(light);
+
+        // 人形の形を作成
+        const doll = new THREE.Group();
+
+        // 頭部
+        const head = new THREE.Mesh(
+            new THREE.SphereGeometry(0.5, 32, 32),
+            new THREE.MeshPhongMaterial({ color: 0xffe0bd })
+        );
+        head.position.y = 1.2;
+        doll.add(head);
+
+        // 胴体
+        const body = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.3, 0.5, 1.2, 32),
+            new THREE.MeshPhongMaterial({ color: 0xff0000 })
+        );
+        body.position.y = 0.6;
+        doll.add(body);
+
+        // ランダムな位置に配置
+        doll.position.set(
+            (Math.random() - 0.5) * 8,
+            (Math.random() - 0.5) * 8,
+            (Math.random() - 0.5) * 8
+        );
+
+        scene.add(doll);
+
+        // カメラの位置設定
+        camera.position.z = 10;
+
+        // ランダムな動きのパラメータ
+        const moveSpeed = 0.05;
+        let time = 0;
+
+        // アニメーション
+        const explode = () => {
+            const pieces = [];
+            // 人形を小さな破片に分解
+            for(let i = 0; i < 60; i++) {
+                const geometry = new THREE.BoxGeometry(0.2, 0.2, 0.2);
+                const material = new THREE.MeshPhongMaterial({
+                    color: Math.random() * 0xffffff
+                });
+                const piece = new THREE.Mesh(geometry, material);
+                
+                // 破片の初期位置を人形の現在位置に
+                piece.position.copy(doll.position);
+                piece.position.x += (Math.random() - 0.5) * 0.3;
+                piece.position.y += (Math.random() - 0.5) * 0.3;
+                piece.position.z += (Math.random() - 0.5) * 0.3;
+                
+                // より激しく飛ばす
+                piece.velocity = new THREE.Vector3(
+                    (Math.random() - 0.5) * 1.0,
+                    Math.random() * 1.0,
+                    (Math.random() - 0.5) * 1.0
+                );
+                
+                pieces.push(piece);
+                scene.add(piece);
+            }
+            
+            // 破片のアニメーション
+            const animate = () => {
+                pieces.forEach(piece => {
+                    piece.position.add(piece.velocity);
+                    piece.velocity.y -= 0.02; // より強い重力
+                    piece.rotation.x += 0.2;
+                    piece.rotation.y += 0.2;
+                });
+                
+                renderer.render(scene, camera);
+                requestAnimationFrame(animate);
+            };
+            
+            scene.remove(doll);
+            animate();
+        };
+
+        // メインのレンダリングループ
+        function render() {
+            // 人形のランダムな動き
+            time += 0.02;
+            doll.position.x += Math.sin(time * 2) * moveSpeed;
+            doll.position.y += Math.cos(time * 3) * moveSpeed;
+            doll.position.z += Math.sin(time * 1.5) * moveSpeed;
+            
+            doll.rotation.x += 0.01;
+            doll.rotation.y += 0.02;
+
+            renderer.render(scene, camera);
+            requestAnimationFrame(render);
+        }
+        render();
+
+        // ランダムな時間（1-10秒）後に爆発
+        const explosionDelay = Math.random() * 9000 + 1000; // 1000-10000ミリ秒
+        setTimeout(explode, explosionDelay);
+    </script>
+</body>
+</html>

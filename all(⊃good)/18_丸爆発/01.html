@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>爆発する丸</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: black;
+        }
+        .circle {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: white;
+            transition: transform 0.5s;
+        }
+        .explode {
+            transform: scale(3);
+            background: orange;
+            opacity: 0;
+            transition: all 0.5s;
+        }
+    </style>
+</head>
+<body>
+    <script>
+        // 画面いっぱいに丸を配置
+        function createCircles() {
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            const size = 30; // 丸のサイズ+マージン
+
+            for (let y = 0; y < height; y += size) {
+                for (let x = 0; x < width; x += size) {
+                    const circle = document.createElement('div');
+                    circle.className = 'circle';
+                    circle.style.left = x + 'px';
+                    circle.style.top = y + 'px';
+                    document.body.appendChild(circle);
+                }
+            }
+        }
+
+        // ランダムな丸を爆発させる
+        function explodeRandom() {
+            const circles = document.getElementsByClassName('circle');
+            const randomCircle = circles[Math.floor(Math.random() * circles.length)];
+            randomCircle.classList.add('explode');
+            
+            // アニメーション後に要素を削除
+            setTimeout(() => {
+                randomCircle.remove();
+            }, 500);
+        }
+
+        // 初期化
+        window.onload = createCircles;
+        
+        // スペースキーで爆発
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                explodeRandom();
+            }
+        });
+    </script>
+</body>
+</html>
+

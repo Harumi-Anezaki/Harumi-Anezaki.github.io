@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>球体のシーン</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+    <script>
+        // シーンの作成
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x87CEEB); // 空色の背景
+
+        // カメラの作成
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        
+        // カメラの位置を設定（30度の角度で配置）
+        const distance = 10;  // カメラと原点との距離
+        const angleInRadians = 30 * (Math.PI / 180);  // 30度をラジアンに変換
+        camera.position.x = 0;
+        camera.position.z = Math.cos(angleInRadians) * distance;
+        camera.position.y = Math.sin(angleInRadians) * distance;
+        
+        // カメラを原点（球体の位置）に向ける
+        camera.lookAt(new THREE.Vector3(0, 0, -3));
+
+        // レンダラーの作成
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // 球体の作成
+        const geometry = new THREE.SphereGeometry(1, 32, 32);
+        const material = new THREE.MeshPhongMaterial({ color: 0xFFFFFF }); // 白色に変更
+        const sphere = new THREE.Mesh(geometry, material);
+        scene.add(sphere);
+
+        // 爆発パーティクルの準備
+        const particles = [];
+        const particleCount = 200; // パーティクル数を増加
+        const particleGeometry = new THREE.SphereGeometry(0.08, 8, 8); // サイズを大きく
+        
+        // 爆発エフェクト用の複数の色
+        const particleColors = [0xFF4500, 0xFF8C00, 0xFFD700, 0xFFFFFF];
+        
+        for(let i = 0; i < particleCount; i++) {
+            const color = particleColors[Math.floor(Math.random() * particleColors.length)];
+            const particleMaterial = new THREE.MeshPhongMaterial({ 
+                color: color,
+                emissive: color, // 発光効果
+                emissiveIntensity: 0.5
+            });
+            const particle = new THREE.Mesh(particleGeometry, particleMaterial);
+            particle.visible = false;
+            scene.add(particle);
+            particles.push({
+                mesh: particle,
+                velocity: new THREE.Vector3(),
+                active: false,
+                scale: 1.0,
+                fadeRate: 0.02 + Math.random() * 0.02 // フェードアウト速度
+            });
+        }
+
+        // 地面の作成（無限に広く見える地面）
+        const planeGeometry = new THREE.PlaneGeometry(1000, 1000);
+        const planeMaterial = new THREE.MeshPhongMaterial({ 
+            color: 0x355E3B,
+            side: THREE.DoubleSide 
+        });
+        const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+        plane.rotation.x = -Math.PI / 2;
+        plane.position.y = -1;
+        scene.add(plane);
+
+        // ライトの追加
+        const light = new THREE.DirectionalLight(0xffffff, 2.0); // 明るさ増加
+        light.position.set(5, 5, 5);
+        scene.add(light);
+        
+        const ambientLight = new THREE.AmbientLight(0x808080);
+        scene.add(ambientLight);
+
+        let isExploded = false;
+        const gravity = -0.015; // 重力を強く
+
+        // スペースキーのイベントリスナー
+        window.addEventListener('keydown', (event) => {
+            if(event.code === 'Space') {
+                if(!isExploded) {
+                    // 爆発
+                    sphere.visible = false;
+                    particles.forEach(p => {
+                        p.mesh.visible = true;
+                        p.mesh.position.copy(sphere.position);
+                        p.mesh.scale.set(1, 1, 1);
+                        const speed = (0.5 + Math.random() * 0.3) * 2; // 3倍の速度に変更
+                        p.velocity.set(
+                            (Math.random() - 0.5) * speed,
+                            Math.random() * speed * 1.2, // 上向きの初速度も3倍に
+                            (Math.random() - 0.5) * speed
+                        );
+                        p.active = true;
+                        p.scale = 1.0;
+                    });
+                } else {
+                    // 復元
+                    sphere.visible = true;
+                    particles.forEach(p => {
+                        p.mesh.visible = false;
+                        p.active = false;
+                    });
+                }
+                isExploded = !isExploded;
+            }
+        });
+
+        // アニメーション
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if(isExploded) {
+                particles.forEach(p => {
+                    if(p.active) {
+                        // 重力の影響を加える
+                        p.velocity.y += gravity;
+                        p.mesh.position.add(p.velocity);
+
+                        // パーティクルの縮小とフェードアウト
+                        p.scale -= p.fadeRate;
+                        if(p.scale <= 0) {
+                            p.mesh.visible = false;
+                            p.active = false;
+                        } else {
+                            p.mesh.scale.set(p.scale, p.scale, p.scale);
+                        }
+
+                        // 地面との衝突判定
+                        if(p.mesh.position.y < -1) {
+                            p.mesh.position.y = -1;
+                            p.velocity.y = -p.velocity.y * 0.3; // より大きな減衰
+                            
+                            // 水平方向の速度も大きく減衰
+                            p.velocity.x *= 0.9;
+                            p.velocity.z *= 0.9;
+                        }
+                    }
+                });
+            }
+
+            renderer.render(scene, camera);
+        }
+        animate();
+    </script>
+</body>
+</html>
