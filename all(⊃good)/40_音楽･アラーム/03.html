@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ランダム音楽プレーヤー</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background-color: #f0f0f0;
+    }
+
+    #time-settings {
+      margin-bottom: 20px;
+      padding: 15px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      background-color: #fff;
+    }
+
+    #time-settings label {
+      margin-right: 10px;
+    }
+
+    #time-settings input[type="time"] {
+      padding: 5px;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+    }
+
+    #time-settings button {
+      padding: 5px 10px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+    #time-settings button:disabled{
+        background-color: #cccccc;
+        cursor: not-allowed;
+    }
+
+    #now-playing {
+      margin-top: 20px;
+      font-weight: bold;
+    }
+
+    audio {
+      margin-top: 10px;
+      width: 80%;
+      max-width: 500px;
+    }
+
+    #file-input-label {
+      display: inline-block;
+      padding: 8px 12px;
+      background-color: #3498db;
+      color: white;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-bottom:15px;
+    }
+
+    #file-input-label:hover {
+      background-color: #2980b9;
+    }
+
+    #file-input {
+      display: none;
+    }
+
+
+    #controls {
+      margin-top: 15px;
+    }
+    #controls button {
+      padding: 5px 10px;
+      margin: 0 5px;
+      background-color: #3498db;
+      color: white;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+    #controls button:disabled{
+        background-color: #cccccc;
+        cursor: not-allowed;
+    }
+
+    #current-time {
+        margin-top: 10px;
+        font-size: 0.9em;
+        color: #888;
+    }
+  </style>
+</head>
+<body>
+  <h1>ランダム音楽プレーヤー</h1>
+
+  <div id="time-settings">
+    <label for="start-time">開始時間:</label>
+    <input type="time" id="start-time" value="09:00">
+    <label for="end-time">終了時間:</label>
+    <input type="time" id="end-time" value="18:00">
+    <button id="set-time-button">時間を設定</button>
+    <button id="clear-time-button" style="background-color:#e74c3c" disabled>設定解除</button>
+  </div>
+
+  <label for="file-input" id="file-input-label">音楽フォルダを選択</label>
+  <input type="file" id="file-input" webkitdirectory directory multiple accept="audio/*">
+
+  <div id="now-playing"></div>
+  <audio id="audio-player" controls></audio>
+
+  <div id="controls">
+    <button id="play-button">再生</button>
+    <button id="pause-button" disabled>一時停止</button>
+    <button id="skip-button">スキップ</button>
+  </div>
+
+  <div id="current-time"></div>
+
+  <script>
+    const startTimeInput = document.getElementById('start-time');
+    const endTimeInput = document.getElementById('end-time');
+    const setTimeButton = document.getElementById('set-time-button');
+    const clearTimeButton = document.getElementById('clear-time-button');
+    const fileInput = document.getElementById('file-input');
+    const nowPlayingDiv = document.getElementById('now-playing');
+    const audioPlayer = document.getElementById('audio-player');
+    const playButton = document.getElementById('play-button');
+    const pauseButton = document.getElementById('pause-button');
+    const skipButton = document.getElementById('skip-button');
+    const currentTimeDiv = document.getElementById('current-time');
+
+
+    let musicFiles = [];
+    let shuffledIndices = []; // シャッフルされたインデックスの配列
+    let currentTrackIndex = 0; // shuffledIndices配列内の現在位置
+    let intervalId = null;
+    let isPlayingWithinTime = false;
+    let isPlaying = false; // 再生中かどうか
+
+
+    // LocalStorageからデータ読み込み
+    function loadFromLocalStorage() {
+        const savedMusicFiles = localStorage.getItem('musicFiles');
+        const savedStartTime = localStorage.getItem('startTime');
+        const savedEndTime = localStorage.getItem('endTime');
+
+        if (savedMusicFiles) {
+            musicFiles = JSON.parse(savedMusicFiles).map(fileData => {
+                // Blob URLからFileオブジェクトを復元 (できないのでデータURLを使用)
+                return dataURLToFile(fileData.dataURL, fileData.name, fileData.type);
+            });
+            // シャッフルされたインデックス配列を初期化 (読み込んだ後)
+            shuffledIndices = shuffle([...Array(musicFiles.length).keys()]);
+            currentTrackIndex = 0;
+        }
+        if(savedStartTime) startTimeInput.value = savedStartTime;
+        if(savedEndTime) endTimeInput.value = savedEndTime;
+    }
+
+    // DataURLをFileオブジェクトに変換する関数
+    function dataURLToFile(dataURL, fileName, fileType) {
+        const byteString = atob(dataURL.split(',')[1]);
+        const ab = new ArrayBuffer(byteString.length);
+        const ia = new Uint8Array(ab);
+        for (let i = 0; i < byteString.length; i++) {
+            ia[i] = byteString.charCodeAt(i);
+        }
+        return new File([ab], fileName, { type: fileType });
+    }
+
+
+
+    // LocalStorageにデータ保存
+    function saveToLocalStorage() {
+        // Fileオブジェクトを保存可能な形式に変換 (Data URLを使用)
+        const filesToSave = musicFiles.map(file => {
+            return new Promise(resolve => { // Promiseでラップ
+                const reader = new FileReader();
+                reader.onload = () => {
+                    resolve({
+                        name: file.name,
+                        type: file.type,
+                        dataURL: reader.result // Data URL
+                    });
+                };
+                reader.readAsDataURL(file);
+            });
+        });
+
+        // Promiseが全て完了するのを待つ
+        Promise.all(filesToSave).then(savedFiles => {
+            localStorage.setItem('musicFiles', JSON.stringify(savedFiles));
+            localStorage.setItem('startTime', startTimeInput.value);
+            localStorage.setItem('endTime', endTimeInput.value);
+        });
+    }
+
+    // ページ読み込み時にLocalStorageから復元
+    loadFromLocalStorage();
+
+
+    // ファイル選択時
+    fileInput.addEventListener('change', (event) => {
+      musicFiles = []; // リセット
+
+      const files = event.target.files;
+      if (files.length === 0) return;
+
+      for (let i = 0; i < files.length; i++) {
+        if (files[i].type.startsWith('audio/')) {
+          musicFiles.push(files[i]);
+        }
+      }
+      // シャッフルされたインデックス配列を初期化 (ファイル選択時)
+      shuffledIndices = shuffle([...Array(musicFiles.length).keys()]);
+      currentTrackIndex = 0;
+
+      saveToLocalStorage(); // LocalStorageに保存
+    });
+
+
+
+    // 時間設定ボタン
+    setTimeButton.addEventListener('click', () => {
+        setTimeButton.disabled = true;
+        clearTimeButton.disabled = false;
+        startTimeInput.disabled = true;
+        endTimeInput.disabled = true;
+        startPlaybackLoop();
+        saveToLocalStorage();
+    });
+
+    // 時間設定解除ボタン
+    clearTimeButton.addEventListener('click', () => {
+      clearTimeButton.disabled = true;
+      setTimeButton.disabled = false;
+      startTimeInput.disabled = false;
+      endTimeInput.disabled = false;
+
+      clearInterval(intervalId);
+      if(!isPlaying){
+        audioPlayer.pause();
+      }
+      isPlayingWithinTime = false;
+      currentTimeDiv.textContent = ""; //表示クリア
+      saveToLocalStorage(); //状態を保存
+    });
+
+
+
+    // 再生ボタン
+    playButton.addEventListener('click', () => {
+        if (musicFiles.length === 0) {
+            alert('音楽ファイルが選択されていません');
+            return;
+        }
+        if (!isPlaying) {
+            playCurrentTrack();
+            playButton.disabled = true;
+            pauseButton.disabled = false;
+            isPlaying = true;
+
+            //時間設定がされていればループ開始
+            if(!setTimeButton.disabled){
+                startPlaybackLoop();
+            }
+        }
+    });
+
+    // 一時停止ボタン
+    pauseButton.addEventListener('click', () => {
+        audioPlayer.pause();
+        pauseButton.disabled = true;
+        playButton.disabled = false;
+        isPlaying = false;
+    });
+
+    // スキップボタン
+    skipButton.addEventListener('click', () => {
+        playNextTrack();
+    });
+
+
+    // 再生ループ開始関数
+    function startPlaybackLoop() {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+
+      intervalId = setInterval(() => {
+        const now = new Date();
+        const currentTime = timeStringToSeconds(now.toLocaleTimeString());
+        const startTime = timeStringToSeconds(startTimeInput.value);
+        const endTime = timeStringToSeconds(endTimeInput.value);
+
+        currentTimeDiv.textContent = `現在時刻: ${now.toLocaleTimeString()}`;
+
+        const withinTime = (startTime <= endTime)
+            ? (currentTime >= startTime && currentTime < endTime)
+            : (currentTime >= startTime || currentTime < endTime);
+
+        if (withinTime) {
+          if (!isPlayingWithinTime) {
+            isPlayingWithinTime = true;
+            //時間内に入ったときに、再生中でなければ再生開始
+            if(isPlaying){
+                playCurrentTrack();
+            }
+          }
+        } else {
+          if(isPlayingWithinTime){
+            isPlayingWithinTime = false;
+            //時間設定が有効、かつ、時間外になった時に再生中なら停止
+            if(isPlaying){
+                audioPlayer.pause();
+                nowPlayingDiv.textContent = "";
+            }
+          }
+        }
+      }, 1000);
+    }
+
+
+
+    //現在の曲を再生
+    function playCurrentTrack() {
+        if (musicFiles.length === 0) {
+            nowPlayingDiv.textContent = '音楽ファイルが選択されていません';
+            return;
+        }
+
+        const file = musicFiles[shuffledIndices[currentTrackIndex]];
+        const objectURL = URL.createObjectURL(file);
+
+        audioPlayer.src = objectURL;
+        audioPlayer.play().then(()=>{
+            // 再生成功時
+            nowPlayingDiv.textContent = `再生中: ${file.name}`;
+            isPlaying = true;
+            playButton.disabled = true;
+            pauseButton.disabled = false;
+        }).catch(error => {
+            // 再生失敗時
+            console.error("再生エラー:", error);
+            nowPlayingDiv.textContent = `再生エラー: ${file.name} - ${error.message}`;
+            // 次の曲を試すなどの処理
+            isPlaying = false;
+            playButton.disabled = false;
+            pauseButton.disabled = true;
+        });
+
+
+        audioPlayer.onended = () => {
+            if(isPlaying || isPlayingWithinTime){
+                playNextTrack();
+            }
+        };
+    }
+
+
+    //次の曲へ
+    function playNextTrack() {
+        currentTrackIndex = (currentTrackIndex + 1) % shuffledIndices.length;
+        playCurrentTrack();
+    }
+
+
+    // Fisher-Yates shuffle (完全ランダム)
+    function shuffle(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    }
+
+
+    // 時刻文字列(HH:MM)を秒に変換
+    function timeStringToSeconds(timeString) {
+      const [hours, minutes] = timeString.split(':').map(Number);
+      return hours * 3600 + minutes * 60;
+    }
+
+  </script>
+</body>
+</html>

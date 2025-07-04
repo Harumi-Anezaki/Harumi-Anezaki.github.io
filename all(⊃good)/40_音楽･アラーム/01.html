@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ランダム音楽プレーヤー</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background-color: #f0f0f0;
+    }
+
+    #time-settings {
+      margin-bottom: 20px;
+      padding: 15px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      background-color: #fff;
+    }
+
+    #time-settings label {
+      margin-right: 10px;
+    }
+
+    #time-settings input[type="time"] {
+      padding: 5px;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+    }
+
+    #time-settings button {
+      padding: 5px 10px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+    #time-settings button:disabled{
+        background-color: #cccccc;
+        cursor: not-allowed;
+    }
+
+    #now-playing {
+      margin-top: 20px;
+      font-weight: bold;
+    }
+
+    audio {
+      margin-top: 10px;
+      width: 80%; /* レスポンシブ対応 */
+      max-width: 500px; /* 最大幅を設定 */
+    }
+
+    #file-input-label {
+      display: inline-block; /* インラインブロック要素にする */
+      padding: 8px 12px;
+      background-color: #3498db;
+      color: white;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-bottom:15px;
+    }
+
+    #file-input-label:hover {
+      background-color: #2980b9;
+    }
+
+    #file-input {
+      display: none; /* ファイルインプットは非表示に */
+    }
+
+    #selected-files{
+        margin-top:10px;
+    }
+
+    #current-time {
+        margin-top: 10px;
+        font-size: 0.9em;
+        color: #888;
+    }
+  </style>
+</head>
+<body>
+  <h1>ランダム音楽プレーヤー</h1>
+
+  <div id="time-settings">
+    <label for="start-time">開始時間:</label>
+    <input type="time" id="start-time" value="09:00">
+    <label for="end-time">終了時間:</label>
+    <input type="time" id="end-time" value="18:00">
+    <button id="set-time-button">時間を設定</button>
+    <button id="clear-time-button" style="background-color:#e74c3c" disabled>設定解除</button>  </div>
+
+  <label for="file-input" id="file-input-label">音楽フォルダを選択</label>
+  <input type="file" id="file-input" webkitdirectory directory multiple accept="audio/*">
+    <div id="selected-files"></div>
+
+  <div id="now-playing"></div>
+  <audio id="audio-player" controls></audio>
+  <div id="current-time"></div>
+
+  <script>
+    const startTimeInput = document.getElementById('start-time');
+    const endTimeInput = document.getElementById('end-time');
+    const setTimeButton = document.getElementById('set-time-button');
+    const clearTimeButton = document.getElementById('clear-time-button');
+    const fileInput = document.getElementById('file-input');
+    const selectedFilesDiv = document.getElementById('selected-files');
+    const nowPlayingDiv = document.getElementById('now-playing');
+    const audioPlayer = document.getElementById('audio-player');
+    const currentTimeDiv = document.getElementById('current-time');
+
+
+    let musicFiles = [];
+    let currentTrackIndex = 0;
+    let intervalId = null;
+    let isPlayingWithinTime = false; //時間内かどうか
+
+
+
+    //ファイル選択時
+    fileInput.addEventListener('change', (event) => {
+      musicFiles = []; // リセット
+      selectedFilesDiv.innerHTML = ""; //ファイルリスト表示クリア
+
+      const files = event.target.files;
+      if (files.length === 0) return;
+
+      // 選択されたファイルを配列に格納 (audio/* でフィルタリング)
+      for (let i = 0; i < files.length; i++) {
+        if (files[i].type.startsWith('audio/')) { //audioファイルのみ
+          musicFiles.push(files[i]);
+        }
+      }
+      displaySelectedFiles();
+    });
+
+    function displaySelectedFiles(){
+        //選択されたファイル名を表示
+        musicFiles.forEach( file => {
+            const fileNameElement = document.createElement("div");
+            fileNameElement.textContent = file.name;
+            selectedFilesDiv.appendChild(fileNameElement);
+        });
+    }
+
+
+    // 時間設定ボタン
+    setTimeButton.addEventListener('click', () => {
+        setTimeButton.disabled = true;
+        clearTimeButton.disabled = false;
+        startTimeInput.disabled = true;
+        endTimeInput.disabled = true;
+        startPlaybackLoop();
+    });
+
+    // 時間設定解除ボタン
+    clearTimeButton.addEventListener('click', () => {
+      clearTimeButton.disabled = true;
+      setTimeButton.disabled = false;
+      startTimeInput.disabled = false;
+      endTimeInput.disabled = false;
+
+      clearInterval(intervalId); //タイマー停止
+      audioPlayer.pause(); //再生停止
+      isPlayingWithinTime = false;
+      nowPlayingDiv.textContent = ""; //表示クリア
+      currentTimeDiv.textContent = "";
+    });
+
+
+
+    // 再生ループ開始関数
+    function startPlaybackLoop() {
+      if (intervalId) {
+        clearInterval(intervalId); // 既存のインターバルをクリア
+      }
+
+      intervalId = setInterval(() => {
+        const now = new Date();
+        const currentTime = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+        const startTime = timeStringToSeconds(startTimeInput.value);
+        const endTime = timeStringToSeconds(endTimeInput.value);
+
+        currentTimeDiv.textContent = `現在時刻: ${now.toLocaleTimeString()}`;
+
+        // 時間内かどうかの判定 (開始時刻 <= 現在時刻 < 終了時刻) 0時をまたぐ場合も考慮
+        const withinTime = (startTime <= endTime)
+            ? (currentTime >= startTime && currentTime < endTime)
+            : (currentTime >= startTime || currentTime < endTime);
+
+        if (withinTime) {
+          if (!isPlayingWithinTime) { //時間内に入った瞬間
+            isPlayingWithinTime = true;
+            playRandomTrack();
+          }
+        } else {
+          if(isPlayingWithinTime){ //時間外になった瞬間
+            isPlayingWithinTime = false;
+            audioPlayer.pause();
+            nowPlayingDiv.textContent = "";
+          }
+        }
+      }, 1000); // 1秒ごとにチェック
+    }
+
+
+
+    // ランダムな曲を再生
+    function playRandomTrack() {
+        if (musicFiles.length === 0) {
+            nowPlayingDiv.textContent = '音楽ファイルが選択されていません';
+            return;
+        }
+
+        // 重複なしランダム (Fisher-Yates shuffle)
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]]; // ES6の分割代入でswap
+            }
+            return array;
+        }
+
+
+        if(currentTrackIndex === 0){  //最初、もしくは一周したらシャッフル
+            shuffle(musicFiles);
+        }
+
+        const file = musicFiles[currentTrackIndex];
+        const objectURL = URL.createObjectURL(file);
+
+        audioPlayer.src = objectURL;
+        audioPlayer.play();
+        nowPlayingDiv.textContent = `再生中: ${file.name}`;
+
+        // 次の曲の準備 (最後まで行ったら最初に戻る)
+        currentTrackIndex = (currentTrackIndex + 1) % musicFiles.length;
+
+
+
+        // 曲が終わったら次の曲を再生 (ended イベント)
+        audioPlayer.onended = () => {
+            if(isPlayingWithinTime){ //時間内であれば次を再生
+                playRandomTrack();
+            } else { //時間外なら停止、表示クリア
+                audioPlayer.pause();
+                nowPlayingDiv.textContent = "";
+            }
+        };
+    }
+
+
+    // 時刻文字列(HH:MM)を秒に変換
+    function timeStringToSeconds(timeString) {
+      const [hours, minutes] = timeString.split(':').map(Number);
+      return hours * 3600 + minutes * 60;
+    }
+  </script>
+</body>
+</html>

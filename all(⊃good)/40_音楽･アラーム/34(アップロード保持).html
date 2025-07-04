@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTML Music Player</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="module" src="https://unpkg.com/idb-keyval@6/dist/index.js"></script>
+    <style>
+        /* Custom styles to ensure smooth experience */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom styles for range input to match the dark theme */
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 8px;
+            background: #4a5568; /* gray-700 */
+            border-radius: 5px;
+            outline: none;
+            transition: opacity .2s;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #48bb78; /* green-500 */
+            cursor: pointer;
+            border-radius: 50%;
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            background: #48bb78; /* green-500 */
+            cursor: pointer;
+            border-radius: 50%;
+            border: none;
+        }
+        .animate-pulse-custom {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse {
+          0%, 100% {
+            opacity: 1;
+          }
+          50% {
+            opacity: .5;
+          }
+        }
+    </style>
+    <link rel="preconnect" href="https://rsms.me/">
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+</head>
+<body class="bg-gray-900 text-white">
+
+    <div class="min-h-screen flex flex-col items-center justify-center p-4">
+        <div class="w-full max-w-4xl flex flex-col gap-8">
+            
+            <!-- Playlist -->
+            <div class="w-full flex flex-col bg-gray-800 rounded-2xl shadow-2xl overflow-hidden">
+                <div class="p-6 border-b border-gray-700 flex justify-between items-center">
+                    <div>
+                        <h3 class="text-lg font-bold">プレイリスト</h3>
+                        <p id="playlist-subtitle" class="text-sm text-gray-400">曲が読み込まれていません</p>
+                    </div>
+                    <button id="load-folder-btn" class="bg-green-500 text-white py-2 px-4 rounded-lg flex items-center justify-center gap-2 hover:bg-green-600 transition-colors duration-300 font-bold text-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                           <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2z"></path>
+                        </svg>
+                        <span>フォルダを選択</span>
+                    </button>
+                </div>
+                <div id="playlist-container" class="flex-grow overflow-y-auto p-2" style="max-height: 50vh;">
+                    <div id="playlist-placeholder" class="flex flex-col items-center justify-center h-full text-center text-gray-500 p-6">
+                        <p>プレイリストは空です。</p>
+                        <p class="mt-2 text-sm">右上のボタンから音楽フォルダを読み込んでください。</p>
+                    </div>
+                    <ul id="playlist" class="hidden"></ul>
+                </div>
+            </div>
+            
+            <!-- Player UI -->
+            <div class="w-full flex flex-col items-center justify-center p-6 bg-gray-800 rounded-2xl shadow-2xl">
+                <h2 id="track-title" class="text-2xl font-bold truncate w-full text-center px-2 mb-8" title="曲が選択されていません">曲が選択されていません</h2>
+
+                <!-- Progress Bar -->
+                <div class="w-full">
+                    <input type="range" id="progress-bar" min="0" max="100" value="0" class="w-full cursor-pointer disabled:cursor-not-allowed" disabled>
+                    <div class="flex justify-between text-xs text-gray-400 mt-1">
+                        <span id="current-time">00:00</span>
+                        <span id="duration">00:00</span>
+                    </div>
+                </div>
+                
+                <!-- Controls -->
+                <div class="flex items-center justify-center gap-6 mt-6">
+                    <button id="shuffle-btn" class="p-2 rounded-full text-green-400" title="シャッフル">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="16 3 21 3 21 8"></polyline>
+                            <line x1="4" y1="20" x2="21" y2="3"></line>
+                            <polyline points="21 16 21 21 16 21"></polyline>
+                            <line x1="15" y1="15" x2="21" y2="21"></line>
+                            <line x1="4" y1="4" x2="9" y2="9"></line>
+                        </svg>
+                    </button>
+                    <button id="prev-btn" class="p-2 rounded-full text-gray-300 disabled:opacity-50" title="前の曲" disabled>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 19 2 12 11 5 11 19"/><polygon points="22 19 13 12 22 5 22 19"/></svg>
+                    </button>
+                    <button id="play-pause-btn" class="bg-green-500 text-white rounded-full w-16 h-16 flex items-center justify-center hover:bg-green-600 transition-transform transform hover:scale-105 shadow-lg disabled:bg-gray-600 disabled:cursor-not-allowed" title="再生" disabled>
+                        <svg id="play-icon" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="ml-1"><path d="m5 3 14 9-14 9V3z"/></svg>
+                        <svg id="pause-icon" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="hidden"><rect width="6" height="14" x="4" y="5" rx="1"/><rect width="6" height="14" x="14" y="5" rx="1"/></svg>
+                    </button>
+                    <button id="next-btn" class="p-2 rounded-full text-gray-300 disabled:opacity-50" title="次の曲" disabled>
+                       <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 5 22 12 13 19 13 5"/><polygon points="2 5 11 12 2 19 2 5"/></svg>
+                    </button>
+                    <button id="repeat-btn" class="p-2 rounded-full text-gray-400" title="リピート">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg>
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    
+    <audio id="audio-player"></audio>
+
+    <script type="module">
+        import { get, set } from 'https://unpkg.com/idb-keyval@6/dist/index.js';
+
+        // --- App State ---
+        let tracks = [];
+        let currentTrackIndex = -1;
+        let isPlaying = false;
+        let isShuffle = true;
+        let isRepeat = false;
+
+        // --- DOM Elements ---
+        const audioPlayer = document.getElementById('audio-player');
+        const playPauseBtn = document.getElementById('play-pause-btn');
+        const playIcon = document.getElementById('play-icon');
+        const pauseIcon = document.getElementById('pause-icon');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const progressBar = document.getElementById('progress-bar');
+        const currentTimeEl = document.getElementById('current-time');
+        const durationEl = document.getElementById('duration');
+        const trackTitleEl = document.getElementById('track-title');
+        const playlistEl = document.getElementById('playlist');
+        const playlistPlaceholder = document.getElementById('playlist-placeholder');
+        const playlistSubtitle = document.getElementById('playlist-subtitle');
+        const loadFolderBtn = document.getElementById('load-folder-btn');
+        const shuffleBtn = document.getElementById('shuffle-btn');
+        const repeatBtn = document.getElementById('repeat-btn');
+
+        // --- IndexedDB Functions ---
+        const directoryHandleKey = 'musicDirectoryHandle';
+
+        async function saveDirectoryHandle(handle) {
+            try {
+                await set(directoryHandleKey, handle);
+            } catch (error) {
+                console.error("Failed to save directory handle to IndexedDB:", error);
+            }
+        }
+
+        async function getDirectoryHandle() {
+            try {
+                return await get(directoryHandleKey);
+            } catch (error) {
+                console.error("Failed to get directory handle from IndexedDB:", error);
+                return undefined;
+            }
+        }
+
+        async function verifyPermission(handle) {
+            const options = { mode: 'read' };
+            // Check if permission was already granted.
+            if ((await handle.queryPermission(options)) === 'granted') {
+                return true;
+            }
+            // Request permission.
+            if ((await handle.requestPermission(options)) === 'granted') {
+                return true;
+            }
+            // The user didn't grant permission, so return false.
+            return false;
+        }
+
+        // --- Core Logic ---
+        async function processDirectory(handle) {
+            const newTracks = [];
+            try {
+                for await (const entry of handle.values()) {
+                    if (entry.kind === 'file') {
+                        const file = await entry.getFile();
+                        if (file.type.startsWith('audio/')) {
+                            newTracks.push({
+                                file,
+                                url: URL.createObjectURL(file),
+                                name: file.name.replace(/\.[^/.]+$/, "")
+                            });
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error("Error processing directory:", error);
+                playlistSubtitle.textContent = `フォルダの読み込みに失敗しました`;
+                return;
+            }
+            
+            tracks = newTracks;
+            isPlaying = false;
+            currentTrackIndex = tracks.length > 0 ? 0 : -1;
+            
+            if (currentTrackIndex !== -1) {
+                audioPlayer.src = tracks[currentTrackIndex].url;
+                audioPlayer.load();
+            }
+            
+            playlistSubtitle.textContent = `${handle.name} (${tracks.length}曲)`;
+            renderPlaylist();
+            updateUI();
+        }
+
+        const formatTime = (seconds) => {
+            if (isNaN(seconds)) return '00:00';
+            const minutes = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        };
+
+        const playTrack = (index) => {
+            if (index < 0 || index >= tracks.length) return;
+            currentTrackIndex = index;
+            const track = tracks[currentTrackIndex];
+            audioPlayer.src = track.url;
+            audioPlayer.load();
+            audioPlayer.play().catch(e => {
+                console.error("Playback error:", e)
+                isPlaying = false;
+                updateUI();
+            });
+            isPlaying = true;
+            updateUI();
+        };
+
+        // --- Event Handlers ---
+        loadFolderBtn.addEventListener('click', async () => {
+            if (!('showDirectoryPicker' in window)) {
+                alert('お使いのブラウザはフォルダ選択機能に対応していません。');
+                return;
+            }
+            try {
+                const handle = await window.showDirectoryPicker();
+                await saveDirectoryHandle(handle);
+                await processDirectory(handle);
+            } catch (err) {
+                 if (err.name !== 'AbortError') {
+                    console.error('フォルダ選択がキャンセルされたか、エラーが発生しました:', err);
+                 } else {
+                    console.log("Folder selection aborted by user.");
+                 }
+            }
+        });
+
+        const togglePlayPause = () => {
+            if (currentTrackIndex === -1) return;
+            if (isPlaying) {
+                audioPlayer.pause();
+            } else {
+                audioPlayer.play();
+            }
+            isPlaying = !isPlaying;
+            updateUI();
+        };
+
+        const playNext = () => {
+            if (tracks.length === 0) return;
+            let nextIndex;
+            if (isShuffle) {
+                nextIndex = Math.floor(Math.random() * tracks.length);
+                if (tracks.length > 1 && nextIndex === currentTrackIndex) {
+                    nextIndex = (currentTrackIndex + 1) % tracks.length;
+                }
+            } else {
+                nextIndex = (currentTrackIndex + 1) % tracks.length;
+            }
+            playTrack(nextIndex);
+        };
+        
+        const playPrev = () => {
+            if (tracks.length === 0) return;
+            if (audioPlayer.currentTime > 3) {
+                audioPlayer.currentTime = 0;
+                return;
+            }
+            const prevIndex = (currentTrackIndex - 1 + tracks.length) % tracks.length;
+            playTrack(prevIndex);
+        };
+
+        playlistEl.addEventListener('click', (event) => {
+            const li = event.target.closest('li');
+            if (li) playTrack(parseInt(li.dataset.index));
+        });
+
+        playPauseBtn.addEventListener('click', togglePlayPause);
+        nextBtn.addEventListener('click', playNext);
+        prevBtn.addEventListener('click', playPrev);
+
+        shuffleBtn.addEventListener('click', () => {
+            isShuffle = !isShuffle;
+            shuffleBtn.classList.toggle('text-green-400', isShuffle);
+            shuffleBtn.classList.toggle('text-gray-400', !isShuffle);
+        });
+
+        repeatBtn.addEventListener('click', () => {
+            isRepeat = !isRepeat;
+            repeatBtn.classList.toggle('text-green-400', isRepeat);
+            repeatBtn.classList.toggle('text-gray-400', !isRepeat);
+        });
+
+        audioPlayer.addEventListener('timeupdate', () => {
+            progressBar.value = audioPlayer.currentTime;
+            currentTimeEl.textContent = formatTime(audioPlayer.currentTime);
+        });
+
+        audioPlayer.addEventListener('loadedmetadata', () => {
+            progressBar.max = audioPlayer.duration;
+            durationEl.textContent = formatTime(audioPlayer.duration);
+            audioPlayer.volume = 1;
+        });
+        
+        progressBar.addEventListener('input', (event) => {
+            audioPlayer.currentTime = event.target.value;
+        });
+        
+        audioPlayer.addEventListener('ended', () => {
+            if (isRepeat) {
+                playTrack(currentTrackIndex);
+            } else {
+                playNext();
+            }
+        });
+
+        // --- UI Rendering ---
+        const updateUI = () => {
+            playIcon.classList.toggle('hidden', isPlaying);
+            pauseIcon.classList.toggle('hidden', !isPlaying);
+            playPauseBtn.title = isPlaying ? '一時停止' : '再生';
+
+            if (currentTrackIndex !== -1) {
+                trackTitleEl.textContent = tracks[currentTrackIndex].name;
+                trackTitleEl.title = tracks[currentTrackIndex].name;
+            } else {
+                trackTitleEl.textContent = '曲が選択されていません';
+                trackTitleEl.title = '曲が選択されていません';
+            }
+
+            const hasTracks = tracks.length > 0;
+            playPauseBtn.disabled = !hasTracks;
+            prevBtn.disabled = !hasTracks;
+            nextBtn.disabled = !hasTracks;
+            progressBar.disabled = !hasTracks;
+
+            const allItems = playlistEl.querySelectorAll('li');
+            allItems.forEach((item, index) => {
+                const isActive = index === currentTrackIndex;
+                item.classList.toggle('bg-green-500/20', isActive);
+                item.classList.toggle('text-green-300', isActive);
+                const musicIcon = item.querySelector('.music-icon');
+                const numIcon = item.querySelector('.num-icon');
+                if(musicIcon && numIcon){
+                    musicIcon.classList.toggle('hidden', !(isActive && isPlaying));
+                    numIcon.classList.toggle('hidden', isActive && isPlaying);
+                }
+            });
+        };
+
+        const renderPlaylist = () => {
+            if (tracks.length > 0) {
+                playlistEl.innerHTML = tracks.map((track, index) => `
+                    <li class="flex items-center gap-4 p-3 rounded-lg cursor-pointer hover:bg-gray-700/50" data-index="${index}">
+                        <div class="w-8 text-center flex-shrink-0 relative h-5 flex items-center justify-center">
+                            <span class="num-icon text-gray-400">${index + 1}</span>
+                            <span class="music-icon hidden">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" class="animate-pulse-custom text-green-400"><path d="m5 3 14 9-14 9V3z"/></svg>
+                            </span>
+                        </div>
+                        <p class="flex-grow truncate" title="${track.name}">${track.name}</p>
+                    </li>
+                `).join('');
+                playlistPlaceholder.classList.add('hidden');
+                playlistEl.classList.remove('hidden');
+            } else {
+                playlistPlaceholder.classList.remove('hidden');
+                playlistEl.classList.add('hidden');
+            }
+            updateUI();
+        };
+
+        // --- App Initialization ---
+        async function init() {
+            if (!('showDirectoryPicker' in window)) {
+                loadFolderBtn.innerHTML = '<span>ブラウザ非対応</span>';
+                loadFolderBtn.disabled = true;
+                loadFolderBtn.classList.add("bg-gray-500", "cursor-not-allowed");
+            } else {
+                try {
+                    const savedHandle = await getDirectoryHandle();
+                    if (savedHandle) {
+                        if (await verifyPermission(savedHandle)) {
+                            await processDirectory(savedHandle);
+                        } else {
+                          console.log('保存されたフォルダへのアクセスが許可されませんでした。');
+                        }
+                    }
+                } catch(e) {
+                    console.error("Initialization failed:", e);
+                }
+            }
+            renderPlaylist();
+            updateUI();
+        }
+
+        init();
+    </script>
+</body>
+</html>

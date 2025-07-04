@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ランダム音楽プレーヤー</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background-color: #f0f0f0;
+    }
+
+    #settings {
+      margin-bottom: 20px;
+      padding: 15px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      background-color: #fff;
+      width: 80%; /* レスポンシブ */
+      max-width: 600px;
+    }
+
+    #settings label {
+      margin-right: 10px;
+    }
+
+    #settings input[type="time"],
+    #settings input[type="text"] {
+      padding: 5px;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+      margin-right: 5px;
+    }
+
+    #settings button {
+      padding: 5px 10px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+      margin-left: 5px;
+    }
+    #settings button:disabled{
+        background-color: #cccccc;
+        cursor: not-allowed;
+    }
+
+    #now-playing {
+      margin-top: 20px;
+      font-weight: bold;
+    }
+
+    audio {
+      margin-top: 10px;
+      width: 80%;
+      max-width: 500px;
+    }
+
+    #controls{
+        margin-top: 10px;
+    }
+
+    #current-time {
+        margin-top: 10px;
+        font-size: 0.9em;
+        color: #888;
+    }
+  </style>
+</head>
+<body>
+  <h1>ランダム音楽プレーヤー</h1>
+
+  <div id="settings">
+    <div>
+        <label for="start-time">開始時間:</label>
+        <input type="time" id="start-time" value="09:00">
+        <label for="end-time">終了時間:</label>
+        <input type="time" id="end-time" value="18:00">
+    </div>
+    <div>
+      <label for="folder-path">フォルダパス:</label>
+      <input type="text" id="folder-path" placeholder="例: C:\Users\...\Music">
+      <button id="load-folder-button">読込</button>
+      <button id="set-time-button">時間設定</button>
+      <button id="clear-time-button" style="background-color:#e74c3c" disabled>設定解除</button>
+    </div>
+  </div>
+
+
+  <div id="now-playing"></div>
+  <audio id="audio-player" controls></audio>
+
+  <div id="controls">
+    <button id="skip-button">スキップ</button>
+  </div>
+
+  <div id="current-time"></div>
+
+  <script>
+    const startTimeInput = document.getElementById('start-time');
+    const endTimeInput = document.getElementById('end-time');
+    const folderPathInput = document.getElementById('folder-path');
+    const loadFolderButton = document.getElementById('load-folder-button');
+    const setTimeButton = document.getElementById('set-time-button');
+    const clearTimeButton = document.getElementById('clear-time-button');
+    const nowPlayingDiv = document.getElementById('now-playing');
+    const audioPlayer = document.getElementById('audio-player');
+    const skipButton = document.getElementById('skip-button');
+    const currentTimeDiv = document.getElementById('current-time');
+
+    let musicFiles = [];
+    let intervalId = null;
+    let isPlayingWithinTime = false;
+    let shuffledIndices = []; // シャッフルされたインデックスの配列
+    let currentTrackIndex = 0; // shuffledIndices 配列内の現在のインデックス
+
+
+    // フォルダ読み込みボタン
+    loadFolderButton.addEventListener('click', async () => {
+        const folderPath = folderPathInput.value;
+        if (!folderPath) {
+            alert('フォルダパスを入力してください');
+            return;
+        }
+
+        try {
+            // フォルダ内のファイル一覧を取得 (fetch API を使う)
+            const response = await fetch(`/get-files?folder=${encodeURIComponent(folderPath)}`);  // バックエンドのエンドポイント
+            if (!response.ok) {
+                throw new Error(`HTTPエラー: ${response.status}`);
+            }
+
+            const data = await response.json(); // JSON としてレスポンスを解析
+            if (data.error) {
+                throw new Error(data.error); // エラーメッセージを表示
+            }
+
+            musicFiles = data.files; // 取得したファイルリストを musicFiles に格納
+
+            if (musicFiles.length === 0) {
+                alert('指定されたフォルダに音楽ファイルが見つかりません');
+                return;
+            }
+            // シャッフルされたインデックス配列を初期化
+            shuffledIndices = shuffle([...Array(musicFiles.length).keys()]); // 0 から始まる連番配列をシャッフル
+            currentTrackIndex = 0; // インデックスをリセット
+
+        } catch (error) {
+            console.error('ファイル取得エラー:', error);
+            alert(`エラー: ${error.message}`);
+        }
+    });
+
+
+
+    // 時間設定ボタン
+    setTimeButton.addEventListener('click', () => {
+        setTimeButton.disabled = true;
+        clearTimeButton.disabled = false;
+        startTimeInput.disabled = true;
+        endTimeInput.disabled = true;
+        folderPathInput.disabled = true; // フォルダパスも無効化
+        loadFolderButton.disabled = true;
+        startPlaybackLoop();
+    });
+
+    // 時間設定解除ボタン
+    clearTimeButton.addEventListener('click', () => {
+      clearTimeButton.disabled = true;
+      setTimeButton.disabled = false;
+      startTimeInput.disabled = false;
+      endTimeInput.disabled = false;
+      folderPathInput.disabled = false;
+      loadFolderButton.disabled = false;
+
+      clearInterval(intervalId); //タイマー停止
+      audioPlayer.pause(); //再生停止
+      isPlayingWithinTime = false;
+      nowPlayingDiv.textContent = ""; //表示クリア
+      currentTimeDiv.textContent = "";
+    });
+
+     // スキップボタン
+     skipButton.addEventListener('click', () => {
+        playNextTrack();
+    });
+
+    // 再生ループ開始関数
+    function startPlaybackLoop() {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+
+      intervalId = setInterval(() => {
+        const now = new Date();
+        const currentTime = timeStringToSeconds(now.toLocaleTimeString());
+        const startTime = timeStringToSeconds(startTimeInput.value);
+        const endTime = timeStringToSeconds(endTimeInput.value);
+
+        currentTimeDiv.textContent = `現在時刻: ${now.toLocaleTimeString()}`;
+
+        const withinTime = (startTime <= endTime)
+            ? (currentTime >= startTime && currentTime < endTime)
+            : (currentTime >= startTime || currentTime < endTime);
+
+        if (withinTime) {
+          if (!isPlayingWithinTime) {
+            isPlayingWithinTime = true;
+            playCurrentTrack(); // 最初の曲、または時間内に戻ったときに再生開始
+          }
+        } else {
+          if(isPlayingWithinTime){
+            isPlayingWithinTime = false;
+            audioPlayer.pause();
+            nowPlayingDiv.textContent = "";
+          }
+        }
+      }, 1000);
+    }
+
+
+
+    function playCurrentTrack(){
+        if (musicFiles.length === 0 || shuffledIndices.length === 0) {
+            nowPlayingDiv.textContent = '音楽ファイルが読み込まれていません';
+            return;
+        }
+
+        const file = musicFiles[shuffledIndices[currentTrackIndex]]; // シャッフルされたインデックスを使用
+        audioPlayer.src = file;
+        audioPlayer.play().catch(error => { // play() が失敗した場合のエラー処理
+            console.error("再生エラー:", error);
+            nowPlayingDiv.textContent = `再生エラー: ${file} - ${error.message}`;
+            // 必要に応じて、次の曲を試すなどの処理
+        });
+        nowPlayingDiv.textContent = `再生中: ${getFileNameFromPath(file)}`;
+
+         // 曲が終わったら次の曲を再生 (ended イベント)
+         audioPlayer.onended = () => {
+            if(isPlayingWithinTime){ //時間内であれば次を再生
+                playNextTrack();
+            } else { //時間外なら停止、表示クリア
+                audioPlayer.pause();
+                nowPlayingDiv.textContent = "";
+            }
+        };
+    }
+
+
+
+    function playNextTrack(){
+        currentTrackIndex = (currentTrackIndex + 1) % shuffledIndices.length; // 次のインデックスへ
+        playCurrentTrack();
+    }
+
+
+    // Fisher-Yates shuffle (完全ランダム)
+    function shuffle(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    }
+
+    // 時刻文字列(HH:MM:SS)を秒に変換
+    function timeStringToSeconds(timeString) {
+      const [hours, minutes, seconds] = timeString.split(':').map(Number);
+      return (hours || 0) * 3600 + (minutes || 0) * 60 + (seconds || 0); // NaN対策
+    }
+
+    // ファイルパスからファイル名を取得する関数
+    function getFileNameFromPath(filePath) {
+        return filePath.split('/').pop().split('\\').pop(); //  / と \ の両方に対応
+    }
+
+  </script>
+</body>
+</html>

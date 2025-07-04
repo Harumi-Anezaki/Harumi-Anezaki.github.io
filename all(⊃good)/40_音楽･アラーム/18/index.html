@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ローカル音楽プレーヤー (IndexedDB)</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>ローカル音楽プレーヤー (IndexedDB)</h1>
+
+  <input type="file" id="folderInput" webkitdirectory directory multiple accept="audio/*" />
+
+  <div id="playlist">
+    <h2>プレイリスト</h2>
+    <ul id="songList">
+      </ul>
+  </div>
+
+  <audio id="audioPlayer" controls></audio>
+
+  <div id="controls">
+      <button id="prevButton">前へ</button>
+      <button id="playPauseButton">再生</button>
+      <button id="nextButton">次へ (ランダム)</button>
+  </div>
+    <div id="now-playing">
+        再生中の曲: <span id="current-song-title"></span>
+    </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

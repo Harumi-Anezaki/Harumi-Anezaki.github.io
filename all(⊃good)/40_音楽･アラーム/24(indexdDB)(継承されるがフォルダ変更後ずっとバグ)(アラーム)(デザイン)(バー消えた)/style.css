@@ -1,0 +1,182 @@
+/* 全体的なスタイル */
+body {
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; /* Spotify風のフォント */
+  margin: 0; /* bodyのデフォルトマージンをなくす */
+  background-color: #121212; /* ダークグレーの背景 */
+  color: #ffffff; /* テキストの色を白に */
+  display: flex; /* 全体をフレックスボックスに */
+  flex-direction: column; /* 縦方向に配置 */
+  min-height: 100vh; /* 最小の高さをビューポートの100%に */
+}
+
+h1 {
+  color: #ffffff;
+  text-align: center;
+  margin-top: 20px;
+  margin-bottom: 30px;
+}
+
+/* フォルダ選択ボタン */
+#folderInput {
+    margin: 0 auto; /* 中央揃え */
+    margin-bottom: 20px;
+    display: block; /* インライン要素をブロック要素に */
+    width: auto; /* 幅をコンテンツに合わせる */
+}
+
+
+/* プレイリスト */
+#playlist {
+  background-color: #181818; /* 少し明るいダークグレー */
+  border-radius: 8px; /* 角丸 */
+  padding: 20px;
+  margin: 0 auto; /* 中央揃え */
+  max-height: 400px; /* 最大高さを設定 */
+  overflow-y: auto; /* スクロール可能に */
+  width: 80%; /* 幅を調整 */
+  max-width: 600px; /* 最大幅を設定 */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5); /* 影を追加 */
+}
+
+#playlist h2 {
+  font-size: 1.5em;
+  font-weight: bold;
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: #ffffff;
+}
+
+#songList {
+  list-style: none; /* リストの点を削除 */
+  padding: 0;
+  margin: 0;
+}
+
+#songList li {
+  padding: 10px 16px; /* パディングを調整 */
+  cursor: pointer;
+  border-bottom: none; /* 境界線削除 */
+  transition: background-color 0.2s ease; /* ホバー時の変化を滑らかに */
+}
+
+#songList li:hover {
+  background-color: #282828; /* ホバー時の背景色 */
+}
+
+/* 再生中の曲のハイライト */
+#songList li.playing {
+  background-color: #383838; /* 選択された項目の背景色 */
+  /* または Spotify のブランドカラー */
+  /* background-color: #1DB954;  */
+  color: #ffffff;
+}
+
+
+/* オーディオプレーヤー (非表示) */
+#audioPlayer {
+  display: none; /* 非表示にする */
+}
+
+/* コントロール */
+#controls {
+  margin-top: 30px;
+  padding: 15px;
+  background-color: #121212;
+  display: flex; /* 水平方向に配置 */
+  align-items: center; /* 垂直方向中央揃え */
+  justify-content: space-around; /* 均等に配置 */
+  width: 80%; /* 幅を調整 */
+  max-width: 600px;/*最大幅*/
+  margin: 0 auto;/*中央揃え*/
+}
+
+#controls button {
+    background-color: #535353; /* ボタンの背景色 */
+    color: #ffffff;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    font-size: 0.9em;
+}
+
+#controls button#playPauseButton{
+  background-color: #1DB954; /* 再生/一時停止ボタンの色 */
+}
+
+#controls button:hover {
+  background-color: #686868; /* ホバー時の背景色 */
+}
+#controls button#playPauseButton:hover{
+    background-color: #20d364;
+}
+
+/* 前へ/次へボタン (アイコン風) */
+#prevButton, #nextButton {
+/*   background-image: url('path/to/icon.svg');  SVGアイコンを使用する場合 */
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 20px;
+  text-indent: -9999px; /* テキストを隠す */
+  overflow: hidden;
+  width: 40px; /* アイコンのサイズに合わせる */
+  height: 40px;
+}
+
+
+#controls input[type="time"] {
+  background-color: #535353;
+  color: #ffffff;
+  border: 1px solid #282828;
+  padding: 8px;
+  border-radius: 4px;
+  width: auto; /* 幅をコンテンツに合わせる */
+  margin-left: 5px; /*少し左に余白*/
+}
+
+#controls label {
+    color:#fff;
+    margin-left: 10px;
+
+}
+
+
+/* 再生中の曲 */
+#now-playing {
+  margin-top: 20px;
+  padding: 10px;
+  background-color: #121212;
+  font-style: italic;
+  text-align: center; /* 中央揃え */
+  width: 80%;
+  max-width: 600px;/*最大幅*/
+  margin: 20px auto 0;/* 上マージン、左右はauto、下マージンは0 */
+
+}
+
+#current-song-title {
+  color: #ffffff;
+}
+
+/* アラーム設定/解除ボタン */
+#setAlarmButton,
+#clearAlarmButton {
+  /* 共通スタイル */
+  margin-left: 10px;
+}
+
+
+/* #clearAlarmButton の初期状態 (JavaScriptで制御) */
+#controls #clearAlarmButton {
+    display: none;
+}
+
+/* #clearAlarmButton が表示されるときのスタイル */
+#controls.alarm-set #clearAlarmButton {
+    display: inline-block;
+}
+/*#setAlarmButtonが非表示*/
+#controls.alarm-set #setAlarmButton {
+    display: none;
+}

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ローカル音楽プレーヤー (IndexedDB)</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+</head>
+<body>
+  <div class="container">
+    <aside class="sidebar">
+      <div class="logo">
+        <i class="fas fa-music"></i>
+        <span>My Music</span>
+      </div>
+      <nav class="navigation">
+        <ul>
+          <li><a href="#"><i class="fas fa-home"></i> ホーム</a></li>
+          <li><a href="#"><i class="fas fa-search"></i> 検索</a></li>
+          <li><a href="#"><i class="fas fa-book"></i> ライブラリ</a></li>
+        </ul>
+      </nav>
+      <div class="playlists">
+        <h3>プレイリスト</h3>
+        <ul id="userPlaylists">
+          </ul>
+      </div>
+        <div class="user">
+            <i class="fas fa-user"></i>
+            <span>User</span>
+        </div>
+    </aside>
+
+    <main class="main-content">
+      <div class="context-header">
+        <h2>プレイリスト</h2>
+      </div>
+      <div id="playlist">
+        <ul id="songList">
+          </ul>
+      </div>
+    </main>
+
+    <aside class="right-sidebar">
+      <div class="now-playing">
+        <div class="song-info">
+          <i class="fas fa-music"></i>
+          <div>
+            <span id="current-song-title"></span><br>
+            <span id="current-song-artist"></span>
+          </div>
+        </div>
+      </div>
+      <div class="queue">
+        <h3>再生キュー</h3>
+        <ul id="queueList">
+        </ul>
+      </div>
+    </aside>
+  </div>
+
+  <div class="controls">
+    <div class="progress-bar-container">
+        <span id="current-time">0:00</span>
+        <input type="range" id="progress-bar" min="0" max="100" value="0">
+        <span id="total-time">0:00</span>
+      </div>
+      <div class="buttons">
+          <button id="prevButton"><i class="fas fa-step-backward"></i></button>
+          <button id="playPauseButton"><i class="fas fa-play"></i></button>
+          <button id="nextButton"><i class="fas fa-step-forward"></i></button>
+      </div>
+      <div class="volume-control">
+          <i class="fas fa-volume-down"></i>
+          <input type="range" id="volume-slider" min="0" max="1" step="0.1" value="1">
+      </div>
+      <div class="other-controls">
+          <label for="alarmTime">アラーム:</label>
+          <input type="time" id="alarmTime" />
+          <button id="setAlarmButton"><i class="fas fa-bell"></i></button>
+          <button id="clearAlarmButton" style="display: none;"><i class="fas fa-bell-slash"></i></button>
+      </div>
+  </div>
+  <div class="file-input-container">
+      <input type="file" id="folderInput" webkitdirectory directory multiple accept="audio/*" />
+  </div>
+
+  <audio id="audioPlayer"></audio>
+  <script src="script.js"></script>
+</body>
+</html>

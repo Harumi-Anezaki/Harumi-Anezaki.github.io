@@ -1,0 +1,361 @@
+/* 全体設定 */
+body {
+  font-family: 'Montserrat', sans-serif; /* または、'Lato', 'Open Sans', 'Circular', 'Gotham' */
+  margin: 0;
+  background-color: #121212;
+  color: #b3b3b3;
+  display: flex;
+  flex-direction: column;
+  height: 100vh; /* ビューポートの高さに合わせる */
+  overflow: hidden; /* スクロールバーを隠す */
+}
+
+.container {
+    display: flex;
+    flex: 1; /* body内で利用可能なスペースを全て使う */
+    overflow: hidden; /* 子要素のスクロールを管理 */
+}
+
+/* サイドバー */
+.sidebar {
+  width: 250px;
+  background-color: #000000;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  margin-bottom: 30px;
+  color: #fff;
+}
+
+.logo i {
+  margin-right: 10px;
+  font-size: 24px;
+}
+.logo span{
+    font-size:  24px;
+    font-weight: bold;
+}
+
+.navigation ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.navigation li a {
+  display: flex;
+  align-items: center;
+  color: #b3b3b3;
+  text-decoration: none;
+  padding: 10px 0;
+  transition: color 0.3s ease;
+}
+
+.navigation li a i {
+  margin-right: 15px;
+  font-size: 18px;
+}
+
+.navigation li a:hover {
+  color: #fff;
+}
+
+.playlists {
+  margin-top: 30px;
+    flex-grow: 1; /* 残りのスペースを埋める */
+    overflow-y: auto; /* スクロール可能に */
+}
+.playlists h3{
+    color:#fff;
+}
+
+.playlists ul {
+  list-style: none;
+  padding: 0;
+    margin: 0;
+}
+.user {
+    display: flex; /* フレックスボックスにする */
+    align-items: center; /* アイコンとテキストを垂直方向に中央揃え */
+    padding: 10px 0;
+    color: #b3b3b3;
+}
+
+.user i {
+    margin-right: 10px; /* アイコンとテキストの間隔 */
+    font-size: 20px;
+}
+
+/* メインコンテンツ */
+.main-content {
+  flex-grow: 1;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.context-header {
+  margin-bottom: 20px;
+}
+.context-header h2{
+    color:#fff;
+}
+
+#playlist {
+    overflow-y: auto;
+}
+
+#songList {
+  list-style: none;
+  padding: 0;
+  margin:0;
+}
+
+#songList li {
+  display: flex; /* フレックスボックス */
+  align-items: center; /* 垂直方向に中央揃え */
+  padding: 10px;
+  border-bottom: 1px solid #282828;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+#songList li i {
+  margin-right: 15px;
+  font-size: 20px;
+}
+
+#songList li:hover {
+  background-color: #282828;
+}
+#songList li.playing {
+    background-color: #3a3a3a; /* 再生中の曲の背景色 */
+    color: #1DB954; /* 再生中の曲のテキスト色 */
+}
+
+
+/* 右サイドバー */
+.right-sidebar {
+  width: 300px;
+  background-color: #000000;
+  padding: 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+.now-playing {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.now-playing .song-info {
+    display: flex;
+    align-items: center;
+}
+
+.now-playing .song-info i{
+    margin-right: 15px;
+    font-size: 30px;
+    color:#fff;
+}
+
+.now-playing #current-song-title {
+  font-weight: bold;
+  color: #fff;
+    display: block; /* ブロックレベル要素にする */
+}
+
+.now-playing #current-song-artist {
+  color: #b3b3b3;
+    display: block;
+}
+
+.queue {
+    flex-grow: 1;
+    overflow-y: auto;
+}
+.queue h3{
+    color:#fff;
+}
+
+.queue ul {
+  list-style: none;
+  padding: 0;
+    margin:0;
+}
+
+/* コントロールバー */
+.controls {
+  background-color: #181818;
+  padding: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* 要素を均等に配置 */
+  border-top: 1px solid #282828;
+}
+
+.progress-bar-container {
+    display: flex;
+    align-items: center;
+    width: 40%; /* 幅を調整 */
+}
+#current-time, #total-time{
+    min-width: 40px; /* 幅を固定 */
+    text-align: center;
+}
+
+#progress-bar {
+  flex-grow: 1; /* 利用可能なスペースを埋める */
+  margin: 0 10px;
+  cursor: pointer;
+    -webkit-appearance: none;  /* ブラウザのデフォルトスタイルを無効化 */
+    appearance: none;
+    height: 4px; /* バーの高さ */
+    background: #535353; /* バーの背景色 */
+    border-radius: 2px; /* バーの角を丸く */
+    outline: none; /* フォーカス時のアウトラインを削除 */
+}
+/* WebKitブラウザ (Chrome, Safari) 用のつまみ */
+#progress-bar::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 12px;
+    height: 12px;
+    background: #fff;
+    border-radius: 50%;
+    cursor: pointer;
+    margin-top: -4px; /* バーの中心に配置 */
+}
+
+/* Firefox用のつまみ */
+#progress-bar::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+    background: #fff;
+    border-radius: 50%;
+    cursor: pointer;
+    border: none; /* ボーダー削除 */
+}
+
+.buttons {
+    width: 20%;
+    display: flex;
+    justify-content: center; /* 中央揃え */
+    gap: 20px; /* ボタン間のスペース */
+}
+
+.controls button {
+  background-color: transparent;
+  border: none;
+  color: #b3b3b3;
+  font-size: 20px;
+  cursor: pointer;
+  transition: color 0.3s ease;
+  padding: 10px;
+}
+
+.controls button:hover {
+  color: #fff;
+}
+#playPauseButton{
+    font-size: 30px; /* play/pauseを大きく */
+}
+
+.volume-control {
+    display: flex;
+    align-items: center;
+    width: 20%;
+    justify-content: flex-end; /* 右寄せ */
+}
+.volume-control i{
+    margin-right: 10px;
+}
+
+#volume-slider {
+  width: 80px;
+  cursor: pointer;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 4px;
+    background: #535353;
+    border-radius: 2px;
+    outline: none;
+}
+#volume-slider::-webkit-slider-thumb{
+    -webkit-appearance: none;
+    appearance: none;
+    width: 12px;
+    height: 12px;
+    background: #fff;
+    border-radius: 50%;
+    cursor: pointer;
+    margin-top: -4px;
+}
+#volume-slider::-moz-range-thumb{
+    width: 12px;
+    height: 12px;
+    background: #fff;
+    border-radius: 50%;
+    cursor: pointer;
+    border: none;
+}
+
+.other-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px; /* 要素間のスペース */
+}
+
+.other-controls label {
+    color: #b3b3b3;
+}
+
+.other-controls input[type="time"] {
+    background-color: #333;
+    border: 1px solid #535353;
+    color: #fff;
+    padding: 5px;
+    border-radius: 4px;
+}
+
+.other-controls button {
+    background-color: transparent;
+    border: none;
+    color: #b3b3b3;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.other-controls button:hover {
+    color: #fff;
+}
+
+/* ファイルインプットは隠す */
+.file-input-container{
+    position: absolute;
+    top: -9999px;
+    left: -9999px;
+}
+
+/* スクロールバーのカスタマイズ (WebKitベースのブラウザ) */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #282828;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #535353;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #777;
+}

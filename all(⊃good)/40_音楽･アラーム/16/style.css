@@ -1,0 +1,36 @@
+body {
+  font-family: sans-serif;
+  margin: 20px;
+}
+
+#playlist {
+  margin-top: 20px;
+  border: 1px solid #ccc;
+  padding: 10px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+#songList {
+  list-style: none;
+  padding: 0;
+}
+
+#songList li {
+  padding: 5px;
+  cursor: pointer;
+  border-bottom: 1px solid #eee;
+}
+
+#songList li:hover {
+  background-color: #f0f0f0;
+}
+
+#controls {
+    margin-top: 10px;
+}
+#now-playing{
+    margin-top: 15px;
+    font-style: italic;
+
+}
