@@ -1,6 +1,0 @@
-{
-  "name": "トーラス",
-  "description": "A React application displaying an interactive 3D torus rendered using Three.js and styled with Tailwind CSS. The torus rotates smoothly in a 3D space.",
-  "requestFramePermissions": [],
-  "prompt": ""
-}
