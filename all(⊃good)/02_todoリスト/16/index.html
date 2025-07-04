@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8">
+  <title>CodePen - Untitled</title>
+  <link rel="stylesheet" href="./style.css">
+
+</head>
+<body>
+<!-- partial:index.partial.html -->
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>future todo</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- Google Fonts の読み込み -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- メインフォント -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- ヘッダー -->
+    <header>
+        <h1 class="app-title">future todo</h1>
+        <button id="theme-toggle" aria-label="テーマ切り替え">
+            <!-- テーマアイコン（シンプルなSVGアイコンを使用） -->
+            <svg width="24" height="24" viewBox="0 0 24 24">
+                <!-- アイコンのパス -->
+            </svg>
+        </button>
+    </header>
+
+    <!-- サイドバー -->
+    <aside id="sidebar">
+        <h2>カテゴリ</h2>
+        <ul id="category-list">
+            <!-- カテゴリ項目がここに追加される -->
+        </ul>
+        <button id="add-category-button">カテゴリを追加</button>
+    </aside>
+
+    <!-- メインコンテンツ -->
+    <main>
+        <!-- タスク追加エリア -->
+        <section id="task-input-section">
+            <input type="text" id="task-name" placeholder="タスクを入力してください…" required>
+            <button id="toggle-details">詳細を表示</button>
+            <div id="task-details" class="hidden">
+                <label for="task-deadline">期限日:</label>
+                <input type="date" id="task-deadline">
+                
+                <label for="task-priority">優先度:</label>
+                <select id="task-priority">
+                    <option value="high">高</option>
+                    <option value="medium" selected>中</option>
+                    <option value="low">低</option>
+                </select>
+                
+                <label for="task-importance">重要度:</label>
+                <div id="task-importance">
+                    <!-- 星アイコンを5つ配置 -->
+                    <!-- 例として、以下は星アイコンの1つ -->
+                    <span class="star" data-value="1">&#9733;</span>
+                </div>
+                
+                <label for="task-category">カテゴリ:</label>
+                <select id="task-category">
+                    <!-- カテゴリがここに追加される -->
+                </select>
+                
+                <label for="task-repeat">繰り返し設定:</label>
+                <select id="task-repeat">
+                    <option value="none" selected>なし</option>
+                    <option value="daily">毎日</option>
+                    <option value="weekly">毎週</option>
+                    <option value="monthly">毎月</option>
+                </select>
+            </div>
+            <button id="add-task-button">タスクを追加</button>
+            <p id="error-message" class="error-message"></p>
+        </section>
+
+        <!-- タスクリスト表示エリア -->
+        <section id="task-list-section">
+            <!-- 並び替えオプション -->
+            <div id="sort-options">
+                <label for="sort-select">並び替え:</label>
+                <select id="sort-select">
+                    <option value="priority">優先度</option>
+                    <option value="importance">重要度</option>
+                    <option value="deadline">期限日</option>
+                </select>
+            </div>
+            <!-- タスクリスト -->
+            <ul id="task-list">
+                <!-- タスクカードがここに追加される -->
+            </ul>
+        </section>
+    </main>
+
+    <!-- フッター -->
+    <footer>
+        <p>&copy; 2023 future todo</p>
+    </footer>
+
+    <!-- スクリプトの読み込み -->
+    <script src="script.js"></script>
+</body>
+</html>
+<!-- partial -->
+  <script  src="./script.js"></script>
+
+</body>
+</html>

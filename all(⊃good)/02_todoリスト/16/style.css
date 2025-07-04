@@ -1,0 +1,238 @@
+/* ベーススタイル */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Roboto', sans-serif;
+}
+
+/* テーマカラーの変数 */
+:root {
+    --background-color: #FFFFFF;
+    --text-color: #333333;
+    --accent-color: #1E90FF;
+}
+
+/* ダークモードの設定（JavaScriptでテーマ切り替え時にクラスを追加） */
+body.dark-mode {
+    --background-color: #2E2E2E;
+    --text-color: #FFFFFF;
+    --accent-color: #1E90FF;
+}
+
+body {
+    background-color: var(--background-color);
+    color: var(--text-color);
+}
+
+/* ヘッダー */
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    background-color: var(--accent-color);
+}
+
+.app-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #FFFFFF;
+}
+
+#theme-toggle {
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+/* サイドバー */
+#sidebar {
+    width: 250px;
+    padding: 20px;
+    background-color: var(--background-color);
+    border-right: 1px solid #ccc;
+}
+
+#sidebar h2 {
+    font-size: 18px;
+    font-weight: 500;
+    margin-bottom: 10px;
+}
+
+#category-list {
+    list-style: none;
+}
+
+#category-list li {
+    padding: 5px 0;
+    cursor: pointer;
+}
+
+#add-category-button {
+    margin-top: 10px;
+    padding: 5px 10px;
+    background-color: var(--accent-color);
+    color: #FFFFFF;
+    border: none;
+    cursor: pointer;
+}
+
+/* メインコンテンツ */
+main {
+    padding: 20px;
+    flex-grow: 1;
+}
+
+/* タスク追加エリア */
+#task-input-section {
+    margin-bottom: 20px;
+}
+
+#task-name {
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+    margin-bottom: 10px;
+}
+
+#toggle-details {
+    background: none;
+    border: none;
+    color: var(--accent-color);
+    cursor: pointer;
+    margin-bottom: 10px;
+}
+
+#task-details {
+    display: none;
+}
+
+#task-details.visible {
+    display: block;
+}
+
+#task-details label {
+    display: block;
+    margin-top: 10px;
+}
+
+#task-details input,
+#task-details select {
+    width: 100%;
+    padding: 5px;
+    margin-top: 5px;
+}
+
+#task-importance .star {
+    font-size: 24px;
+    color: #ccc;
+    cursor: pointer;
+}
+
+#task-importance .star.selected {
+    color: var(--accent-color);
+}
+
+#error-message {
+    color: red;
+    margin-top: 10px;
+}
+
+#add-task-button {
+    display: block;
+    margin-top: 10px;
+    padding: 10px;
+    background-color: var(--accent-color);
+    color: #FFFFFF;
+    border: none;
+    cursor: pointer;
+}
+
+/* タスクリスト */
+#task-list {
+    list-style: none;
+}
+
+.task-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    border: 1px solid #ccc;
+    margin-bottom: 10px;
+    background-color: #F9F9F9;
+    cursor: grab;
+}
+
+.task-card.completed {
+    opacity: 0.6;
+    text-decoration: line-through;
+}
+
+.task-info {
+    flex-grow: 1;
+}
+
+.task-actions {
+    display: flex;
+    align-items: center;
+}
+
+.task-actions button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    margin-left: 10px;
+}
+
+.task-actions .edit-button svg,
+.task-actions .delete-button svg,
+.task-actions .memo-button svg {
+    fill: var(--text-color);
+}
+
+.task-actions .edit-button:hover svg,
+.task-actions .delete-button:hover svg,
+.task-actions .memo-button:hover svg {
+    fill: var(--accent-color);
+}
+
+/* フッター */
+footer {
+    text-align: center;
+    padding: 10px;
+    background-color: #EEEEEE;
+    font-size: 12px;
+}
+
+/* レスポンシブデザイン */
+@media (max-width: 767px) {
+    #sidebar {
+        display: none;
+    }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+    #sidebar {
+        width: 80px;
+    }
+
+    #sidebar h2 {
+        display: none;
+    }
+
+    #sidebar li {
+        text-align: center;
+    }
+
+    #add-category-button {
+        display: none;
+    }
+}
+
+@media (min-width: 1024px) {
+    #sidebar {
+        display: block;
+    }
+}

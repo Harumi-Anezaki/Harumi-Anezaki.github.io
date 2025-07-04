@@ -1,0 +1,302 @@
+/* 共通スタイル */
+body {
+    margin: 0;
+    font-family: 'Montserrat', sans-serif;
+    background-color: #f0f4f8;
+    color: #333;
+}
+
+.app-container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+header, footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+h1 {
+    font-weight: 700;
+}
+
+.theme-selector select {
+    padding: 5px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}
+
+.task-input {
+    display: flex;
+    margin: 20px 0;
+}
+
+.task-input input {
+    flex: 1;
+    padding: 10px;
+    font-size: 16px;
+    border: none;
+    border-bottom: 2px solid #ccc;
+    outline: none;
+}
+
+.task-input input:focus {
+    border-bottom: 2px solid #007BFF;
+}
+
+.task-input button {
+    padding: 10px 20px;
+    margin-left: 10px;
+    background-color: #007BFF;
+    border: none;
+    color: #fff;
+    font-weight: 500;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.task-input button:hover {
+    background-color: #0056b3;
+}
+
+.filters {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.filters select {
+    padding: 5px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}
+
+#task-list {
+    list-style: none;
+    padding: 0;
+}
+
+.task-item {
+    background-color: #fff;
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 10px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    cursor: grab;
+}
+
+.task-item.dragging {
+    opacity: 0.5;
+}
+
+.task-content {
+    flex: 1;
+}
+
+.task-title {
+    font-size: 18px;
+    font-weight: 500;
+    margin: 0;
+}
+
+.task-details {
+    display: flex;
+    font-size: 14px;
+    color: #666;
+}
+
+.task-details span {
+    margin-right: 10px;
+}
+
+.task-actions {
+    display: flex;
+    align-items: center;
+}
+
+.task-actions button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    margin-left: 10px;
+    font-size: 18px;
+    color: #666;
+}
+
+.task-actions button:hover {
+    color: #000;
+}
+
+footer {
+    margin-top: 20px;
+}
+
+footer button {
+    padding: 10px 20px;
+    background-color: #28a745;
+    border: none;
+    color: #fff;
+    font-weight: 500;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+footer button:hover {
+    background-color: #218838;
+}
+
+/* モーダルウィンドウのスタイル */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.4);
+}
+
+.modal-content {
+    background-color: #fff;
+    margin: 10% auto;
+    padding: 20px;
+    border-radius: 10px;
+    width: 80%;
+    max-width: 500px;
+}
+
+.close-btn {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close-btn:hover {
+    color: #000;
+}
+
+.subtask-input, .memo-content {
+    margin: 20px 0;
+}
+
+.subtask-input input {
+    width: calc(100% - 60px);
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    outline: none;
+}
+
+.subtask-input button {
+    padding: 10px;
+    margin-left: 10px;
+    background-color: #17a2b8;
+    border: none;
+    color: #fff;
+    font-weight: 500;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.subtask-input button:hover {
+    background-color: #117a8b;
+}
+
+#subtask-list {
+    list-style: none;
+    padding: 0;
+}
+
+.subtask-item {
+    background-color: #eef;
+    padding: 10px;
+    margin-bottom: 5px;
+    border-radius: 5px;
+}
+
+#memo-content {
+    width: 100%;
+    height: 100px;
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    outline: none;
+}
+
+#save-memo-btn {
+    padding: 10px 20px;
+    background-color: #ffc107;
+    border: none;
+    color: #fff;
+    font-weight: 500;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+#save-memo-btn:hover {
+    background-color: #e0a800;
+}
+
+/* テーマスタイル */
+.theme-default {
+    --bg-color: #f0f4f8;
+    --text-color: #333;
+    --accent-color: #007BFF;
+}
+
+.theme-dark {
+    --bg-color: #343a40;
+    --text-color: #fff;
+    --accent-color: #17a2b8;
+}
+
+.theme-blue {
+    --bg-color: #e3f2fd;
+    --text-color: #0d47a1;
+    --accent-color: #2196f3;
+}
+
+.theme-green {
+    --bg-color: #e8f5e9;
+    --text-color: #1b5e20;
+    --accent-color: #4caf50;
+}
+
+.theme-pink {
+    --bg-color: #fce4ec;
+    --text-color: #880e4f;
+    --accent-color: #e91e63;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+}
+
+.task-input button {
+    background-color: var(--accent-color);
+}
+
+.task-input button:hover {
+    background-color: var(--accent-color);
+    opacity: 0.8;
+}
+
+footer button {
+    background-color: var(--accent-color);
+}
+
+footer button:hover {
+    background-color: var(--accent-color);
+    opacity: 0.8;
+}

@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Future todo</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <!-- CSS -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="light-theme">
+    <!-- Header -->
+    <header>
+        <h1 class="logo">Future todo</h1>
+        <div class="header-controls">
+            <button id="theme-toggle" title="テーマ切替">🌙/☀️</button>
+            <button id="filter-btn" title="フィルター">🔍</button>
+            <button id="manage-categories-btn" title="カテゴリー管理">🗂️</button>
+            <button id="export-btn" title="データをエクスポート">📤</button>
+            <button id="import-btn" title="データをインポート">📥</button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main>
+        <!-- Task Form -->
+        <section class="task-form-section">
+            <form id="task-form">
+                <input type="text" id="task-content" placeholder="タスク内容" required>
+                <input type="date" id="task-deadline" placeholder="期限日">
+                <select id="category-select">
+                    <!-- カテゴリはJavaScriptで動的に追加 -->
+                </select>
+                <textarea id="task-memo" placeholder="メモ"></textarea>
+                <select id="task-importance" required>
+                    <option value="">重要度</option>
+                    <option value="high">高</option>
+                    <option value="medium">中</option>
+                    <option value="low">低</option>
+                </select>
+                <button type="submit" id="add-task-btn">追加</button>
+            </form>
+        </section>
+
+        <!-- Sorting Options -->
+        <section class="sorting-section">
+            <label for="sort-select">並び替え:</label>
+            <select id="sort-select">
+                <option value="">選択してください</option>
+                <option value="deadline-asc">期限日昇順</option>
+                <option value="deadline-desc">期限日降順</option>
+                <option value="importance-asc">重要度昇順</option>
+                <option value="importance-desc">重要度降順</option>
+                <option value="createdAt-asc">作成日昇順</option>
+                <option value="createdAt-desc">作成日降順</option>
+            </select>
+        </section>
+
+        <!-- Task List -->
+        <section class="task-list-section">
+            <div id="task-list">
+                <!-- タスクカードはJavaScriptで動的に追加 -->
+            </div>
+        </section>
+    </main>
+
+    <!-- Modals -->
+
+    <!-- Add Task Confirmation Modal -->
+    <div id="add-task-confirmation-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <p>タスクが正常に追加されました！</p>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="delete-confirmation-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <p>本当にこのタスクを削除しますか？</p>
+            <button id="confirm-delete-btn">確認</button>
+            <button id="cancel-delete-btn">キャンセル</button>
+        </div>
+    </div>
+
+    <!-- Memo Modal -->
+    <div id="memo-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>メモ内容</h2>
+            <p class="memo-content"></p>
+        </div>
+    </div>
+
+    <!-- Import Modal -->
+    <div id="import-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>データのインポート</h2>
+            <input type="file" id="import-file-input" accept="application/json">
+            <div class="import-options">
+                <label>
+                    <input type="radio" name="import-option" value="merge"> データを統合
+                </label>
+                <label>
+                    <input type="radio" name="import-option" value="overwrite"> データを上書き
+                </label>
+            </div>
+            <button id="confirm-import-btn">インポート</button>
+            <button id="cancel-import-btn">キャンセル</button>
+        </div>
+    </div>
+
+    <!-- Manage Categories Modal -->
+    <div id="manage-categories-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>カテゴリー管理</h2>
+            <ul id="category-list">
+                <!-- カテゴリはJavaScriptで動的に追加 -->
+            </ul>
+            <form id="add-category-form">
+                <input type="text" id="new-category-input" placeholder="新しいカテゴリー" required>
+                <button type="submit">追加</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Filter Modal -->
+    <div id="filter-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>フィルター設定</h2>
+            <div class="filter-options">
+                <label for="filter-category">カテゴリー:</label>
+                <select id="filter-category">
+                    <option value="All">すべて</option>
+                    <!-- カテゴリはJavaScriptで動的に追加 -->
+                </select>
+
+                <label for="filter-importance">重要度:</label>
+                <select id="filter-importance">
+                    <option value="All">すべて</option>
+                    <option value="high">高</option>
+                    <option value="medium">中</option>
+                    <option value="low">低</option>
+                </select>
+
+                <label for="filter-deadline">期限日:</label>
+                <select id="filter-deadline">
+                    <option value="All">すべて</option>
+                    <option value="Overdue">期限切れ</option>
+                    <option value="Due Today">今日が期限</option>
+                    <option value="Upcoming">今後</option>
+                </select>
+            </div>
+            <button id="apply-filter-btn">適用</button>
+            <button id="cancel-filter-btn">キャンセル</button>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="script.js"></script>
+</body>
+</html>

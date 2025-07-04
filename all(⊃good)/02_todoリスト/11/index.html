@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>future todo</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <!-- フォントの読み込み（おしゃれなフォントを使用） -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <h1>future todo</h1>
+            <div class="theme-selector">
+                <label for="theme">テーマ選択:</label>
+                <select id="theme">
+                    <option value="default">デフォルト</option>
+                    <option value="dark">ダークモード</option>
+                    <option value="blue">ブルーモード</option>
+                    <option value="green">グリーンモード</option>
+                    <option value="pink">ピンクモード</option>
+                </select>
+            </div>
+        </header>
+        <main>
+            <div class="task-input">
+                <input type="text" id="task-title" placeholder="新しいタスクを入力...">
+                <button id="add-task-btn">追加</button>
+            </div>
+            <div class="filters">
+                <select id="category-filter">
+                    <option value="all">すべてのカテゴリ</option>
+                </select>
+                <select id="sort-filter">
+                    <option value="default">並び替え: デフォルト</option>
+                    <option value="importance">重要度順</option>
+                    <option value="deadline">期限順</option>
+                </select>
+            </div>
+            <ul id="task-list">
+                <!-- タスクがここに表示されます -->
+            </ul>
+        </main>
+        <footer>
+            <button id="export-btn">エクスポート</button>
+            <button id="import-btn">インポート</button>
+        </footer>
+    </div>
+
+    <!-- サブタスク用モーダルウィンドウ -->
+    <div id="subtask-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h2>サブタスク</h2>
+            <div class="subtask-input">
+                <input type="text" id="subtask-title" placeholder="新しいサブタスクを入力...">
+                <button id="add-subtask-btn">追加</button>
+            </div>
+            <ul id="subtask-list">
+                <!-- サブタスクがここに表示されます -->
+            </ul>
+        </div>
+    </div>
+
+    <!-- メモ/コメント用モーダルウィンドウ -->
+    <div id="memo-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h2>メモ/コメント</h2>
+            <textarea id="memo-content" placeholder="メモを入力..."></textarea>
+            <button id="save-memo-btn">保存</button>
+        </div>
+    </div>
+
+    <!-- スクリプトの読み込み -->
+    <script src="script.js"></script>
+</body>
+</html>

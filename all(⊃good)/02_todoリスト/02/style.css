@@ -1,0 +1,175 @@
+/* テーマ用のCSS変数を定義 */
+:root {
+    --bg-color: #f0f0f0;
+    --text-color: #222;
+    --accent-color: #00bcd4;
+    --header-bg: #fff;
+    --input-bg: #fff;
+    --card-bg: #fff;
+}
+
+body.dark-mode {
+    --bg-color: #1e1e1e;
+    --text-color: #f0f0f0;
+    --accent-color: #00bcd4;
+    --header-bg: #2c2c2c;
+    --input-bg: #2c2c2c;
+    --card-bg: #2c2c2c;
+}
+
+body {
+    font-family: 'Roboto', sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    margin: 0;
+    padding: 0;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.container {
+    width: 600px;
+    max-width: 90%;
+    margin: 50px auto;
+    background-color: var(--card-bg);
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 0 30px rgba(0,0,0,0.1);
+    transition: background-color 0.3s;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+header h1 {
+    margin: 0;
+    font-size: 2.5rem;
+}
+
+.header-actions button {
+    background: none;
+    border: none;
+    color: var(--accent-color);
+    font-size: 1.5rem;
+    cursor: pointer;
+    margin-left: 10px;
+}
+
+#todo-form {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    margin: 20px 0;
+}
+
+#todo-form input[type="text"],
+#todo-form input[type="date"],
+#todo-form select {
+    flex: 1 1 calc(25% - 10px);
+    padding: 10px;
+    margin: 5px;
+    font-size: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: var(--input-bg);
+    color: var(--text-color);
+}
+
+#todo-form button {
+    flex: 1 1 50px;
+    padding: 10px;
+    margin: 5px;
+    font-size: 1.5rem;
+    background-color: var(--accent-color);
+    border: none;
+    color: #fff;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+#search-input {
+    flex: 1;
+    padding: 10px;
+    font-size: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: var(--input-bg);
+    color: var(--text-color);
+}
+
+.search-container {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+#filter-button {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: var(--accent-color);
+    cursor: pointer;
+    margin-left: 10px;
+}
+
+#todo-list, #completed-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.todo-item, .completed-item {
+    background-color: var(--card-bg);
+    padding: 15px;
+    margin-bottom: 10px;
+    border: 1px solid var(--accent-color);
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    transition: background-color 0.3s;
+}
+
+.todo-item.dragging {
+    opacity: 0.5;
+}
+
+.todo-item.completed .todo-text {
+    text-decoration: line-through;
+    color: #888;
+}
+
+.todo-text {
+    flex: 1;
+    margin: 0;
+    font-size: 1.2rem;
+}
+
+.todo-meta {
+    font-size: 0.8rem;
+    color: #666;
+}
+
+.todo-actions {
+    display: flex;
+    align-items: center;
+}
+
+.todo-actions button {
+    background: none;
+    border: none;
+    color: var(--accent-color);
+    font-size: 1.2rem;
+    cursor: pointer;
+    margin-left: 10px;
+}
+
+#completed-section {
+    margin-top: 40px;
+}
+
+#completed-section h2 {
+    font-size: 1.8rem;
+    margin-bottom: 20px;
+}

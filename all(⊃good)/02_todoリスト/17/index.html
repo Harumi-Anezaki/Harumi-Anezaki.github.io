@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8">
+  <title>CodePen - Untitled</title>
+  <link rel="stylesheet" href="./style.css">
+
+</head>
+<body>
+<!-- partial:index.partial.html -->
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>スマートなToDoリストアプリ</title>
+  <!-- フォントの読み込み（未来的なデザインに合うフォントを使用） -->
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+  <!-- アイコンフォントの読み込み -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- CSSファイルの読み込み -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- アプリケーションのメインコンテナ -->
+  <div class="container">
+    <!-- ヘッダー -->
+    <header class="app-header">
+      <h1 class="app-title"><i class="fas fa-tasks"></i> ToDoリスト</h1>
+      <!-- テーマ切り替えスイッチ -->
+      <div class="theme-toggle">
+        <input type="checkbox" id="theme-checkbox">
+        <label for="theme-checkbox" class="theme-label">
+          <span class="theme-icon theme-icon-light"><i class="fas fa-sun"></i></span>
+          <span class="theme-icon theme-icon-dark"><i class="fas fa-moon"></i></span>
+        </label>
+      </div>
+    </header>
+
+    <!-- タスク追加フォーム -->
+    <div class="task-input-area">
+      <!-- タスク入力フィールド -->
+      <input type="text" id="task-input" class="task-input" placeholder="何を計画しますか？" maxlength="255">
+      <!-- 優先度選択メニュー -->
+      <div class="priority-selector">
+        <input type="radio" id="priority-high" name="priority" value="高">
+        <label for="priority-high" class="priority-label priority-high">高</label>
+        <input type="radio" id="priority-medium" name="priority" value="中" checked>
+        <label for="priority-medium" class="priority-label priority-medium">中</label>
+        <input type="radio" id="priority-low" name="priority" value="低">
+        <label for="priority-low" class="priority-label priority-low">低</label>
+      </div>
+      <!-- 追加ボタン -->
+      <button id="add-button" class="add-button"><i class="fas fa-plus"></i></button>
+    </div>
+
+    <!-- タスクリスト -->
+    <div class="task-list-container">
+      <ul id="task-list" class="task-list">
+        <!-- JavaScriptでタスクが動的に追加されます -->
+      </ul>
+    </div>
+  </div>
+
+  <!-- モーダルオーバーレイ -->
+  <div id="modal-overlay" class="modal-overlay">
+    <!-- 削除確認モーダル -->
+    <div id="modal" class="modal" role="dialog" aria-modal="true">
+      <div class="modal-content">
+        <button id="modal-close-button" class="modal-close-button" aria-label="閉じる"><i class="fas fa-times"></i></button>
+        <p id="modal-message" class="modal-message">このタスクを削除しますか？</p>
+        <div class="modal-actions">
+          <button id="modal-yes-button" class="modal-button">はい</button>
+          <button id="modal-no-button" class="modal-button">いいえ</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- メモ編集モーダル -->
+  <div id="memo-modal-overlay" class="modal-overlay">
+    <div id="memo-modal" class="modal" role="dialog" aria-modal="true">
+      <div class="modal-content">
+        <button id="memo-modal-close-button" class="modal-close-button" aria-label="閉じる"><i class="fas fa-times"></i></button>
+        <h2 class="modal-title">メモ</h2>
+        <textarea id="memo-textarea" class="memo-textarea" rows="5" placeholder="メモを入力してください"></textarea>
+        <div class="modal-actions">
+          <button id="memo-save-button" class="modal-button">保存</button>
+          <button id="memo-cancel-button" class="modal-button">キャンセル</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScriptファイルの読み込み -->
+  <script src="script.js"></script>
+</body>
+</html>
+<!-- partial -->
+  <script  src="./script.js"></script>
+
+</body>
+</html>

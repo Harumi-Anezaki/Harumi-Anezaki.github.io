@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>future task</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- フォントの読み込み -->
+  <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@400;600&display=swap" rel="stylesheet">
+  <!-- スタイルシートのリンク -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <!-- ヘッダー -->
+    <header>
+      <h1>future task</h1>
+      <div class="theme-switcher">
+        <select id="theme-selector">
+          <option value="light">ライトモード</option>
+          <option value="dark">ダークモード</option>
+          <option value="ocean">オーシャン</option>
+          <option value="forest">フォレスト</option>
+          <option value="sunset">サンセット</option>
+          <option value="midnight">ミッドナイト</option>
+        </select>
+      </div>
+    </header>
+
+    <!-- メインコンテンツ -->
+    <main>
+      <!-- タスク入力フォーム -->
+      <div class="task-input">
+        <input type="text" id="task-title" placeholder="新しいタスクを追加..." />
+        <button id="add-task-btn">追加</button>
+      </div>
+
+      <!-- カテゴリ選択 -->
+      <div class="category-selector">
+        <select id="category-selector">
+          <option value="all">全てのカテゴリ</option>
+          <option value="仕事">仕事</option>
+          <option value="個人">個人</option>
+          <option value="ショッピング">ショッピング</option>
+          <option value="その他">その他</option>
+        </select>
+      </div>
+
+      <!-- タスクリスト -->
+      <ul id="task-list">
+        <!-- タスクがここに表示されます -->
+      </ul>
+
+      <!-- エクスポート/インポートボタン -->
+      <div class="export-import">
+        <button id="export-btn">タスクをエクスポート</button>
+        <button id="import-btn">タスクをインポート</button>
+        <input type="file" id="file-input" accept=".json" hidden />
+      </div>
+    </main>
+
+    <!-- タスクモーダルウィンドウ -->
+    <div id="task-modal" class="modal">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>タスク詳細</h2>
+        <!-- タスク詳細フォーム -->
+        <div class="task-details">
+          <label>タイトル: <input type="text" id="modal-task-title"></label>
+          <label>期限: <input type="date" id="modal-due-date"></label>
+          <label>優先度:
+            <select id="modal-priority">
+              <option value="低">低</option>
+              <option value="中">中</option>
+              <option value="高">高</option>
+            </select>
+          </label>
+          <label>カテゴリ:
+            <select id="modal-category">
+              <option value="仕事">仕事</option>
+              <option value="個人">個人</option>
+              <option value="ショッピング">ショッピング</option>
+              <option value="その他">その他</option>
+            </select>
+          </label>
+          <label>繰り返し:
+            <select id="modal-repeat">
+              <option value="なし">なし</option>
+              <option value="毎日">毎日</option>
+              <option value="毎週">毎週</option>
+              <option value="毎月">毎月</option>
+            </select>
+          </label>
+          <label>メモ:
+            <textarea id="modal-notes"></textarea>
+          </label>
+        </div>
+        <!-- サブタスク -->
+        <h3>サブタスク</h3>
+        <div class="subtasks">
+          <ul id="subtask-list">
+            <!-- サブタスクがここに表示されます -->
+          </ul>
+          <input type="text" id="subtask-input" placeholder="サブタスクを追加...">
+          <button id="add-subtask-btn">追加</button>
+        </div>
+        <!-- 保存ボタン -->
+        <button id="save-task-btn">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- スクリプトのリンク -->
+  <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,473 @@
+/* 全体スタイル */
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Roboto', sans-serif;
+    background-color: var(--background);
+    color: var(--text);
+    transition: background-color 0.3s, color 0.3s;
+}
+
+:root {
+    --background: #f0f4f8;
+    --text: #333;
+    --header-bg: #ffffff;
+    --card-bg: #ffffff;
+    --button-bg: #007BFF;
+    --button-text: #ffffff;
+    --modal-bg: rgba(0, 0, 0, 0.5);
+    --border-color: #ccc;
+    --priority-low-color: #42a5f5;
+    --priority-medium-color: #ffeb3b;
+    --priority-high-color: #ef5350;
+}
+
+.dark-theme {
+    --background: #121212;
+    --text: #e0e0e0;
+    --header-bg: #1f1f1f;
+    --card-bg: #1f1f1f;
+    --button-bg: #1E88E5;
+    --button-text: #ffffff;
+    --modal-bg: rgba(255, 255, 255, 0.1);
+    --border-color: #555;
+    --priority-low-color: #2196F3;
+    --priority-medium-color: #FFEB3B;
+    --priority-high-color: #F44336;
+}
+
+.container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: var(--header-bg);
+    padding: 10px 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+h1 {
+    font-family: 'Orbitron', sans-serif;
+    margin: 0;
+    font-size: 2em;
+}
+
+.theme-switcher {
+    display: flex;
+    align-items: center;
+}
+
+/* トグルスイッチ */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 34px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: 0.4s;
+    border-radius: 34px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 26px;
+    width: 26px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: 0.4s;
+    border-radius: 50%;
+}
+
+input:checked + .slider {
+    background-color: #66bb6a;
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+
+.controls {
+    display: flex;
+    gap: 10px;
+    margin: 20px 0;
+}
+
+.controls button {
+    padding: 10px 20px;
+    background-color: var(--button-bg);
+    color: var(--button-text);
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1.2em;
+    transition: background-color 0.3s, transform 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.controls button:hover {
+    background-color: #0056b3;
+    transform: scale(1.05);
+}
+
+.filter-sort {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.filter-sort select {
+    padding: 8px;
+    border-radius: 5px;
+    border: 1px solid var(--border-color);
+    background-color: var(--card-bg);
+    color: var(--text);
+    appearance: none;
+    cursor: pointer;
+    transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+}
+
+.filter-sort select:focus {
+    outline: none;
+    border-color: #007BFF;
+}
+
+main {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+section {
+    /* Flex container to hold tasks */
+}
+
+section h2 {
+    border-bottom: 2px solid #007BFF;
+    padding-bottom: 5px;
+    margin-bottom: 10px;
+}
+
+ul {
+    list-style: none;
+    padding: 0;
+    max-height: 500px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--button-bg) var(--border-color);
+}
+
+ul::-webkit-scrollbar {
+    width: 8px;
+}
+
+ul::-webkit-scrollbar-track {
+    background: var(--border-color);
+    border-radius: 4px;
+}
+
+ul::-webkit-scrollbar-thumb {
+    background-color: var(--button-bg);
+    border-radius: 4px;
+}
+
+li {
+    background-color: var(--card-bg);
+    margin-bottom: 10px;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+    cursor: grab;
+    border-left: 5px solid var(--priority-medium-color);
+    transition: background-color 0.3s, border-left 0.3s;
+}
+
+li.priority-low {
+    border-left: 5px solid var(--priority-low-color);
+}
+
+li.priority-medium {
+    border-left: 5px solid var(--priority-medium-color);
+}
+
+li.priority-high {
+    border-left: 5px solid var(--priority-high-color);
+}
+
+li.completed {
+    opacity: 0.6;
+    text-decoration: line-through;
+}
+
+.task-info {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    flex: 1;
+}
+
+.task-info span {
+    font-size: 1em;
+}
+
+.task-info .deadline {
+    font-size: 0.9em;
+}
+
+.task-info .category {
+    font-size: 0.9em;
+    font-style: italic;
+}
+
+.task-info .subtasks {
+    font-size: 0.9em;
+}
+
+.task-info .category::before {
+    content: "📂 ";
+}
+
+.task-info .deadline::before {
+    content: "⏰ ";
+}
+
+.task-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-top: 10px;
+}
+
+.task-actions input[type="checkbox"] {
+    transform: scale(1.5);
+    cursor: pointer;
+}
+
+.task-actions button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.2em;
+    color: var(--text);
+    transition: color 0.3s;
+}
+
+.task-actions button:hover {
+    color: #007BFF;
+}
+
+.task-actions .memo-button {
+    font-size: 1.5em;
+}
+
+.modal {
+    display: none; /* Hidden by default */
+    position: fixed; 
+    z-index: 1000; 
+    left: 0;
+    top: 0;
+    width: 100%; 
+    height: 100%;
+    overflow: auto; 
+    background-color: var(--modal-bg);
+    backdrop-filter: blur(5px);
+}
+
+.modal-content {
+    background-color: var(--card-bg);
+    margin: 5% auto; 
+    padding: 20px;
+    border: 1px solid #888;
+    width: 90%;
+    max-width: 500px;
+    border-radius: 8px;
+    position: relative;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    animation: fadeIn 0.3s;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-50px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.close-button {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    position: absolute;
+    right: 20px;
+    top: 10px;
+    cursor: pointer;
+}
+
+.close-button:hover,
+.close-button:focus {
+    color: #000;
+    text-decoration: none;
+}
+
+.form-group {
+    margin-bottom: 15px;
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group label {
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.form-group .required {
+    color: red;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    padding: 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    font-size: 1em;
+    background-color: var(--background);
+    color: var(--text);
+    transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #007BFF;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.form-actions button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1em;
+    transition: background-color 0.3s;
+}
+
+#save-task,
+#save-subtask {
+    background-color: #28a745;
+    color: #fff;
+}
+
+#save-task:hover,
+#save-subtask:hover {
+    background-color: #218838;
+}
+
+#cancel-task,
+#cancel-subtask,
+#confirm-delete {
+    background-color: #dc3545;
+    color: #fff;
+}
+
+#cancel-task:hover,
+#cancel-subtask:hover,
+#confirm-delete:hover {
+    background-color: #c82333;
+}
+
+/* カテゴリ追加ボタン */
+.category-input {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+#add-category-button {
+    padding: 8px 12px;
+    background-color: #17a2b8;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1em;
+    transition: background-color 0.3s;
+}
+
+#add-category-button:hover {
+    background-color: #138496;
+}
+
+/* メモモーダル */
+#memo-content {
+    white-space: pre-wrap;
+    font-size: 1em;
+}
+
+/* サブタスク追加・編集モーダル */
+#subtask-modal-title {
+    font-size: 1.2em;
+}
+
+/* サブタスクスタイル */
+.subtask-list {
+    list-style: none;
+    padding-left: 20px;
+    margin-top: 10px;
+}
+
+.subtask-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 5px;
+}
+
+.subtask-item.completed {
+    text-decoration: line-through;
+    opacity: 0.6;
+}
+
+.subtask-item button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.2em;
+    color: var(--text);
+    transition: color 0.3s;
+}
+
+.subtask-item button:hover {
+    color: #dc3545;
+}

@@ -1,0 +1,243 @@
+/* リセット */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+/* フォント設定 */
+body {
+    font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'メイリオ', sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+}
+
+:root {
+    --bg-color: #f4f4f4;
+    --text-color: #333;
+    --accent-color: #007BFF;
+}
+
+body.dark {
+    --bg-color: #2c2c2c;
+    --text-color: #f4f4f4;
+    --accent-color: #1E90FF;
+}
+
+body.pastel {
+    --bg-color: #fff0f5;
+    --text-color: #333;
+    --accent-color: #DB7093;
+}
+
+body.ocean {
+    --bg-color: #e0f7fa;
+    --text-color: #006064;
+    --accent-color: #00838f;
+}
+
+body.forest {
+    --bg-color: #e8f5e9;
+    --text-color: #1b5e20;
+    --accent-color: #388e3c;
+}
+
+.theme-switcher {
+    text-align: right;
+    padding: 10px;
+}
+
+.container {
+    max-width: 800px;
+    margin: 30px auto;
+    padding: 20px;
+    background-color: var(--bg-color);
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+h1 {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+#todo-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+#todo-form input[type="text"],
+#todo-form select,
+#todo-form input[type="date"],
+#todo-form textarea {
+    flex: 1 1 calc(50% - 20px);
+    padding: 10px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+#todo-form textarea {
+    flex: 1 1 100%;
+    resize: vertical;
+}
+
+#todo-form button {
+    padding: 10px 20px;
+    font-size: 16px;
+    background-color: var(--accent-color);
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+#todo-form button:hover {
+    background-color: darken(var(--accent-color), 10%);
+}
+
+.export-import {
+    margin: 20px 0;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+#export-btn {
+    padding: 10px 20px;
+    background-color: var(--accent-color);
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+#todo-list {
+    list-style-type: none;
+    padding: 0;
+}
+
+.todo-item {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    padding: 15px;
+    border-bottom: 1px solid #eee;
+    background-color: #fff;
+    border-radius: 4px;
+    margin-bottom: 10px;
+}
+
+.todo-item.high {
+    border-left: 4px solid red;
+}
+
+.todo-item.medium {
+    border-left: 4px solid orange;
+}
+
+.todo-item.low {
+    border-left: 4px solid green;
+}
+
+.todo-header {
+    flex: 1 1 100%;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.todo-title {
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.todo-category {
+    font-size: 14px;
+    color: #666;
+}
+
+.todo-due-date {
+    font-size: 14px;
+    color: #666;
+}
+
+.todo-notes {
+    flex: 1 1 100%;
+    margin-top: 10px;
+    color: #333;
+}
+
+.todo-actions {
+    display: flex;
+    gap: 10px;
+    margin-left: auto;
+}
+
+.todo-actions button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 18px;
+    color: var(--accent-color);
+}
+
+.todo-actions button:hover {
+    color: darken(var(--accent-color), 10%);
+}
+
+.completed .todo-title {
+    text-decoration: line-through;
+    color: #999;
+}
+
+.modern-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent-color) transparent;
+}
+
+.modern-scrollbar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.modern-scrollbar::-webkit-scrollbar-thumb {
+    background-color: var(--accent-color);
+    border-radius: 3px;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.4);
+}
+
+.modal-content {
+    background-color: var(--bg-color);
+    margin: 10% auto;
+    padding: 20px;
+    border-radius: 8px;
+    width: 80%;
+    max-width: 500px;
+}
+
+.close-btn {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close-btn:hover,
+.close-btn:focus {
+    color: #000;
+    text-decoration: none;
+    cursor: pointer;
+}

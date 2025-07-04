@@ -1,0 +1,314 @@
+/* リセット */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+/* フォント設定 */
+body {
+    font-family: 'Roboto', 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'メイリオ', sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+}
+
+:root {
+    --bg-color: #fff;
+    --text-color: #202124;
+    --accent-color: #4285F4;
+}
+
+body.dark {
+    --bg-color: #202124;
+    --text-color: #e8eaed;
+    --accent-color: #8AB4F8;
+}
+
+body.pastel {
+    --bg-color: #FCE8E6;
+    --text-color: #202124;
+    --accent-color: #FB6962;
+}
+
+body.ocean {
+    --bg-color: #E0F7FA;
+    --text-color: #006064;
+    --accent-color: #00838F;
+}
+
+body.forest {
+    --bg-color: #E8F5E9;
+    --text-color: #1B5E20;
+    --accent-color: #388E3C;
+}
+
+.theme-switcher {
+    text-align: right;
+    padding: 10px;
+}
+
+.container {
+    max-width: 800px;
+    margin: 30px auto;
+    padding: 20px;
+}
+
+h1 {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+#todo-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+#todo-form input[type="text"],
+#todo-form select,
+#todo-form input[type="date"],
+#todo-form textarea {
+    flex: 1 1 calc(50% - 20px);
+    padding: 12px;
+    font-size: 16px;
+    border: 1px solid #dadce0;
+    border-radius: 4px;
+}
+
+#todo-form textarea {
+    flex: 1 1 100%;
+    resize: vertical;
+}
+
+#todo-form button {
+    padding: 12px 24px;
+    font-size: 16px;
+    background-color: var(--accent-color);
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+#todo-form button:hover {
+    background-color: darken(var(--accent-color), 10%);
+}
+
+.export-import {
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+#export-btn {
+    padding: 10px 20px;
+    background-color: var(--accent-color);
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+#todo-list {
+    list-style-type: none;
+    padding: 0;
+}
+
+.todo-item {
+    display: flex;
+    flex-direction: column;
+    background-color: #fff;
+    border: 1px solid #dadce0;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    padding: 15px;
+    transition: background-color 0.3s;
+}
+
+.todo-item:hover {
+    background-color: #f1f3f4;
+}
+
+.todo-item.high {
+    border-left: 4px solid #d93025;
+}
+
+.todo-item.medium {
+    border-left: 4px solid #f9ab00;
+}
+
+.todo-item.low {
+    border-left: 4px solid #34a853;
+}
+
+.todo-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.todo-title {
+    font-size: 18px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.todo-category,
+.todo-due-date {
+    font-size: 14px;
+    color: #5f6368;
+}
+
+.todo-notes {
+    margin-top: 10px;
+    color: #3c4043;
+}
+
+.todo-actions {
+    display: flex;
+    gap: 10px;
+    margin-left: auto;
+    margin-top: 10px;
+}
+
+.todo-actions button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 18px;
+    color: var(--accent-color);
+}
+
+.todo-actions button:hover {
+    color: darken(var(--accent-color), 10%);
+}
+
+.completed .todo-title {
+    text-decoration: line-through;
+    color: #5f6368;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(32, 33, 36, 0.6);
+}
+
+.modal-content {
+    background-color: var(--bg-color);
+    margin: 5% auto;
+    padding: 20px;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 500px;
+    position: relative;
+}
+
+.close-btn {
+    color: #5f6368;
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+.close-btn:hover {
+    color: #202124;
+}
+
+#edit-form input[type="text"],
+#edit-form select,
+#edit-form input[type="date"],
+#edit-form textarea {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+    border: 1px solid #dadce0;
+    border-radius: 4px;
+    margin-bottom: 10px;
+}
+
+#edit-form textarea {
+    resize: vertical;
+}
+
+#edit-form button {
+    padding: 12px 24px;
+    font-size: 16px;
+    background-color: var(--accent-color);
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+#subtask-form {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+#subtask-form input[type="text"] {
+    flex: 1;
+    padding: 12px;
+    font-size: 16px;
+    border: 1px solid #dadce0;
+    border-radius: 4px;
+}
+
+#subtask-form button {
+    padding: 12px 24px;
+    font-size: 16px;
+    background-color: var(--accent-color);
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+#subtask-list {
+    list-style-type: none;
+    padding: 0;
+}
+
+.subtask-item {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    border-bottom: 1px solid #dadce0;
+}
+
+.subtask-item:last-child {
+    border-bottom: none;
+}
+
+.subtask-title {
+    flex: 1;
+    cursor: pointer;
+}
+
+.subtask-actions button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    color: var(--accent-color);
+}
+
+.subtask-actions button:hover {
+    color: darken(var(--accent-color), 10%);
+}
+
+.subtask-completed .subtask-title {
+    text-decoration: line-through;
+    color: #5f6368;
+}

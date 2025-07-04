@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Todo</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Google Fonts: Orbitron and Roboto for future-like fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Smart Todo</h1>
+            <div class="theme-switcher">
+                <label class="switch">
+                    <input type="checkbox" id="theme-toggle">
+                    <span class="slider round"></span>
+                </label>
+            </div>
+            <div class="export-import">
+                <button id="export-data" title="データをエクスポート">💾</button>
+                <button id="import-data" title="データをインポート">⬇️</button>
+                <input type="file" id="import-file" accept=".json" style="display: none;">
+            </div>
+        </header>
+        <div class="controls">
+            <button id="add-task-button">タスクを追加</button>
+        </div>
+        <div class="filter-sort">
+            <select id="sort-tasks">
+                <option value="">並び替え</option>
+                <option value="dueDate-asc">期限日昇順</option>
+                <option value="dueDate-desc">期限日降順</option>
+                <option value="priority-asc">重要度昇順</option>
+                <option value="priority-desc">重要度降順</option>
+                <option value="createdAt-asc">作成日昇順</option>
+                <option value="createdAt-desc">作成日降順</option>
+            </select>
+            <select id="filter-category">
+                <option value="">カテゴリー</option>
+                <!-- 動的にカテゴリーが追加されます -->
+            </select>
+            <select id="filter-priority">
+                <option value="">重要度</option>
+                <option value="low">低</option>
+                <option value="medium">中</option>
+                <option value="high">高</option>
+            </select>
+            <select id="filter-status">
+                <option value="">状態</option>
+                <option value="completed">完了</option>
+                <option value="incomplete">未完了</option>
+            </select>
+        </div>
+        <main>
+            <section id="incomplete-tasks">
+                <h2>未完了</h2>
+                <ul id="task-list">
+                    <!-- タスクがここに表示されます -->
+                </ul>
+            </section>
+            <section id="completed-tasks">
+                <h2>完了</h2>
+                <ul id="completed-task-list">
+                    <!-- 完了タスクがここに表示されます -->
+                </ul>
+            </section>
+        </main>
+    </div>
+
+    <!-- モーダルウィンドウ -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h2 id="modal-title">タスクを追加</h2>
+            <form id="task-form">
+                <div class="form-group">
+                    <label for="title">タスク<span class="required">*</span></label>
+                    <input type="text" id="title" name="title" maxlength="100" required>
+                </div>
+                <div class="form-group">
+                    <label for="dueDate">期間</label>
+                    <input type="date" id="dueDate" name="dueDate" min="">
+                </div>
+                <div class="form-group">
+                    <label for="category">カテゴリ</label>
+                    <div class="category-input">
+                        <input list="categories" id="category" name="category" placeholder="既存のカテゴリーを選択 or 新規入力">
+                        <button type="button" id="add-category-button" title="カテゴリを追加">＋</button>
+                    </div>
+                    <datalist id="categories">
+                        <!-- カテゴリーがここに追加されます -->
+                    </datalist>
+                </div>
+                <div class="form-group">
+                    <label for="priority">重要度</label>
+                    <select id="priority" name="priority">
+                        <option value="low">小</option>
+                        <option value="medium" selected>中</option>
+                        <option value="high">大</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="memo">メモ</label>
+                    <textarea id="memo" name="memo" maxlength="500"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" id="save-task">保存</button>
+                    <button type="button" id="cancel-task">キャンセル</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- メモ表示モーダル -->
+    <div id="memo-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h2>メモ</h2>
+            <p id="memo-content"></p>
+        </div>
+    </div>
+
+    <!-- 削除確認モーダル -->
+    <div id="delete-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h2>確認</h2>
+            <p>本当にこのタスクを削除しますか？</p>
+            <div class="form-actions">
+                <button type="button" id="confirm-delete">削除</button>
+                <button type="button" id="cancel-delete">キャンセル</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- サブタスク追加・編集モーダル(実装しない) -->
+    <div id="subtask-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h2 id="subtask-modal-title">サブタスクを追加</h2>
+            <form id="subtask-form">
+                <div class="form-group">
+                    <label for="subtask-title">サブタスク内容<span class="required">*</span></label>
+                    <input type="text" id="subtask-title" name="subtask-title" maxlength="100" required>
+                </div>
+                <div class="form-group">
+                    <label for="subtask-dueDate">期限日</label>
+                    <input type="date" id="subtask-dueDate" name="subtask-dueDate" min="">
+                </div>
+                <div class="form-group">
+                    <label for="subtask-priority">重要度</label>
+                    <select id="subtask-priority" name="subtask-priority">
+                        <option value="low">低</option>
+                        <option value="medium" selected>中</option>
+                        <option value="high">高</option>
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" id="save-subtask">保存</button>
+                    <button type="button" id="cancel-subtask">キャンセル</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

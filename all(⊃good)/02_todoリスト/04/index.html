@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>FutureToDo</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+  <!-- Font Awesome (アイコン用) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Future<span>ToDo</span></h1>
+      <div class="header-actions">
+        <button id="export-todos"><i class="fas fa-file-export"></i></button>
+        <button id="import-todos"><i class="fas fa-file-import"></i></button>
+      </div>
+    </header>
+    <div class="theme-selector">
+      <label for="theme-select">テーマを選択:</label>
+      <select id="theme-select">
+        <option value="default">デフォルト</option>
+        <option value="dark">ダーク</option>
+        <option value="light">ライト</option>
+        <option value="neon">ネオン</option>
+      </select>
+    </div>
+    <form id="todo-form">
+      <input type="text" id="todo-input" placeholder="新しいタスクを追加 (Ctrl+Enter)" autocomplete="off" required>
+      <input type="date" id="todo-date">
+      <select id="todo-priority">
+        <option value="low">低</option>
+        <option value="medium" selected>中</option>
+        <option value="high">高</option>
+      </select>
+      <input type="text" id="todo-category" placeholder="カテゴリー" autocomplete="off">
+      <button type="submit"><i class="fas fa-plus"></i></button>
+    </form>
+    <div class="search-container">
+      <input type="text" id="search-input" placeholder="タスクを検索 (Ctrl+F)">
+    </div>
+    <div class="stats">
+      <p>総タスク数: <span id="total-tasks">0</span></p>
+      <p>完了: <span id="completed-tasks">0</span></p>
+      <p>未完了: <span id="pending-tasks">0</span></p>
+    </div>
+    <div class="sort-filter">
+      <label for="sort-select">ソート:</label>
+      <select id="sort-select">
+        <option value="createdAt">作成日</option>
+        <option value="dueDate">期限日</option>
+        <option value="priority">優先度</option>
+      </select>
+      <label for="filter-status">ステータス:</label>
+      <select id="filter-status">
+        <option value="all">全て</option>
+        <option value="completed">完了</option>
+        <option value="pending">未完了</option>
+      </select>
+    </div>
+    <ul id="todo-list"></ul>
+  </div>
+  <input type="file" id="import-file" accept=".json" style="display: none;">
+  <script src="script.js"></script>
+</body>
+</html>

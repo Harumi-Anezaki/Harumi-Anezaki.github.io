@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>FutureToDo</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    <!-- Font Awesome (アイコン用) -->
+    <script src="https://kit.fontawesome.com/yourfontawesomekit.js" crossorigin="anonymous"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Future<span>ToDo</span></h1>
+            <div class="header-actions">
+                <button id="toggle-theme"><i class="fas fa-moon"></i></button>
+                <button id="logout-button"><i class="fas fa-sign-out-alt"></i></button>
+            </div>
+        </header>
+        <section id="auth-section">
+            <h2>ログイン</h2>
+            <form id="login-form">
+                <input type="email" id="email-input" placeholder="メールアドレス" required>
+                <input type="password" id="password-input" placeholder="パスワード" required>
+                <button type="submit">ログイン</button>
+                <p>アカウントをお持ちでないですか？ <a href="#" id="show-register">新規登録</a></p>
+            </form>
+            <form id="register-form" style="display: none;">
+                <input type="email" id="reg-email-input" placeholder="メールアドレス" required>
+                <input type="password" id="reg-password-input" placeholder="パスワード" required>
+                <button type="submit">登録</button>
+                <p>既にアカウントをお持ちですか？ <a href="#" id="show-login">ログイン</a></p>
+            </form>
+        </section>
+        <section id="app-section" style="display: none;">
+            <form id="todo-form">
+                <input type="text" id="todo-input" placeholder="新しいタスクを追加" autocomplete="off" required>
+                <input type="date" id="todo-date" required>
+                <select id="todo-priority">
+                    <option value="low">低</option>
+                    <option value="medium" selected>中</option>
+                    <option value="high">高</option>
+                </select>
+                <input type="text" id="todo-category" placeholder="カテゴリー" autocomplete="off">
+                <button type="submit"><i class="fas fa-plus"></i></button>
+            </form>
+            <div class="search-container">
+                <input type="text" id="search-input" placeholder="タスクを検索">
+                <select id="filter-priority">
+                    <option value="">優先度でフィルター</option>
+                    <option value="high">高</option>
+                    <option value="medium">中</option>
+                    <option value="low">低</option>
+                </select>
+                <button id="filter-button"><i class="fas fa-filter"></i></button>
+            </div>
+            <ul id="todo-list"></ul>
+        </section>
+    </div>
+    <!-- FirebaseのSDKを読み込み -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
