@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tracking.js Demo</title>
+    <script src="https://cdn.jsdelivr.net/npm/tracking@1.1.3/build/tracking-min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tracking@1.1.3/build/data/face-min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tracking@1.1.3/build/data/eye-min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tracking@1.1.3/build/data/mouth-min.js"></script>
+    <style>
+    body {
+        font-family: sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        margin: 0;
+        background-color: #f0f0f0;
+    }
+
+    #container {
+        position: relative;
+        display: inline-block;
+    }
+
+    #myVideo {
+        display: block;
+        transform: scaleX(-1); /* 左右反転 */
+    }
+
+    #myCanvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+    }
+
+    #boundingBoxes {
+        position: absolute;
+        top: 0;
+        left: 0;
+        display: none;  /* 初期状態では非表示 */
+        pointer-events: none;
+    }
+
+    #boundingBoxes div { /* 動的に生成される div のスタイル */
+        border: 3px solid red; /* 太い赤枠 */
+        position: absolute;
+    }
+
+    #controls {
+        margin-top: 20px;
+        text-align: center;
+    }
+
+    button {
+        padding: 10px 20px;
+        font-size: 16px;
+        margin: 5px;
+        cursor: pointer;
+    }
+    </style>
+</head>
+<body>
+    <h1>Tracking.js Demo</h1>
+
+    <div id="container">
+        <video id="myVideo" width="640" height="480" preload autoplay loop muted playsinline></video>
+        <canvas id="myCanvas" width="640" height="480"></canvas>
+        <div id="boundingBoxes"></div>
+    </div>
+
+    <div id="controls">
+        <button id="trackFace">顔追跡</button>
+        <button id="trackEye">目追跡</button>
+        <button id="trackMouth">口追跡</button>
+        <button id="stopTracking">停止</button>
+    </div>
+
+    <script>
+    (function() {
+        let video = document.getElementById('myVideo');
+        let canvas = document.getElementById('myCanvas');
+        let context = canvas.getContext('2d');
+        let tracker = null;
+        let trackingTask = null;
+        const boundingBoxes = document.getElementById('boundingBoxes');
+
+        function startCamera() {
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                navigator.mediaDevices.getUserMedia({ video: true })
+                    .then(function(stream) {
+                        video.srcObject = stream;
+                        //video.play();  // autoplay属性があるため不要
+                    })
+                    .catch(function(err) {
+                        console.error("カメラへのアクセスに失敗しました: ", err);
+                        alert("カメラへのアクセスに失敗しました。\nエラー: " + err.message + "\n\nブラウザの設定でカメラへのアクセスが許可されているか、他のアプリケーションがカメラを使用していないか確認してください。");
+                    });
+            } else {
+                alert("お使いのブラウザは getUserMedia API をサポートしていません。");
+            }
+        }
+
+        function startTracking(trackerType) {
+            stopTracking();
+
+            if (trackerType === 'ObjectTracker') {
+                tracker = new tracking.ObjectTracker(['mouth']); // 口を検出
+            } else {
+                tracker = new tracking[trackerType]();
+            }
+
+
+            tracker.on('track', function(event) {
+                context.clearRect(0, 0, canvas.width, canvas.height);
+                boundingBoxes.innerHTML = ''; // バウンディングボックスをクリア
+                console.log(event.data); // 検出結果をコンソールに出力 (デバッグ用)
+
+                if (event.data.length === 0) {
+                    boundingBoxes.style.display = 'none';
+                } else {
+                    event.data.forEach(function(rect) {
+                        const box = document.createElement('div');
+                        box.style.left = rect.x + 'px';
+                        box.style.top = rect.y + 'px';
+                        box.style.width = rect.width + 'px';
+                        box.style.height = rect.height + 'px';
+                        boundingBoxes.appendChild(box);
+                        boundingBoxes.style.display = 'block';
+                    });
+                }
+            });
+
+              // tracking.track() は tracker.on('track', ...) の後に呼び出す
+             trackingTask = tracking.track('#myVideo', tracker, { camera: true });
+        }
+
+        function stopTracking() {
+            if (trackingTask) {
+                trackingTask.stop();
+                trackingTask = null;
+                tracker = null;
+                 if (context) {
+                   context.clearRect(0, 0, canvas.width, canvas.height);
+                 }
+                boundingBoxes.style.display = 'none';
+                boundingBoxes.innerHTML = '';
+            }
+        }
+
+        document.getElementById('trackFace').addEventListener('click', function() {
+            startTracking('FaceTracker');
+        });
+        document.getElementById('trackEye').addEventListener('click', function() {
+            startTracking('EyeTracker');
+        });
+        document.getElementById('trackMouth').addEventListener('click', function() {
+            startTracking('ObjectTracker');
+        });
+        document.getElementById('stopTracking').addEventListener('click', stopTracking);
+
+        startCamera();
+    })();
+    </script>
+</body>
+</html>

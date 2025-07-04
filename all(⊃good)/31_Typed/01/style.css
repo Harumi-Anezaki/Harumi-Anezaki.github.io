@@ -1,0 +1,47 @@
+body {
+    background-color: #000;
+    color: #0f0; /* 緑色のテキスト */
+    font-family: 'Courier New', Courier, monospace;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
+
+.terminal {
+    background-color: #111;
+    border: 2px solid #0f0;
+    padding: 20px;
+    width: 80%;
+    max-width: 600px;
+    box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+}
+
+.prompt {
+    color: #0f0;
+}
+
+#command-input {
+    background-color: transparent;
+    border: none;
+    color: #0f0;
+    outline: none;
+    font-family: inherit;
+    font-size: inherit;
+    width: 80%; /* 入力欄の幅を調整 */
+}
+
+/* カーソルの点滅 */
+#command-input:focus {
+  animation: blink-caret 0.7s step-end infinite;
+}
+
+@keyframes blink-caret {
+    from, to {
+      border-color: transparent;
+    }
+    50% {
+      border-color: #0f0;
+    }
+}

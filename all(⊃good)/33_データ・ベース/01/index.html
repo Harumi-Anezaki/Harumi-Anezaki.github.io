@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database App</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>Database Table</h1>
+
+    <div id="columnDefinition">
+        <h2>Column Definition</h2>
+        <input type="text" id="columnName" placeholder="Column Name">
+        <button id="addColumnButton">Add Column</button>
+        <ul id="columnList"></ul>
+    </div>
+
+    <div id="dataInput">
+      <h2>Add Data</h2>
+      <div id="inputForm"></div>
+      <button id="addRowButton">Add Row</button>
+    </div>
+
+
+    <table id="dataTable">
+        <thead>
+            <tr id="headerRow"></tr>
+        </thead>
+        <tbody id="dataBody">
+        </tbody>
+    </table>
+    <script src="script.js"></script>
+</body>
+</html>

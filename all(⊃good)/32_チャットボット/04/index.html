@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatGPT風チャットボット</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <h2>ChatGPT風チャット</h2>
+        </div>
+        <div class="chat-messages" id="chat-messages">
+            <!-- メッセージはここに動的に追加 -->
+             <div class="message bot-message">
+                <div class="message-content">こんにちは！何かお手伝いできることはありますか？</div>
+            </div>
+        </div>
+        <div class="chat-input">
+            <textarea id="user-input" placeholder="メッセージを入力..." rows="1"></textarea>
+            <button id="send-button">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M7.46377 11.5137L15.4638 3.51367C15.9638 3.01367 16.2138 3.01367 16.7138 3.51367L21.7138 8.51367C22.2138 9.01367 22.2138 9.26367 21.7138 9.76367L12.7138 18.7637C12.2138 19.2637 11.9638 19.2637 11.4638 18.7637L9.96377 17.2637L8.46377 18.7637C7.96377 19.2637 7.71377 19.2637 7.21377 18.7637L2.21377 13.7637C1.71377 13.2637 1.71377 13.0137 2.21377 12.5137L7.46377 11.5137Z" fill="currentColor"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Typing Game with Anime.js</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Typing Game</h1>
+    <div id="target-text"></div>
+    <input type="text" id="input-text" autofocus>
+    <div id="message"></div>
+    <div id="score">Score: 0</div>
+    <div id="combo">Combo: 0</div>
+    <div class="animation-area">
+      <!-- アニメーション用の要素をここに追加 -->
+    </div>
+  </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

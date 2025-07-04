@@ -1,0 +1,11 @@
+body {
+    margin: 0;
+    overflow: hidden; /* はみ出し部分を非表示 */
+    background-color: #f0f0f0; /* 背景色 */
+}
+
+#drawingCanvas {
+    background-color: white;
+    cursor: crosshair; /* マウスカーソルを十字に */
+    border: 1px solid #ccc;
+}

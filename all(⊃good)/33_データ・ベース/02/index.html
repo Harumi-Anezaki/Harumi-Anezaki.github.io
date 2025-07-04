@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database App</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Database Table</h1>
+
+        <div class="section" id="columnDefinition">
+            <h2>Column Definition</h2>
+            <div class="input-group">
+                <input type="text" id="columnName" placeholder="Column Name">
+                <select id="columnType">
+                    <option value="text">Text</option>
+                    <option value="number">Number</option>
+                    <option value="checkbox">Checkbox</option>
+                    <option value="date">Date</option>
+                </select>
+                <button id="addColumnButton">Add Column</button>
+            </div>
+            <ul id="columnList"></ul>
+        </div>
+
+        <div class="section" id="dataInput">
+            <h2>Add Data</h2>
+            <div id="inputForm"></div>
+            <button id="addRowButton">Add Row</button>
+        </div>
+
+        <table id="dataTable">
+            <thead>
+                <tr id="headerRow"></tr>
+            </thead>
+            <tbody id="dataBody">
+            </tbody>
+        </table>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tracking.js Demo</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/tracking@1.1.3/build/tracking-min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tracking@1.1.3/build/data/face-min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tracking@1.1.3/build/data/eye-min.js"></script>
+      <!-- オブジェクト検出 (任意) -->
+    <script src="https://cdn.jsdelivr.net/npm/tracking@1.1.3/build/data/mouth-min.js"></script> 
+    <style>
+    /* 基本的なスタイル */
+    body {
+        font-family: sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        margin: 0;
+        background-color: #f0f0f0;
+    }
+
+    #container {
+      position: relative;  /* 子要素の絶対配置の基準 */
+      display: inline-block; /*  インラインブロック要素にする */
+    }
+
+    #myVideo {
+      display: block;  /* ブロックレベル要素にして、余分なスペースを削除 */
+       /* 左右反転 */
+       transform: scaleX(-1);
+    }
+    #myCanvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+    }
+
+    #controls {
+        margin-top: 20px;
+        text-align: center;
+    }
+    button {
+        padding: 10px 20px;
+        font-size: 16px;
+        margin: 5px;
+        cursor: pointer;
+    }
+
+    #boundingBoxes {
+        position: absolute; /*  絶対配置 */
+        top: 0;
+        left: 0;
+        border: 2px solid blue; /*  境界線 (最初は非表示)*/
+        display: none;  /* 初期状態では非表示 */
+        pointer-events: none; /*  クリックイベントなどを無効化 */
+
+    }
+    </style>
+
+</head>
+<body>
+    <h1>Tracking.js Demo</h1>
+
+    <div id="container">
+      <video id="myVideo" width="640" height="480" preload autoplay loop muted></video>
+      <canvas id="myCanvas" width="640" height="480"></canvas>
+      <div id="boundingBoxes"></div>
+    </div>
+
+
+    <div id="controls">
+        <button id="trackFace">顔追跡</button>
+        <button id="trackEye">目追跡</button>
+        <button id="trackMouth">口追跡 (任意)</button>  <!-- オブジェクト検出の例 -->
+        <button id="stopTracking">停止</button>
+    </div>
+
+    <script>
+      (function() {  // 即時実行関数でスコープを限定
+
+          let video = document.getElementById('myVideo');
+          let canvas = document.getElementById('myCanvas');
+          let context = canvas.getContext('2d');
+          let tracker = null; //  トラッカーオブジェクトを保持する変数
+          let trackingTask = null;  // tracking.track()の戻り値（タスク）を保持
+
+          //  バウンディングボックス表示用の要素
+          const boundingBoxes = document.getElementById('boundingBoxes');
+
+           // カメラの起動と初期設定
+          function startCamera() {
+              if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                  navigator.mediaDevices.getUserMedia({ video: true })
+                      .then(function(stream) {
+                          video.srcObject = stream;
+                          video.play();
+                      })
+                      .catch(function(err) {
+                          console.error("カメラへのアクセスに失敗しました: ", err);
+                          alert("カメラへのアクセスを許可してください。"); // ユーザーへの通知
+                      });
+              } else {
+                  alert("お使いのブラウザは getUserMedia API をサポートしていません。");
+              }
+          }
+
+
+          function startTracking(trackerType) {
+              stopTracking(); // 既存のトラッキングを停止
+
+              tracker = new tracking[trackerType](); //  トラッカーの初期化
+
+                if(trackerType === "ObjectTracker"){
+                    //オブジェクトトラッカーの場合は、検出対象を設定
+                    tracker.setObjects(['mouth']);  //例：口を検出
+                }
+
+              //  イベントハンドラの設定
+              tracker.on('track', function(event) {
+                  context.clearRect(0, 0, canvas.width, canvas.height); //  キャンバスをクリア
+                  boundingBoxes.innerHTML = ''; // バウンディングボックスをクリア
+
+                  if (event.data.length === 0) {
+                      //  何も検出されなかった場合
+                       boundingBoxes.style.display = 'none';
+                  } else {
+                      event.data.forEach(function(rect) {
+                        //  検出されたオブジェクトごとに処理
+                        //  バウンディングボックスの描画
+                        context.strokeStyle = '#a64ceb';
+                        context.strokeRect(rect.x, rect.y, rect.width, rect.height);
+                        context.font = '11px Helvetica';
+                        context.fillStyle = "#fff";
+                        //  詳細情報の表示 (トラッカーの種類による)
+                        context.fillText('x: ' + rect.x + 'px', rect.x + rect.width + 5, rect.y + 11);
+                        context.fillText('y: ' + rect.y + 'px', rect.x + rect.width + 5, rect.y + 22);
+
+
+                         //  バウンディングボックス要素の作成と表示
+                         const box = document.createElement('div');
+                         box.style.border = '2px solid red';  // 目立つ色に
+                         box.style.position = 'absolute';
+                         box.style.left = rect.x + 'px';
+                         box.style.top = rect.y + 'px';
+                         box.style.width = rect.width + 'px';
+                         box.style.height = rect.height + 'px';
+                         boundingBoxes.appendChild(box);
+                         boundingBoxes.style.display = 'block';
+
+
+                      });
+                  }
+              });
+
+              // トラッキング開始
+              trackingTask = tracking.track('#myVideo', tracker, { camera: true });
+          }
+
+
+
+          function stopTracking() {
+              if (trackingTask) {
+                  trackingTask.stop();
+                  trackingTask = null; //タスクをクリア
+                  tracker = null;     //トラッカーをクリア
+                  context.clearRect(0, 0, canvas.width, canvas.height);  // キャンバスをクリア
+                  boundingBoxes.style.display = 'none'; // バウンディングボックスを非表示に
+                  boundingBoxes.innerHTML = '';        // バウンディングボックスの内容をクリア
+              }
+          }
+
+
+
+          //  ボタンのイベントリスナー設定
+          document.getElementById('trackFace').addEventListener('click', function() {
+              startTracking('FaceTracker');
+          });
+          document.getElementById('trackEye').addEventListener('click', function() {
+              startTracking('EyeTracker');
+          });
+
+          document.getElementById('trackMouth').addEventListener('click', function() {
+                startTracking('ObjectTracker'); // ObjectTracker を使用
+          });
+
+          document.getElementById('stopTracking').addEventListener('click', stopTracking);
+
+          // ページ読み込み時にカメラを起動
+          startCamera();
+      })(); // 即時実行関数の終わり
+
+    </script>
+</body>
+</html>
