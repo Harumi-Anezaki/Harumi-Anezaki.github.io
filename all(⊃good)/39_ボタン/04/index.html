@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Filled Buttons</title>
+<style>
+body {
+  margin: 0; /* Remove default body margin */
+  overflow: hidden; /* Prevent scrollbars */
+  background-color: #e0e5ec; /* Set a background color */
+}
+
+.container {
+  display: flex;
+  flex-wrap: wrap;
+  width: 100vw;
+  height: 100vh;
+}
+
+.custom-btn {
+  flex: 1 0 calc(10% - 2px); /* Distribute space, accounting for borders */
+  /* width: 130px;  Remove fixed width */
+  /* height: 40px; Remove fixed height */
+  height: calc(100%/10);  /*  height as a percentage of the container, divided by the number of rows. */
+  color: #fff;
+  /* border-radius: 5px; Reduce or remove border-radius for tight packing */
+  /* padding: 10px 25px; Remove padding */
+    padding: 0; /* Remove padding */
+
+  font-family: 'Lato', sans-serif;
+  font-weight: 500;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  display: flex; /* Use flexbox for centering */
+  align-items: center; /* Center vertically */
+  justify-content: center; /* Center horizontally */
+  box-shadow: inset 2px 2px 2px 0px rgba(255,255,255,.5),
+              7px 7px 20px 0px rgba(0,0,0,.1),
+              4px 4px 5px 0px rgba(0,0,0,.1);
+  outline: none;
+  border: 1px solid rgba(0, 0, 0, 0.1); /* Add a subtle border */
+    margin:0; /* remove margin */
+}
+
+
+/* 11 */
+.btn-11 {
+  border: none;
+  background: rgb(251,33,117);
+  background: linear-gradient(0deg, rgba(251,33,117,1) 0%, rgba(234,76,137,1) 100%);
+  color: #fff;
+  overflow: hidden;
+}
+
+.btn-11:hover {
+    text-decoration: none;
+    color: #fff;
+}
+.btn-11:before {
+    position: absolute;
+    content: '';
+    display: inline-block;
+    top: -180px;
+    left: 0;
+    width: 30px;
+    height: 100%;
+    background-color: #fff;
+    animation: shiny-btn1 3s ease-in-out infinite;
+}
+.btn-11:hover{
+  opacity: .7;
+}
+.btn-11:active{
+  box-shadow:  4px 4px 6px 0 rgba(255,255,255,.3),
+              -4px -4px 6px 0 rgba(116, 125, 136, .2),
+    inset -4px -4px 6px 0 rgba(255,255,255,.2),
+    inset 4px 4px 6px 0 rgba(0, 0, 0, .2);
+}
+
+.btn-11 .dot{ /*  added to show the dot */
+    position: absolute;
+    inset: 5px; /*  for positioning */
+    z-index: 1; /*  for showing above */
+     border: 2px solid #fff;/* for style */
+}
+
+@-webkit-keyframes shiny-btn1 {
+    0% { -webkit-transform: scale(0) rotate(45deg); opacity: 0; }
+    80% { -webkit-transform: scale(0) rotate(45deg); opacity: 0.5; }
+    81% { -webkit-transform: scale(4) rotate(45deg); opacity: 1; }
+    100% { -webkit-transform: scale(50) rotate(45deg); opacity: 0; }
+}
+
+
+/* 12 */
+.btn-12{
+  position: relative;
+  /*right: 20px;
+  bottom: 20px; remove position attributes*/
+  border:none;
+  box-shadow: none;
+  /*width: 130px; remove fixed width and height*/
+  /*height: 40px;*/
+  line-height: 42px; /* This might need adjustment or removal */
+  -webkit-perspective: 230px;
+  perspective: 230px;
+}
+.btn-12 span {
+  background: rgb(0,172,238);
+background: linear-gradient(0deg, rgba(0,172,238,1) 0%, rgba(2,126,251,1) 100%);
+  display: block;
+  position: absolute;
+   width: 100%; /* Full width of the button */
+  height: 100%; /* Full height of the button */
+  box-shadow:inset 2px 2px 2px 0px rgba(255,255,255,.5),
+   7px 7px 20px 0px rgba(0,0,0,.1),
+   4px 4px 5px 0px rgba(0,0,0,.1);
+  /* border-radius: 5px;  Remove or reduce border-radius */
+  margin:0;
+  text-align: center;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+  -webkit-transition: all .3s;
+  transition: all .3s;
+}
+.btn-12 span:nth-child(1) {
+  box-shadow:
+   -7px -7px 20px 0px #fff9,
+   -4px -4px 5px 0px #fff9,
+   7px 7px 20px 0px #0002,
+   4px 4px 5px 0px #0001;
+  -webkit-transform: rotateX(90deg);
+  -moz-transform: rotateX(90deg);
+  transform: rotateX(90deg);
+  -webkit-transform-origin: 50% 50% -20px;
+  -moz-transform-origin: 50% 50% -20px;
+  transform-origin: 50% 50% -20px;
+    transform-origin: 50% 50% calc(-50% / 10); /*  dynamic transform origin */
+
+}
+.btn-12 span:nth-child(2) {
+  -webkit-transform: rotateX(0deg);
+  -moz-transform: rotateX(0deg);
+  transform: rotateX(0deg);
+  -webkit-transform-origin: 50% 50% -20px;
+  -moz-transform-origin: 50% 50% -20px;
+  transform-origin: 50% 50% -20px;
+    transform-origin: 50% 50% calc(-50% / 10);/*  dynamic transform origin */
+}
+.btn-12:hover span:nth-child(1) {
+  box-shadow:inset 2px 2px 2px 0px rgba(255,255,255,.5),
+   7px 7px 20px 0px rgba(0,0,0,.1),
+   4px 4px 5px 0px rgba(0,0,0,.1);
+  -webkit-transform: rotateX(0deg);
+  -moz-transform: rotateX(0deg);
+  transform: rotateX(0deg);
+}
+.btn-12:hover span:nth-child(2) {
+  box-shadow:inset 2px 2px 2px 0px rgba(255,255,255,.5),
+   7px 7px 20px 0px rgba(0,0,0,.1),
+   4px 4px 5px 0px rgba(0,0,0,.1);
+ color: transparent;
+  -webkit-transform: rotateX(-90deg);
+  -moz-transform: rotateX(-90deg);
+  transform: rotateX(-90deg);
+}
+
+</style>
+</head>
+<body>
+<div class="container">
+  <!-- Buttons will be generated here -->
+</div>
+
+<script>
+  const container = document.querySelector('.container');
+  const buttonTypes = ['btn-11', 'btn-12'];
+  const numRows = 10;  //  rows
+  const numCols = 10;  //  columns
+
+  for (let i = 0; i < numRows * numCols; i++) {
+    const buttonType = buttonTypes[i % buttonTypes.length];
+    const button = document.createElement('button');
+    button.classList.add('custom-btn', buttonType);
+
+        if(buttonType === 'btn-11'){
+            button.textContent = 'Read More';
+            const dot = document.createElement('div');
+            dot.classList.add('dot');
+            button.appendChild(dot);
+
+        } else if (buttonType === 'btn-12'){
+
+            const span1 = document.createElement('span');
+            span1.textContent = 'Click!';
+            const span2 = document.createElement('span');
+            span2.textContent = 'Read More';
+            button.appendChild(span1);
+            button.appendChild(span2);
+        }
+    container.appendChild(button);
+  }
+</script>
+</body>
+</html>
