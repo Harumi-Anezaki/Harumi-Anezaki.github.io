@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Study Scheduler</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- フォントの読み込み -->
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Noto+Sans+JP:wght@300;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- ハンバーガーメニュー -->
+    <nav id="sidebar" class="sidebar">
+        <div class="sidebar-content">
+            <h2>教材追加</h2>
+            <input type="text" id="教材名" placeholder="教材名">
+            <input type="number" id="問題数" placeholder="問題数">
+            <div class="period-section">
+                <label for="学習期間開始">開始</label>
+                <input type="date" id="学習期間開始">
+                <label for="学習期間終了">終了</label>
+                <input type="date" id="学習期間終了">
+            </div>
+            <div id="曜日指定">
+                <p>曜日指定</p>
+                <div class="weekday-buttons">
+                    <button type="button" onclick="selectAllDays()">全て選択</button>
+                    <button type="button" onclick="clearAllDays()">全て解除</button>
+                </div>
+                <div class="weekday-checkboxes">
+                    <label>
+                        <input type="checkbox" value="月">
+                        <span>月</span>
+                    </label>
+                    <label>
+                        <input type="checkbox" value="火">
+                        <span>火</span>
+                    </label>
+                    <label>
+                        <input type="checkbox" value="水">
+                        <span>水</span>
+                    </label>
+                    <label>
+                        <input type="checkbox" value="木">
+                        <span>木</span>
+                    </label>
+                    <label>
+                        <input type="checkbox" value="金">
+                        <span>金</span>
+                    </label>
+                    <label>
+                        <input type="checkbox" value="土">
+                        <span>土</span>
+                    </label>
+                    <label>
+                        <input type="checkbox" value="日">
+                        <span>日</span>
+                    </label>
+                </div>
+            </div>
+            <button onclick="add教材()">追加</button>
+        </div>
+    </nav>
+
+    <!-- ハンバーガーメニューボタン -->
+    <div class="toggle-btn" onclick="toggleSidebar()">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+
+    <!-- タイトル -->
+    <h1 class="title">Study Scheduler</h1>
+
+
+    <!-- カレンダーUI -->
+    <div class="table-container">
+        <table id="scheduler">
+            <thead>
+                <tr>
+                    <th id="fixed-header">教材</th>
+                    <!-- 日付のセルがここに動的に挿入される -->
+                </tr>
+            </thead>
+            <tbody>
+                <!-- 教材の行がここに動的に挿入される -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 完了した問題数入力用モーダル -->
+    <div id="completion-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeCompletionModal()">&times;</span>
+            <h2 id="completion-modal-title"></h2>
+            <input type="number" id="完了した問題数" placeholder="完了した問題数">
+            <button onclick="saveCompletion()">保存</button>
+        </div>
+    </div>
+
+    <!-- 教材削除確認モーダル -->
+    <div id="delete-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeDeleteModal()">&times;</span>
+            <h2>教材を削除しますか？</h2>
+            <button onclick="delete教材()">削除する</button>
+            <button onclick="closeDeleteModal()">キャンセル</button>
+        </div>
+    </div>
+
+
+    <!-- エラーモーダル -->
+    <div id="error-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeErrorModal()">&times;</span>
+            <h2>エラー</h2>
+            <p>全ての項目を正しく入力してください。</p>
+            <button onclick="closeErrorModal()">閉じる</button>
+        </div>
+    </div>
+
+    <!-- スクリプトの読み込み -->
+    <script src="script.js"></script>
+</body>
+</html>

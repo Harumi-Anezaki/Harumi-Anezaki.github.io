@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Study Scheduler</title>
+    <!-- フォントの読み込み -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP&display=swap" rel="stylesheet">
+    <style>
+        /* CSSスタイル */
+        body {
+            font-family: 'Noto Sans JP', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        
+        header {
+            position: relative;
+            background-color: #f0f0f0;
+            padding: 10px;
+        }
+        
+        header h1 {
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-size: 2em;
+            text-align: center;
+            margin: 0;
+        }
+        
+        .hamburger-menu {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+        }
+        
+        .hamburger-icon {
+            cursor: pointer;
+            width: 30px;
+            height: 25px;
+            position: relative;
+        }
+        
+        .hamburger-icon span {
+            background: #333;
+            display: block;
+            height: 4px;
+            width: 100%;
+            margin-bottom: 5px;
+            position: relative;
+        }
+        
+        .menu {
+            display: none;
+            position: absolute;
+            top: 40px;
+            left: 10px;
+            background: #fff;
+            border: 1px solid #ccc;
+            padding: 20px;
+            z-index: 1000;
+        }
+        
+        .menu h2 {
+            margin-top: 0;
+        }
+        
+        main {
+            padding: 20px;
+        }
+        
+        .calendar-container {
+            overflow-x: auto;
+        }
+        
+        #calendar-table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        
+        #calendar-table th, #calendar-table td {
+            border: 1px solid #ccc;
+            padding: 5px;
+            text-align: center;
+            min-width: 100px;
+        }
+        
+        #calendar-table th:first-child, #calendar-table td:first-child {
+            position: sticky;
+            left: 0;
+            background: #fff;
+            z-index: 5;
+        }
+        
+        .today-column {
+            background-color: #ffffe0; /* 淡い黄色 */
+        }
+        
+        .progress-cell {
+            background-color: #e0ffe0; /* 淡い緑 */
+        }
+        
+        .modal {
+            display: none; /* デフォルトでは非表示 */
+            position: fixed; /* 画面全体に固定 */
+            z-index: 10; /* 最前面 */
+            padding-top: 60px;
+            left: 0;
+            top: 0;
+            width: 100%; /* 幅100% */
+            height: 100%; /* 高さ100% */
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4); /* 背景を半透明に */
+        }
+        
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+        }
+        
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        /* セル内のボタンスタイル */
+        .cell-button {
+            background: none;
+            border: none;
+            color: blue;
+            text-decoration: underline;
+            cursor: pointer;
+            font-size: 1em;
+            padding: 0;
+            margin: 0;
+        }
+        
+    </style>
+</head>
+<body>
+    <!-- ヘッダー -->
+    <header>
+        <div class="hamburger-menu" id="hamburger-menu">
+            <div class="hamburger-icon" id="hamburger-icon">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+            <!-- メニューの内容 -->
+            <div class="menu" id="menu">
+                <!-- 教材追加フォーム -->
+                <h2>教材を追加</h2>
+                <form id="material-form">
+                    <label for="material-name">教材名:</label>
+                    <input type="text" id="material-name" name="material-name" required><br><br>
+
+                    <label for="problem-count">問題数:</label>
+                    <input type="number" id="problem-count" name="problem-count" required><br><br>
+
+                    <label for="start-date">開始日:</label>
+                    <input type="date" id="start-date" name="start-date" required><br><br>
+
+                    <label for="end-date">終了日:</label>
+                    <input type="date" id="end-date" name="end-date" required><br><br>
+
+                    <label for="weekdays">曜日指定:</label><br>
+                    <input type="checkbox" id="weekday-all" name="weekday-all">
+                    <label for="weekday-all">全曜日選択</label><br>
+                    <input type="checkbox" id="weekday-mon" name="weekdays" value="1">
+                    <label for="weekday-mon">月曜日</label><br>
+                    <input type="checkbox" id="weekday-tue" name="weekdays" value="2">
+                    <label for="weekday-tue">火曜日</label><br>
+                    <input type="checkbox" id="weekday-wed" name="weekdays" value="3">
+                    <label for="weekday-wed">水曜日</label><br>
+                    <input type="checkbox" id="weekday-thu" name="weekdays" value="4">
+                    <label for="weekday-thu">木曜日</label><br>
+                    <input type="checkbox" id="weekday-fri" name="weekdays" value="5">
+                    <label for="weekday-fri">金曜日</label><br>
+                    <input type="checkbox" id="weekday-sat" name="weekdays" value="6">
+                    <label for="weekday-sat">土曜日</label><br>
+                    <input type="checkbox" id="weekday-sun" name="weekdays" value="0">
+                    <label for="weekday-sun">日曜日</label><br><br>
+
+                    <button type="submit">追加</button>
+                </form>
+                <button id="save-button">保存</button>
+            </div>
+        </div>
+        <h1>Study Scheduler</h1>
+    </header>
+
+    <!-- メインコンテンツ -->
+    <main>
+        <div class="calendar-container">
+            <table id="calendar-table">
+                <!-- テーブルはJavaScriptで動的に生成 -->
+            </table>
+        </div>
+    </main>
+
+    <!-- 完了した問題数入力用のモーダル -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <span id="close-modal" class="close">&times;</span>
+            <h2>完了した問題数を入力</h2>
+            <p id="modal-material-date"></p>
+            <label for="completed-count">完了した問題数:</label>
+            <input type="number" id="completed-count" name="completed-count">
+            <button id="modal-submit">送信</button>
+        </div>
+    </div>
+
+    <!-- JavaScriptコード -->
+    <script>
+        // グローバル変数の定義
+        let materials = [];
+        let calendarTable = document.getElementById('calendar-table');
+        let modal = document.getElementById('modal');
+        let closeModal = document.getElementById('close-modal');
+        let modalMaterialDate = document.getElementById('modal-material-date');
+        let completedCountInput = document.getElementById('completed-count');
+        let modalSubmit = document.getElementById('modal-submit');
+        let selectedMaterialIndex = null;
+        let selectedDate = null;
+
+        // ハンバーガーメニューのトグル機能
+        document.getElementById('hamburger-icon').addEventListener('click', function() {
+            let menu = document.getElementById('menu');
+            if (menu.style.display === 'block') {
+                menu.style.display = 'none';
+            } else {
+                menu.style.display = 'block';
+            }
+        });
+
+        // '全曜日選択'チェックボックスの処理
+        document.getElementById('weekday-all').addEventListener('change', function() {
+            let weekdays = document.querySelectorAll('input[name="weekdays"]');
+            weekdays.forEach(function(checkbox) {
+                checkbox.checked = document.getElementById('weekday-all').checked;
+            });
+        });
+
+        // 教材データをlocalStorageから読み込む
+        function loadMaterials() {
+            let savedMaterials = localStorage.getItem('materials');
+            if (savedMaterials) {
+                materials = JSON.parse(savedMaterials);
+            }
+        }
+
+        // 教材データをlocalStorageに保存する
+        function saveMaterials() {
+            localStorage.setItem('materials', JSON.stringify(materials));
+        }
+
+        // 新しい教材を追加する
+        document.getElementById('material-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            let name = document.getElementById('material-name').value;
+            let problemCount = parseInt(document.getElementById('problem-count').value);
+            let startDate = document.getElementById('start-date').value;
+            let endDate = document.getElementById('end-date').value;
+            let weekdays = [];
+            let weekdayCheckboxes = document.querySelectorAll('input[name="weekdays"]:checked');
+            weekdayCheckboxes.forEach(function(checkbox) {
+                weekdays.push(parseInt(checkbox.value));
+            });
+            if (weekdays.length === 0) {
+                alert('少なくとも1つの曜日を選択してください。');
+                return;
+            }
+            let material = {
+                name: name,
+                problemCount: problemCount,
+                startDate: startDate,
+                endDate: endDate,
+                weekdays: weekdays,
+                completed: {}, // 日付ごとの完了した問題数
+                remainingProblems: problemCount
+            };
+            materials.push(material);
+            saveMaterials();
+            renderCalendar();
+            this.reset();
+        });
+
+        // カレンダーをレンダリングする
+        function renderCalendar() {
+            // 既存のテーブルをクリア
+            while (calendarTable.firstChild) {
+                calendarTable.removeChild(calendarTable.firstChild);
+            }
+
+            // 日付の範囲を取得
+            let allDates = getAllDates();
+            if (allDates.length === 0) return;
+
+            let today = new Date();
+            let todayIndex = allDates.findIndex(date => isSameDate(date, today));
+
+            // テーブルヘッダーの作成（1行目：日付）
+            let headerRow = document.createElement('tr');
+            let materialHeaderCell = document.createElement('th');
+            materialHeaderCell.innerText = '教材 / 日付';
+            headerRow.appendChild(materialHeaderCell);
+
+            allDates.forEach(function(date, index) {
+                let dateHeader = document.createElement('th');
+                dateHeader.innerText = formatDateDisplay(date);
+                // 今日の列を色付け
+                if (isSameDate(date, today)) {
+                    dateHeader.classList.add('today-column');
+                }
+                headerRow.appendChild(dateHeader);
+            });
+
+            calendarTable.appendChild(headerRow);
+
+            // 各教材の行を作成
+            materials.forEach(function(material, materialIndex) {
+                let row = document.createElement('tr');
+
+                let materialCell = document.createElement('td');
+                materialCell.innerHTML = `
+                    ${material.name} 
+                    <button class="delete-material" data-index="${materialIndex}">削除</button>
+                `;
+                row.appendChild(materialCell);
+
+                allDates.forEach(function(date, dateIndex) {
+                    let cell = document.createElement('td');
+                    // 学習期間内かつ指定された曜日かどうかを確認
+                    if (date >= new Date(material.startDate) && date <= new Date(material.endDate) && material.weekdays.includes(date.getDay())) {
+                        let problemsPerDay = calculateProblemsPerDay(material, date);
+                        let dateKey = formatDate(date);
+
+                        // 完了した問題数
+                        let completed = material.completed[dateKey] || 0;
+
+                        // 進捗率を計算
+                        let progress = Math.min((completed / problemsPerDay) * 100, 100);
+
+                        cell.innerHTML = `
+                            <button class="cell-button" data-material-index="${materialIndex}" data-date="${dateKey}">
+                                ${completed} / ${problemsPerDay}
+                            </button>
+                            <div class="progress-bar" style="width: 100%; background: #e0e0e0; height: 5px;">
+                                <div style="width: ${progress}%; background: #76c7c0; height: 100%;"></div>
+                            </div>
+                        `;
+
+                        // 今日以降のセルは入力可能
+                        if (date <= today) {
+                            let button = cell.querySelector('.cell-button');
+                            button.addEventListener('click', function() {
+                                selectedMaterialIndex = materialIndex;
+                                selectedDate = new Date(date);
+                                modalMaterialDate.innerText = material.name + ' - ' + formatDateDisplay(new Date(date));
+                                completedCountInput.value = material.completed[dateKey] || '';
+                                modal.style.display = 'block';
+                            });
+                        }
+                    } else {
+                        cell.innerText = '-';
+                    }
+
+                    // 今日の列を色付け
+                    if (isSameDate(date, today)) {
+                        cell.classList.add('today-column');
+                    }
+
+                    row.appendChild(cell);
+                });
+
+                calendarTable.appendChild(row);
+            });
+
+            // 今日の日付が2列目の位置に来るようにスクロール
+            let calendarContainer = document.querySelector('.calendar-container');
+            let cellWidth = 100; // 仮のセル幅
+            if (todayIndex > 0) {
+                calendarContainer.scrollLeft = (todayIndex - 1) * cellWidth;
+            }
+
+            // 教材削除ボタンのイベントリスナーを設定
+            document.querySelectorAll('.delete-material').forEach(function(button) {
+                button.addEventListener('click', function() {
+                    let index = parseInt(this.getAttribute('data-index'));
+                    if (confirm('教材「' + materials[index].name + '」を削除しますか？')) {
+                        materials.splice(index, 1);
+                        saveMaterials();
+                        renderCalendar();
+                    }
+                });
+            });
+        }
+
+        // 最小の開始日から最大の終了日までの日付を取得
+        function getAllDates() {
+            let dates = [];
+            let start = null;
+            let end = null;
+            materials.forEach(function(material) {
+                let materialStart = new Date(material.startDate);
+                let materialEnd = new Date(material.endDate);
+                if (!start || materialStart < start) start = materialStart;
+                if (!end || materialEnd > end) end = materialEnd;
+            });
+            if (!start || !end) return dates;
+            let currentDate = new Date(start);
+            while (currentDate <= end) {
+                dates.push(new Date(currentDate));
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+            return dates;
+        }
+
+        // 1日あたりの問題数を計算
+        function calculateProblemsPerDay(material, date) {
+            let dateKey = formatDate(date);
+            let problemsPerDay = 0;
+            let totalScheduledDays = getTotalScheduledDays(material);
+            if (totalScheduledDays > 0) {
+                problemsPerDay = material.problemCount / totalScheduledDays;
+            }
+
+            // 過去の完了数を集計
+            let totalCompleted = 0;
+            for (let key in material.completed) {
+                totalCompleted += parseInt(material.completed[key]);
+            }
+
+            let remainingProblems = material.problemCount - totalCompleted;
+            let remainingScheduledDays = getRemainingScheduledDays(material, date);
+
+            if (remainingScheduledDays > 0) {
+                return Math.ceil(remainingProblems / remainingScheduledDays);
+            } else {
+                return 0;
+            }
+        }
+
+        // 教材の総スケジュール日数を取得
+        function getTotalScheduledDays(material) {
+            let totalDays = 0;
+            let currentDate = new Date(material.startDate);
+            let endDate = new Date(material.endDate);
+            while (currentDate <= endDate) {
+                if (material.weekdays.includes(currentDate.getDay())) {
+                    totalDays++;
+                }
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+            return totalDays;
+        }
+
+        // 残りのスケジュール日数を取得
+        function getRemainingScheduledDays(material, date) {
+            let remainingDays = 0;
+            let currentDate = new Date(date);
+            let endDate = new Date(material.endDate);
+            while (currentDate <= endDate) {
+                if (material.weekdays.includes(currentDate.getDay())) {
+                    remainingDays++;
+                }
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+            return remainingDays;
+        }
+
+        // モーダルを閉じる
+        closeModal.addEventListener('click', function() {
+            modal.style.display = 'none';
+        });
+
+        // 完了数を送信
+        modalSubmit.addEventListener('click', function() {
+            let completedCount = parseInt(completedCountInput.value) || 0;
+            let material = materials[selectedMaterialIndex];
+            let dateKey = formatDate(selectedDate);
+
+            // 入力値の検証
+            let problemsPerDay = calculateProblemsPerDay(material, selectedDate);
+            if (completedCount > problemsPerDay) {
+                alert('1日あたりの割り当て問題数を超えています。');
+                return;
+            }
+
+            // 完了した問題数を更新
+            material.completed[dateKey] = completedCount;
+
+            saveMaterials();
+            modal.style.display = 'none';
+            renderCalendar();
+        });
+
+        // 日付を文字列にフォーマット
+        function formatDate(date) {
+            return date.getFullYear() + '-' + (('0'+(date.getMonth()+1)).slice(-2)) + '-' + ('0'+('0'+date.getDate()).slice(-2));
+        }
+
+        // 表示用に日付をフォーマット
+        function formatDateDisplay(date) {
+            let weekdayNames = ['日', '月', '火', '水', '木', '金', '土'];
+            return date.getFullYear() + '/' + (date.getMonth()+1) + '/' + date.getDate() + ' (' + weekdayNames[date.getDay()] + ')';
+        }
+
+        // 2つの日付が同じかどうかをチェック
+        function isSameDate(date1, date2) {
+            return date1.getFullYear() === date2.getFullYear()
+                && date1.getMonth() === date2.getMonth()
+                && date1.getDate() === date2.getDate();
+        }
+
+        // 初期化関数
+        function init() {
+            loadMaterials();
+            renderCalendar();
+        }
+
+        // '保存'ボタンの処理
+        document.getElementById('save-button').addEventListener('click', function() {
+            saveMaterials();
+            alert('保存しました。');
+        });
+
+        // ページ読み込み時に初期化
+        window.onload = init;
+    </script>
+
+</body>
+</html>

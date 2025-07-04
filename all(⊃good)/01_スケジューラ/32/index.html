@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Study Scheduler</title>
+    <!-- フォントの読み込み -->
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Noto+Serif&family=Noto+Serif+JP&display=swap" rel="stylesheet">
+    <!-- アイコンの読み込み（ハンバーガーメニュー用） -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.2/css/all.min.css">
+    <!-- CSSファイルの読み込み -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <!-- ハンバーガーメニュー -->
+        <div class="hamburger-menu" id="hamburger-menu">
+            <i class="fas fa-bars"></i>
+        </div>
+        <!-- タイトル -->
+        <h1>Study Scheduler</h1>
+    </header>
+
+    <!-- メニュー内容 -->
+    <nav class="menu-content" id="menu-content">
+        <!-- 閉じるボタンの追加 -->
+        <div class="menu-close" id="menu-close">
+            <i class="fas fa-times"></i>
+        </div>
+        <h2>新しい教材を追加</h2>
+        <form id="material-form">
+            <div class="form-group">
+                <label for="material-name">教材名</label>
+                <input type="text" id="material-name" required>
+            </div>
+            <div class="form-group">
+                <label for="total-problems">問題数</label>
+                <input type="number" id="total-problems" min="1" required>
+            </div>
+            <div class="form-group">
+                <label for="study-period-start">学習開始日</label>
+                <input type="date" id="study-period-start" required>
+            </div>
+            <div class="form-group">
+                <label for="study-period-end">学習終了日</label>
+                <input type="date" id="study-period-end" required>
+            </div>
+            <div class="form-group">
+                <label>曜日指定</label>
+                <div class="checkbox-group">
+                    <label><input type="checkbox" value="1" id="day-mon">月</label>
+                    <label><input type="checkbox" value="2" id="day-tue">火</label>
+                    <label><input type="checkbox" value="3" id="day-wed">水</label>
+                    <label><input type="checkbox" value="4" id="day-thu">木</label>
+                    <label><input type="checkbox" value="5" id="day-fri">金</label>
+                    <label><input type="checkbox" value="6" id="day-sat">土</label>
+                    <label><input type="checkbox" value="0" id="day-sun">日</label>
+                </div>
+            </div>
+            <button type="submit">追加</button>
+        </form>
+        <div class="import-export">
+            <button id="import-json">データをインポート</button>
+            <button id="export-json">データをエクスポート</button>
+        </div>
+    </nav>
+
+    <main>
+        <div class="table-container">
+            <table id="schedule-table">
+                <thead>
+                    <tr id="date-row">
+                        <!-- 教材ヘッダーが動的に挿入されます -->
+                    </tr>
+                </thead>
+                <tbody id="material-rows">
+                    <!-- 日付ごとの行が動的に挿入されます -->
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <!-- モーダル -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <span id="modal-close" class="close">&times;</span>
+            <h2 id="modal-title"></h2>
+            <div id="modal-body">
+                <!-- モーダルの内容が動的に挿入されます -->
+            </div>
+            <button id="modal-submit">保存</button>
+        </div>
+    </div>
+
+    <!-- JavaScriptファイルの読み込み -->
+    <script src="script.js"></script>
+</body>
+</html>

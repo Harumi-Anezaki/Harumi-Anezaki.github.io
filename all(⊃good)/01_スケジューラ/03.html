@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Study Scheduler</title>
+    <style>
+        /* リセットCSS */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* フォントの設定 */
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Noto+Sans+JP:wght@400;700&display=swap');
+        body {
+            font-family: 'Roboto', 'Noto Sans JP', sans-serif;
+            background-color: #f0f2f5;
+            overflow-x: hidden;
+        }
+
+        /* ヘッダー */
+        header {
+            background-color: #3f51b5;
+            color: white;
+            padding: 15px 20px;
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 24px;
+            flex-grow: 1;
+        }
+
+        /* ハンバーガーメニュー */
+        .menu-toggle {
+            cursor: pointer;
+            width: 30px;
+            height: 25px;
+            position: relative;
+        }
+
+        .menu-toggle span {
+            background-color: white;
+            height: 3px;
+            margin: 4px 0;
+            display: block;
+            width: 100%;
+            position: absolute;
+            left: 0;
+            transition: all 0.3s;
+        }
+
+        .menu-toggle span:nth-child(1) {
+            top: 0px;
+        }
+
+        .menu-toggle span:nth-child(2) {
+            top: 9px;
+        }
+
+        .menu-toggle span:nth-child(3) {
+            top: 18px;
+        }
+
+        /* サイドメニュー */
+        #sidebar {
+            position: fixed;
+            top: 0;
+            right: -400px;
+            width: 400px;
+            height: 100%;
+            background-color: #fff;
+            box-shadow: -2px 0 5px rgba(0,0,0,0.2);
+            padding: 30px 20px;
+            transition: right 0.3s ease-in-out;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+
+        #sidebar.active {
+            right: 0;
+        }
+
+        #sidebar h2 {
+            margin-bottom: 20px;
+            color: #333;
+            font-size: 22px;
+        }
+
+        #sidebar label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: bold;
+        }
+
+        #sidebar input[type="text"],
+        #sidebar input[type="number"],
+        #sidebar input[type="date"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            font-size: 14px;
+            border-radius: 5px;
+        }
+
+        #sidebar .weekdays {
+            margin-bottom: 15px;
+        }
+
+        #sidebar .weekdays label {
+            display: inline-block;
+            width: 48%;
+            margin-bottom: 5px;
+            font-weight: normal;
+        }
+
+        #sidebar .weekday-buttons {
+            margin-bottom: 10px;
+        }
+
+        #sidebar .weekday-buttons button {
+            margin-right: 5px;
+            margin-bottom: 5px;
+            padding: 5px 10px;
+            font-size: 12px;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+            color: #fff;
+            background-color: #3f51b5;
+        }
+
+        #sidebar .buttons {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        #sidebar button {
+            background-color: #3f51b5;
+            color: white;
+            padding: 12px 30px;
+            font-size: 16px;
+            border: none;
+            cursor: pointer;
+            margin: 5px;
+            border-radius: 5px;
+        }
+
+        /* メインコンテンツ */
+        .content {
+            padding: 20px;
+        }
+
+        .table-container {
+            background-color: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            position: relative;
+        }
+
+        .schedule-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        .schedule-table th,
+        .schedule-table td {
+            border: 1px solid #e0e0e0;
+            padding: 10px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .schedule-table th {
+            background-color: #f5f5f5;
+            font-weight: 700;
+        }
+
+        .schedule-table td {
+            background-color: #fff;
+            position: relative;
+        }
+
+        .schedule-table td.today {
+            background-color: #FFFDE7 !important;
+        }
+
+        .schedule-table td .cell-content {
+            cursor: pointer;
+        }
+
+        .delete-button {
+            background-color: #f44336;
+            color: white;
+            padding: 5px 10px;
+            font-size: 12px;
+            border: none;
+            cursor: pointer;
+            border-radius: 3px;
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+
+        /* モーダルウィンドウ */
+        .modal {
+            display: none; 
+            position: fixed; 
+            z-index: 2000; 
+            left: 0;
+            top: 0;
+            width: 100%; 
+            height: 100%; 
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+
+        .modal-content {
+            background-color: #fff;
+            margin: 15% auto; 
+            padding: 20px;
+            border: 1px solid #888;
+            width: 90%; 
+            max-width: 400px;
+            border-radius: 8px;
+            position: relative;
+        }
+
+        .close-modal {
+            color: #aaa;
+            position: absolute;
+            right: 15px;
+            top: 10px;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .modal-content h2 {
+            font-size: 20px;
+            margin-bottom: 20px;
+        }
+
+        .modal-content input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .modal-content button {
+            background-color: #3f51b5;
+            color: white;
+            padding: 12px 20px;
+            font-size: 16px;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            width: 100%;
+        }
+
+        /* モバイル対応 */
+        @media screen and (max-width: 600px) {
+            .menu-toggle {
+                right: 10px;
+            }
+            #sidebar {
+                width: 80%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Study Scheduler</h1>
+        <div class="menu-toggle" id="menu-toggle">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </header>
+
+    <!-- サイドバー -->
+    <div id="sidebar">
+        <h2>新しい教材を追加</h2>
+        <label for="textbook-name">教材名</label>
+        <input type="text" id="textbook-name" placeholder="例：数学I">
+
+        <label for="problem-count">問題数</label>
+        <input type="number" id="problem-count" min="1" placeholder="例：100">
+
+        <label for="start-date">開始日</label>
+        <input type="date" id="start-date">
+
+        <label for="end-date">終了日</label>
+        <input type="date" id="end-date">
+
+        <div class="weekdays">
+            <div class="weekday-buttons">
+                <button type="button" id="select-all">全て選択</button>
+                <button type="button" id="deselect-all">全て解除</button>
+                <button type="button" id="select-weekdays">平日</button>
+                <button type="button" id="select-weekends">週末</button>
+            </div>
+            <label><input type="checkbox" value="1"> 月曜日</label>
+            <label><input type="checkbox" value="2"> 火曜日</label>
+            <label><input type="checkbox" value="3"> 水曜日</label>
+            <label><input type="checkbox" value="4"> 木曜日</label>
+            <label><input type="checkbox" value="5"> 金曜日</label>
+            <label><input type="checkbox" value="6"> 土曜日</label>
+            <label><input type="checkbox" value="0"> 日曜日</label>
+        </div>
+
+        <div class="buttons">
+            <button id="add-textbook">追加</button>
+            <button id="close-sidebar">閉じる</button>
+        </div>
+    </div>
+
+    <!-- メインコンテンツ -->
+    <div class="content" id="content">
+        <!-- ここにスケジュール表が表示されます -->
+    </div>
+
+    <!-- モーダルウィンドウ -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2 id="modal-date"></h2>
+            <label for="completed-problems">終えた問題数</label>
+            <input type="number" id="completed-problems" min="0">
+            <button id="save-progress">保存</button>
+        </div>
+    </div>
+
+    <script>
+        // JavaScriptコード
+
+        // サイドバーの表示・非表示
+        const menuToggle = document.getElementById('menu-toggle');
+        const sidebar = document.getElementById('sidebar');
+        const closeSidebar = document.getElementById('close-sidebar');
+
+        menuToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('active');
+        });
+
+        closeSidebar.addEventListener('click', () => {
+            sidebar.classList.remove('active');
+        });
+
+        // 教材の追加
+        const addTextbookButton = document.getElementById('add-textbook');
+        const content = document.getElementById('content');
+
+        let textbooks = JSON.parse(localStorage.getItem('textbooks')) || [];
+
+        renderSchedule();
+
+        addTextbookButton.addEventListener('click', () => {
+            const name = document.getElementById('textbook-name').value.trim();
+            const problemCount = parseInt(document.getElementById('problem-count').value);
+            const startDate = document.getElementById('start-date').value;
+            const endDate = document.getElementById('end-date').value;
+            const weekdays = Array.from(document.querySelectorAll('.weekdays input[type="checkbox"]:checked')).map(el => parseInt(el.value));
+
+            if (!name || isNaN(problemCount) || !startDate || !endDate || weekdays.length === 0) {
+                alert('すべての項目を正しく入力してください。');
+                return;
+            }
+
+            if (new Date(startDate) > new Date(endDate)) {
+                alert('開始日は終了日より前の日付にしてください。');
+                return;
+            }
+
+            const textbook = {
+                id: Date.now(),
+                name,
+                problemCount,
+                startDate,
+                endDate,
+                weekdays,
+                progress: {}
+            };
+
+            textbooks.push(textbook);
+
+            // スケジュール表を再描画
+            renderSchedule();
+
+            // データを保存
+            saveData();
+
+            // フォームをリセット
+            document.getElementById('textbook-name').value = '';
+            document.getElementById('problem-count').value = '';
+            document.getElementById('start-date').value = '';
+            document.getElementById('end-date').value = '';
+            document.querySelectorAll('.weekdays input[type="checkbox"]').forEach(el => el.checked = false);
+
+            sidebar.classList.remove('active');
+        });
+
+        function renderSchedule() {
+            content.innerHTML = '';
+
+            textbooks.forEach((textbook, index) => {
+                // 学習期間の計算
+                const dates = getDates(new Date(textbook.startDate), new Date(textbook.endDate), textbook.weekdays);
+                const totalDays = dates.length;
+
+                // 既に完了した問題数を計算
+                let completedProblems = 0;
+                const today = new Date();
+                const todayKey = formatDate(today);
+
+                dates.forEach(date => {
+                    const dateKey = formatDate(date);
+                    if (new Date(date) < new Date(today)) {
+                        if (textbook.progress[dateKey] === undefined) {
+                            textbook.progress[dateKey] = 0;
+                        }
+                    }
+                    completedProblems += parseInt(textbook.progress[dateKey]) || 0;
+                });
+
+                // 残りの問題数
+                let remainingProblems = textbook.problemCount - completedProblems;
+
+                // 1日あたりの問題数
+                let remainingDays = dates.filter(date => {
+                    const dateKey = formatDate(date);
+                    return (textbook.progress[dateKey] === undefined);
+                }).length;
+
+                let problemsPerDay = remainingDays > 0 ? Math.ceil(remainingProblems / remainingDays) : 0;
+
+                // テーブルコンテナ
+                const tableContainer = document.createElement('div');
+                tableContainer.classList.add('table-container');
+
+                // 削除ボタン
+                const deleteButton = document.createElement('button');
+                deleteButton.textContent = '削除';
+                deleteButton.classList.add('delete-button');
+                deleteButton.addEventListener('click', () => {
+                    if (confirm(`「${textbook.name}」を削除しますか？`)) {
+                        textbooks.splice(index, 1);
+                        saveData();
+                        renderSchedule();
+                    }
+                });
+                tableContainer.appendChild(deleteButton);
+
+                // テーブルの作成
+                const table = document.createElement('table');
+                table.classList.add('schedule-table');
+
+                // テーブルヘッダー
+                const thead = document.createElement('thead');
+                const headerRow = document.createElement('tr');
+
+                const textbookHeader = document.createElement('th');
+                textbookHeader.textContent = textbook.name;
+                textbookHeader.colSpan = dates.length + 1;
+                headerRow.appendChild(textbookHeader);
+
+                thead.appendChild(headerRow);
+
+                const dateRow = document.createElement('tr');
+                const emptyCell = document.createElement('th');
+                emptyCell.textContent = '';
+                dateRow.appendChild(emptyCell);
+
+                dates.forEach(date => {
+                    const dateHeader = document.createElement('th');
+                    dateHeader.textContent = formatDate(date);
+                    dateRow.appendChild(dateHeader);
+                });
+
+                thead.appendChild(dateRow);
+                table.appendChild(thead);
+
+                // テーブルボディ
+                const tbody = document.createElement('tbody');
+                const plannedRow = document.createElement('tr');
+                const completedRow = document.createElement('tr');
+
+                const plannedCellHeader = document.createElement('td');
+                plannedCellHeader.textContent = 'やるべき量';
+                plannedRow.appendChild(plannedCellHeader);
+
+                const completedCellHeader = document.createElement('td');
+                completedCellHeader.textContent = '終えた問題数';
+                completedRow.appendChild(completedCellHeader);
+
+                dates.forEach((date, idx) => {
+                    const dateKey = formatDate(date);
+
+                    // やるべき量セル
+                    const plannedCell = document.createElement('td');
+                    plannedCell.textContent = problemsPerDay;
+
+                    // 終えた問題数セル
+                    const completedCell = document.createElement('td');
+                    const cellContent = document.createElement('div');
+                    cellContent.classList.add('cell-content');
+                    cellContent.textContent = textbook.progress[dateKey] !== undefined ? textbook.progress[dateKey] : '-';
+
+                    // 今日の日付セルの色を変更
+                    if (dateKey === formatDate(today)) {
+                        plannedCell.classList.add('today');
+                        completedCell.classList.add('today');
+                    }
+
+                    // セルクリック時の処理
+                    if (dateKey === formatDate(today)) {
+                        completedCell.addEventListener('click', () => {
+                            openModal(textbook.id, dateKey, problemsPerDay);
+                        });
+                    }
+
+                    completedCell.appendChild(cellContent);
+                    plannedRow.appendChild(plannedCell);
+                    completedRow.appendChild(completedCell);
+                });
+
+                tbody.appendChild(plannedRow);
+                tbody.appendChild(completedRow);
+                table.appendChild(tbody);
+                tableContainer.appendChild(table);
+                content.appendChild(tableContainer);
+            });
+        }
+
+        // 日付の配列を取得
+        function getDates(startDate, endDate, weekdays) {
+            const dates = [];
+            const currentDate = new Date(startDate);
+
+            while (currentDate <= endDate) {
+                if (weekdays.includes(currentDate.getDay())) {
+                    dates.push(new Date(currentDate));
+                }
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+
+            return dates;
+        }
+
+        // 日付をYYYY/MM/DD形式にフォーマット
+        function formatDate(date) {
+            const y = date.getFullYear();
+            const m = ('00' + (date.getMonth()+1)).slice(-2);
+            const d = ('00' + date.getDate()).slice(-2);
+            return `${y}/${m}/${d}`;
+        }
+
+        // データをローカルストレージに保存
+        function saveData() {
+            localStorage.setItem('textbooks', JSON.stringify(textbooks));
+        }
+
+        // 曜日の一括選択機能
+        document.getElementById('select-all').addEventListener('click', () => {
+            document.querySelectorAll('.weekdays input[type="checkbox"]').forEach(el => el.checked = true);
+        });
+
+        document.getElementById('deselect-all').addEventListener('click', () => {
+            document.querySelectorAll('.weekdays input[type="checkbox"]').forEach(el => el.checked = false);
+        });
+
+        document.getElementById('select-weekdays').addEventListener('click', () => {
+            document.querySelectorAll('.weekdays input[type="checkbox"]').forEach(el => {
+                el.checked = el.value >= 1 && el.value <= 5;
+            });
+        });
+
+        document.getElementById('select-weekends').addEventListener('click', () => {
+            document.querySelectorAll('.weekdays input[type="checkbox"]').forEach(el => {
+                el.checked = el.value == 0 || el.value == 6;
+            });
+        });
+
+        // モーダルウィンドウの操作
+        const modal = document.getElementById('modal');
+        const closeModalBtn = document.querySelector('.close-modal');
+        const modalDate = document.getElementById('modal-date');
+        const completedProblemsInput = document.getElementById('completed-problems');
+        const saveProgressBtn = document.getElementById('save-progress');
+
+        let currentTextbookId = null;
+        let currentDateKey = null;
+        let currentProblemsPerDay = null;
+
+        function openModal(textbookId, dateKey, problemsPerDay) {
+            currentTextbookId = textbookId;
+            currentDateKey = dateKey;
+            currentProblemsPerDay = problemsPerDay;
+
+            modalDate.textContent = `終えた問題数 (${dateKey})`;
+            const textbook = textbooks.find(tb => tb.id === currentTextbookId);
+            completedProblemsInput.value = textbook.progress[currentDateKey] !== undefined ? textbook.progress[currentDateKey] : '';
+            modal.style.display = 'block';
+        }
+
+        closeModalBtn.addEventListener('click', () => {
+            modal.style.display = 'none';
+        });
+
+        window.addEventListener('click', event => {
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        });
+
+        saveProgressBtn.addEventListener('click', () => {
+            const value = parseInt(completedProblemsInput.value) || 0;
+            const textbook = textbooks.find(tb => tb.id === currentTextbookId);
+
+            textbook.progress[currentDateKey] = value;
+
+            // データを保存
+            saveData();
+
+            // モーダルを閉じる
+            modal.style.display = 'none';
+
+            // スケジュールを再描画
+            renderSchedule();
+        });
+    </script>
+
+</body>
+</html>

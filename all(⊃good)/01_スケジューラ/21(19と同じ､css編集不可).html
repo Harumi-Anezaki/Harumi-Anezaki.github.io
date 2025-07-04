@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Study Scheduler</title>
+    <!-- フォントの読み込み -->
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Noto+Sans+JP:wght@300;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #1a1a1a;
+            color: #f0f0f0;
+        }
+
+        .title {
+            font-family: 'Great Vibes', cursive;
+            text-align: center;
+            margin: 0;
+            padding: 20px 0;
+            font-size: 48px;
+            color: #00bfff;
+            background: linear-gradient(45deg, #0d0d0d, #333);
+            border-bottom: 1px solid #333;
+        }
+
+        .save-button {
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #00bfff;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            z-index: 1001;
+            transition: background-color 0.3s;
+        }
+
+        .save-button:hover {
+            background-color: #009acd;
+        }
+
+        #sidebar {
+            position: fixed;
+            width: 300px;
+            height: 100%;
+            background: #262626;
+            left: -300px;
+            transition: left 0.3s;
+            color: #f0f0f0;
+            padding: 20px;
+            box-sizing: border-box;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+
+        #sidebar.active {
+            left: 0;
+        }
+
+        .toggle-btn {
+            position: fixed;
+            left: 15px;
+            top: 15px;
+            cursor: pointer;
+            z-index: 1001;
+        }
+
+        .toggle-btn span {
+            display: block;
+            width: 30px;
+            height: 4px;
+            background: #00bfff;
+            margin: 5px 0;
+            transition: background-color 0.3s;
+        }
+
+        .toggle-btn:hover span {
+            background: #009acd;
+        }
+
+        .sidebar-content h2 {
+            margin-top: 0;
+            color: #00bfff;
+            text-align: center;
+        }
+
+        .sidebar-content input, .sidebar-content button {
+            width: 100%;
+            margin-bottom: 15px;
+            padding: 10px;
+            background-color: #333;
+            border: none;
+            color: #f0f0f0;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+
+        .sidebar-content button {
+            background-color: #00bfff;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .sidebar-content button:hover {
+            background-color: #009acd;
+        }
+
+        .sidebar-content label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 700;
+        }
+
+        #曜日指定 {
+            margin-bottom: 15px;
+        }
+
+        #曜日指定 p {
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .weekday-buttons {
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .weekday-buttons button {
+            margin-right: 10px;
+            padding: 8px 12px;
+            background-color: #00bfff;
+            border: none;
+            color: #fff;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .weekday-buttons button:hover {
+            background-color: #009acd;
+        }
+
+        .weekday-checkboxes {
+            display: flex;
+            justify-content: space-around;
+        }
+
+        .weekday-checkboxes label {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .weekday-checkboxes input[type="checkbox"] {
+            margin-bottom: 5px;
+            width: 20px;
+            height: 20px;
+        }
+
+        .table-container {
+            margin: 80px 20px 20px 20px;
+            overflow-x: auto;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            min-width: 800px;
+        }
+
+        th, td {
+            border: 1px solid #333;
+            text-align: center;
+            padding: 10px;
+            min-width: 80px;
+            color: #f0f0f0;
+        }
+
+        th {
+            background-color: #262626;
+            font-weight: normal;
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+
+        #fixed-header {
+            left: 0;
+            position: sticky;
+            z-index: 3;
+            background-color: #262626;
+        }
+
+        th:first-child, td:first-child {
+            position: sticky;
+            left: 0;
+            background-color: #1a1a1a;
+            z-index: 1;
+        }
+
+        td {
+            position: relative;
+        }
+
+        .today-cell {
+            background-color: #a78b94;
+        }
+
+        .assigned-cell {
+            background-color: #5b9094;
+        }
+
+        .completed-cell {
+            background-color: #7bc2c8;
+        }
+
+        .completed-today-cell {
+            background-color: #00994d;
+        }
+
+        input[type="number"] {
+            width: 60px;
+        }
+
+        .bar-container {
+            width: 100%;
+            background-color: #333;
+            height: 20px;
+            position: relative;
+            margin-top: 5px;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            background-color: #00bfff;
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        .bar-text {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+        }
+
+        td button {
+            margin-top: 10px;
+            padding: 5px 10px;
+            background-color: #ff3333;
+            border: none;
+            color: #fff;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        td button:hover {
+            background-color: #cc0000;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.6);
+        }
+
+        .modal-content {
+            background-color: #1a1a1a;
+            margin: 15% auto;
+            padding: 20px;
+            width: 90%;
+            max-width: 400px;
+            position: relative;
+            color: #f0f0f0;
+            border: 1px solid #333;
+        }
+
+        .close {
+            color: #aaa;
+            position: absolute;
+            right: 15px;
+            top: 10px;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover {
+            color: #fff;
+        }
+
+        .modal-content h2 {
+            margin-top: 0;
+            color: #00bfff;
+        }
+
+        .modal-content input, .modal-content button {
+            width: 100%;
+            margin-bottom: 15px;
+            padding: 10px;
+            background-color: #333;
+            border: none;
+            color: #f0f0f0;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+
+        .modal-content button {
+            background-color: #00bfff;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .modal-content button:hover {
+            background-color: #009acd;
+        }
+
+        .modal-content p {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <!-- ハンバーガーメニュー -->
+    <nav id="sidebar" class="sidebar">
+        <div class="sidebar-content">
+            <h2>教材追加</h2>
+            <input type="text" id="教材名" placeholder="教材名">
+            <input type="number" id="問題数" placeholder="問題数">
+            <div class="period-section">
+                <label for="学習期間開始">学習期間開始</label>
+                <input type="date" id="学習期間開始">
+                <label for="学習期間終了">学習期間終了</label>
+                <input type="date" id="学習期間終了">
+            </div>
+            <div id="曜日指定">
+                <p>曜日指定</p>
+                <div class="weekday-buttons">
+                    <button type="button" onclick="selectAllDays()">全て選択</button>
+                    <button type="button" onclick="clearAllDays()">全て解除</button>
+                </div>
+                <div class="weekday-checkboxes">
+                    <label>
+                        <input type="checkbox" value="月">
+                        <span>月</span>
+                    </label>
+                    <label>
+                        <input type="checkbox" value="火">
+                        <span>火</span>
+                    </label>
+                    <label>
+                        <input type="checkbox" value="水">
+                        <span>水</span>
+                    </label>
+                    <label>
+                        <input type="checkbox" value="木">
+                        <span>木</span>
+                    </label>
+                    <label>
+                        <input type="checkbox" value="金">
+                        <span>金</span>
+                    </label>
+                    <label>
+                        <input type="checkbox" value="土">
+                        <span>土</span>
+                    </label>
+                    <label>
+                        <input type="checkbox" value="日">
+                        <span>日</span>
+                    </label>
+                </div>
+            </div>
+            <button onclick="add教材()">追加</button>
+        </div>
+    </nav>
+
+    <!-- ハンバーガーメニューボタン -->
+    <div class="toggle-btn" onclick="toggleSidebar()">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+
+    <!-- タイトル -->
+    <h1 class="title">Study Scheduler</h1>
+
+    <!-- 保存ボタン -->
+    <button class="save-button" onclick="openSaveModal()">保存</button>
+
+    <!-- カレンダーUI -->
+    <div class="table-container">
+        <table id="scheduler">
+            <thead>
+                <tr>
+                    <th id="fixed-header">教材</th>
+                    <!-- 日付のセルがここに動的に挿入される -->
+                </tr>
+            </thead>
+            <tbody>
+                <!-- 教材の行がここに動的に挿入される -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 完了した問題数入力用モーダル -->
+    <div id="completion-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeCompletionModal()">&times;</span>
+            <h2 id="completion-modal-title"></h2>
+            <input type="number" id="完了した問題数" placeholder="完了した問題数">
+            <button onclick="saveCompletion()">保存</button>
+        </div>
+    </div>
+
+    <!-- 教材削除確認モーダル -->
+    <div id="delete-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeDeleteModal()">&times;</span>
+            <h2>教材を削除しますか？</h2>
+            <button onclick="delete教材()">削除する</button>
+            <button onclick="closeDeleteModal()">キャンセル</button>
+        </div>
+    </div>
+
+    <!-- 保存確認モーダル -->
+    <div id="save-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeSaveModal()">&times;</span>
+            <h2>データを保存しますか？</h2>
+            <button onclick="saveDataWithModal()">保存する</button>
+            <button onclick="closeSaveModal()">キャンセル</button>
+        </div>
+    </div>
+
+    <!-- エラーモーダル -->
+    <div id="error-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeErrorModal()">&times;</span>
+            <h2>エラー</h2>
+            <p>全ての項目を正しく入力してください。</p>
+            <button onclick="closeErrorModal()">閉じる</button>
+        </div>
+    </div>
+
+    <!-- スクリプトの読み込み -->
+    <script>
+        let 教材一覧 = [];
+        let 日付一覧 = [];
+        let 現在表示中の教材 = null;
+        let 現在表示中の日付 = null;
+
+        // ハンバーガーメニューの開閉
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('active');
+        }
+
+        // 曜日一括選択
+        function selectAllDays() {
+            let 曜日チェックボックス = document.querySelectorAll('#曜日指定 input[type="checkbox"]');
+            曜日チェックボックス.forEach(cb => cb.checked = true);
+        }
+
+        function clearAllDays() {
+            let 曜日チェックボックス = document.querySelectorAll('#曜日指定 input[type="checkbox"]');
+            曜日チェックボックス.forEach(cb => cb.checked = false);
+        }
+
+        // 教材を追加
+        function add教材() {
+            let 教材名Input = document.getElementById('教材名');
+            let 問題数Input = document.getElementById('問題数');
+            let 学習期間開始Input = document.getElementById('学習期間開始');
+            let 学習期間終了Input = document.getElementById('学習期間終了');
+
+            let 教材名 = 教材名Input.value.trim();
+            let 問題数 = parseInt(問題数Input.value);
+            let 学習期間開始 = 学習期間開始Input.value;
+            let 学習期間終了 = 学習期間終了Input.value;
+
+            let 曜日チェックボックス = document.querySelectorAll('#曜日指定 input[type="checkbox"]');
+            let 選択された曜日 = [];
+            曜日チェックボックス.forEach(cb => {
+                if (cb.checked) 選択された曜日.push(cb.value);
+            });
+
+            if (!教材名 || !問題数 || !学習期間開始 || !学習期間終了 || 選択された曜日.length === 0) {
+                openErrorModal();
+                return;
+            }
+
+            let 新しい教材 = {
+                教材名,
+                問題数,
+                学習期間開始: new Date(学習期間開始),
+                学習期間終了: new Date(学習期間終了),
+                選択された曜日,
+                割り当て: {},
+                完了: {},
+                進捗: 0
+            };
+
+            教材一覧.push(新しい教材);
+
+            // 入力欄をクリア
+            教材名Input.value = '';
+            問題数Input.value = '';
+            学習期間開始Input.value = '';
+            学習期間終了Input.value = '';
+            曜日チェックボックス.forEach(cb => cb.checked = false);
+
+            saveData();
+            再計算();
+            描画する();
+            toggleSidebar();
+        }
+
+        // エラーモーダルを開く
+        function openErrorModal() {
+            document.getElementById('error-modal').style.display = 'block';
+        }
+
+        // エラーモーダルを閉じる
+        function closeErrorModal() {
+            document.getElementById('error-modal').style.display = 'none';
+        }
+
+        // 日付の生成
+        function 生成日付一覧() {
+            let 全ての日付 = new Set();
+            教材一覧.forEach(教材 => {
+                let 開始日 = new Date(教材.学習期間開始);
+                let 終了日 = new Date(教材.学習期間終了);
+
+                for (let 日付 = new Date(開始日); 日付 <= 終了日; 日付.setDate(日付.getDate() + 1)) {
+                    全ての日付.add(new Date(日付).toISOString().split('T')[0]);
+                }
+            });
+            日付一覧 = Array.from(全ての日付).sort();
+        }
+
+        // カレンダーの描画
+        function 描画する() {
+            生成日付一覧();
+            let thead = document.querySelector('#scheduler thead tr');
+            let tbody = document.querySelector('#scheduler tbody');
+
+            // 日付のヘッダーをクリア
+            thead.innerHTML = '<th id="fixed-header">教材</th>';
+
+            // 今日の日付を取得
+            let 今日 = new Date().toISOString().split('T')[0];
+
+            // 日付セルの生成
+            日付一覧.forEach(日付 => {
+                let 日付オブジェクト = new Date(日付);
+                let 表示日付 = `${日付オブジェクト.getMonth() + 1}/${日付オブジェクト.getDate()}<br>${['日','月','火','水','木','金','土'][日付オブジェクト.getDay()]}`;
+                let th = document.createElement('th');
+                th.innerHTML = 表示日付;
+                if (日付 === 今日) {
+                    th.classList.add('today-cell');
+                }
+                thead.appendChild(th);
+            });
+
+            // 教材の行をクリア
+            tbody.innerHTML = '';
+
+            // 教材ごとの行を生成
+            教材一覧.forEach((教材, 教材インデックス) => {
+                let tr = document.createElement('tr');
+                let td = document.createElement('td');
+
+                // 教材名の表示
+                let title = document.createElement('div');
+                title.innerText = 教材.教材名;
+                td.appendChild(title);
+
+                // 進捗バーの表示
+                let barContainer = document.createElement('div');
+                barContainer.classList.add('bar-container');
+                let progressBar = document.createElement('div');
+                progressBar.classList.add('progress-bar');
+                let 完了数 = 0;
+                for(let key in 教材.完了){
+                    if(教材.完了.hasOwnProperty(key)){
+                        完了数 += 教材.完了[key];
+                    }
+                }
+                let 進捗率 = (完了数 / 教材.問題数) * 100;
+                progressBar.style.width = `${進捗率}%`;
+                barContainer.appendChild(progressBar);
+                let barText = document.createElement('div');
+                barText.classList.add('bar-text');
+                barText.innerText = `${完了数}/${教材.問題数}`;
+                barContainer.appendChild(barText);
+                td.appendChild(barContainer);
+
+                // 教材削除ボタン
+                let deleteButton = document.createElement('button');
+                deleteButton.innerText = '削除';
+                deleteButton.onclick = () => openDeleteModal(教材インデックス);
+                td.appendChild(deleteButton);
+
+                tr.appendChild(td);
+
+                // 日付ごとのセルを生成
+                日付一覧.forEach(日付 => {
+                    let cell = document.createElement('td');
+                    cell.addEventListener('click', () => セルをクリック(教材インデックス, 日付));
+
+                    let 割り当て数 = 教材.割り当て[日付];
+                    let 完了数 = 教材.完了[日付];
+
+                    if (割り当て数 !== undefined && 完了数 !== undefined) {
+                        // 割り当てあり、完了数あり
+                        if (日付 === 今日) {
+                            cell.innerHTML = `${完了数}/${割り当て数}`;
+                            cell.classList.add('completed-today-cell');
+                        } else if (new Date(日付) < new Date(今日)) {
+                            cell.innerHTML = `${完了数}/${割り当て数}`;
+                            cell.classList.add('completed-cell');
+                        }
+                    } else if (割り当て数 !== undefined) {
+                        // 割り当てあり、完了数なし
+                        cell.innerHTML = 割り当て数;
+                        if (日付 === 今日) {
+                            cell.classList.add('today-cell');
+                        } else if (new Date(日付) > new Date(今日)) {
+                            cell.classList.add('assigned-cell');
+                        }
+                    } else if (完了数 !== undefined) {
+                        // 割り当てなし、完了数あり
+                        cell.innerHTML = 完了数;
+                        if (日付 === 今日) {
+                            cell.classList.add('completed-today-cell');
+                        } else {
+                            cell.classList.add('completed-cell');
+                        }
+                    }
+
+                    tr.appendChild(cell);
+                });
+
+                tbody.appendChild(tr);
+            });
+
+            // 今日の日付を2列目に持ってくる
+            let tableContainer = document.querySelector('.table-container');
+            let todayIndex = 日付一覧.indexOf(今日);
+            if (todayIndex > 0) {
+                let scrollAmount = (todayIndex) * 80; // セル幅に合わせて調整
+                tableContainer.scrollLeft = scrollAmount;
+            }
+        }
+
+        // セルをクリックしたときの処理
+        function セルをクリック(教材インデックス, 日付) {
+            let 今日 = new Date().toISOString().split('T')[0];
+            if (new Date(日付) > new Date(今日)) return;
+            現在表示中の教材 = 教材インデックス;
+            現在表示中の日付 = 日付;
+            let 教材 = 教材一覧[教材インデックス];
+
+            document.getElementById('completion-modal-title').innerText = `${教材.教材名} - ${日付}`;
+            document.getElementById('完了した問題数').value = 教材.完了[日付] || '';
+            document.getElementById('completion-modal').style.display = 'block';
+        }
+
+        // モーダルを閉じる
+        function closeCompletionModal() {
+            document.getElementById('completion-modal').style.display = 'none';
+        }
+
+        // 完了した問題数を保存
+        function saveCompletion() {
+            let 完了した問題数 = parseInt(document.getElementById('完了した問題数').value) || 0;
+            let 教材 = 教材一覧[現在表示中の教材];
+            教材.完了[現在表示中の日付] = 完了した問題数;
+
+            // 進捗の再計算
+            再計算();
+            saveData();
+            描画する();
+            closeCompletionModal();
+        }
+
+        // 割り当てと再計算
+        function 再計算() {
+            let 今日 = new Date().toISOString().split('T')[0];
+
+            教材一覧.forEach(教材 => {
+
+                // 過去の日付で未入力のセルを0に設定
+                for(let 日付 = new Date(教材.学習期間開始); 日付 < new Date(今日); 日付.setDate(日付.getDate() + 1)) {
+                    let 日付文字列 = new Date(日付).toISOString().split('T')[0];
+                    if(!教材.完了[日付文字列]) {
+                        教材.完了[日付文字列] = 0;
+                    }
+                }
+
+                // 完了した問題数の合計を計算
+                let 完了した問題数合計 = 0;
+                for(let 日付 in 教材.完了) {
+                    if (教材.完了.hasOwnProperty(日付)) {
+                        完了した問題数合計 += 教材.完了[日付];
+                    }
+                }
+
+                let 残りの問題数 = 教材.問題数 - 完了した問題数合計;
+
+                // 残りの学習日を計算
+                let 残りの学習期間 = [];
+                for (let 日付 = new Date(今日); 日付 <= new Date(教材.学習期間終了); 日付.setDate(日付.getDate() + 1)) {
+                    let 曜日 = ['日','月','火','水','木','金','土'][日付.getDay()];
+                    let 日付文字列 = new Date(日付).toISOString().split('T')[0];
+                    if (教材.選択された曜日.includes(曜日)) {
+                        残りの学習期間.push(日付文字列);
+                    }
+                }
+
+                // 割り当て数を計算
+                let 割り当て数 = 残りの学習期間.length > 0 ? Math.floor(残りの問題数 / 残りの学習期間.length) : 0;
+                let 余り = 残りの学習期間.length > 0 ? 残りの問題数 % 残りの学習期間.length : 0;
+
+                教材.割り当て = {};
+
+                残りの学習期間.forEach((日付, index) => {
+                    教材.割り当て[日付] = 割り当て数 + (index < 余り ? 1 : 0);
+                });
+            });
+        }
+
+        // データを保存
+        function saveData() {
+            localStorage.setItem('教材一覧', JSON.stringify(教材一覧));
+        }
+
+        // データを読み込み
+        function loadData() {
+            let データ = localStorage.getItem('教材一覧');
+            if (データ) {
+                教材一覧 = JSON.parse(データ);
+                再計算();
+                描画する();
+            } else {
+                描画する();
+            }
+        }
+
+        // 教材削除モーダルを開く
+        function openDeleteModal(教材インデックス) {
+            現在表示中の教材 = 教材インデックス;
+            document.getElementById('delete-modal').style.display = 'block';
+        }
+
+        // 教材削除モーダルを閉じる
+        function closeDeleteModal() {
+            document.getElementById('delete-modal').style.display = 'none';
+        }
+
+        // 教材を削除
+        function delete教材() {
+            教材一覧.splice(現在表示中の教材, 1);
+            saveData();
+            描画する();
+            closeDeleteModal();
+        }
+
+        // 保存モーダルを開く
+        function openSaveModal() {
+            document.getElementById('save-modal').style.display = 'block';
+        }
+
+        // 保存モーダルを閉じる
+        function closeSaveModal() {
+            document.getElementById('save-modal').style.display = 'none';
+        }
+
+        // データを保存（ユーザーに確認）
+        function saveDataWithModal() {
+            saveData();
+            closeSaveModal();
+            alert('データを保存しました。');
+        }
+
+        // ウィンドウ読み込み時に実行
+        window.onload = function() {
+            loadData();
+        };
+    </script>
+</body>
+</html>
