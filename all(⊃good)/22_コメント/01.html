@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>コメント欄</title>
+    <style>
+        .comment-form {
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        .comment-list {
+            max-width: 600px;
+            margin: 20px auto;
+        }
+        .comment {
+            border-bottom: 1px solid #ccc;
+            padding: 10px 0;
+        }
+        textarea {
+            width: 100%;
+            height: 100px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="comment-form">
+        <h2>コメントを投稿する</h2>
+        <form id="commentForm">
+            <div>
+                <label for="name">お名前:</label>
+                <input type="text" id="name" required>
+            </div>
+            <div>
+                <label for="comment">コメント:</label>
+                <textarea id="comment" required></textarea>
+            </div>
+            <button type="submit">投稿する</button>
+        </form>
+    </div>
+
+    <div class="comment-list" id="commentList">
+        <h2>コメント一覧</h2>
+        <!-- コメントがここに表示されます -->
+    </div>
+
+    <script>
+        document.getElementById('commentForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('name').value;
+            const comment = document.getElementById('comment').value;
+            const date = new Date().toLocaleString();
+
+            const commentElement = document.createElement('div');
+            commentElement.className = 'comment';
+            commentElement.innerHTML = `
+                <strong>${name}</strong>
+                <small>${date}</small>
+                <p>${comment}</p>
+            `;
+
+            document.getElementById('commentList').appendChild(commentElement);
+            
+            // フォームをリセット
+            this.reset();
+        });
+    </script>
+</body>
+</html>

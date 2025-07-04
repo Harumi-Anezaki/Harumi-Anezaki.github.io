@@ -1,0 +1,316 @@
+/* 既存のスタイルはすべて保持 */
+body {
+  font-family: 'Arial', sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f4f4f4;
+  color: #333;
+  overflow: hidden; /* スクロールバーを隠す */
+}
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh; /* 画面全体を埋める */
+}
+
+/* ヘッダー */
+.app-header {
+  background-color: #fff;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  padding: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.search-bar {
+  margin-left: auto;
+  margin-right: 10px;
+}
+
+.search-bar input {
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  width: 200px;
+}
+
+.export-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.export-buttons button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.export-buttons button:hover {
+    background-color: #0056b3;
+}
+
+/* メインコンテンツ */
+.app-main {
+  display: flex;
+  flex: 1; /* 残りのスペースを埋める */
+  overflow: hidden; /* 子要素がはみ出さないように */
+}
+
+/* ナビゲーション */
+.app-nav {
+  width: 250px;
+  background-color: #eee;
+  border-right: 1px solid #ddd;
+  padding: 10px;
+  overflow-y: auto; /* 縦スクロールを許可 */
+}
+
+.filter-input-container {
+  margin-bottom: 10px;
+}
+
+.filter-input-container input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+#page-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+#page-list li {
+  padding: 8px;
+  cursor: pointer;
+  border-bottom: 1px solid #ddd;
+  display: flex; /* フレックスボックスにする */
+  align-items: center; /* 垂直方向に中央揃え */
+  justify-content: space-between; /* 子要素を両端に配置 */
+
+}
+
+#page-list li:hover {
+  background-color: #ddd;
+}
+/* 階層表示のインデント */
+#page-list ul {
+  padding-left: 20px;
+}
+
+/* 削除ボタン */
+.delete-button {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 2px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-left: auto; /* 右寄せ */
+}
+.delete-button:hover{
+  background-color: #c82333;
+}
+
+/* エディタ */
+.editor-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%; /* 親要素の高さいっぱいにする */
+}
+
+.editor-toolbar {
+  background-color: #fff;
+  padding: 10px;
+  border-bottom: 1px solid #ddd;
+}
+
+.editor-toolbar button {
+  background-color: transparent;
+  border: none;
+  padding: 5px 10px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.editor-toolbar button:hover {
+  background-color: #f0f0f0;
+}
+
+textarea {
+  flex: 1;
+  padding: 20px;
+  border: none;
+  resize: none;
+  font-size: 16px;
+  outline: none;
+  height: 100%; /* 親要素の高さいっぱいにする */
+}
+
+#markdown-output {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  line-height: 1.6;
+  border-left: 1px solid #ddd;
+  height: 100%; /* 親要素の高さいっぱいにする */
+}
+
+/* 追加ボタン */
+.add-button {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  font-size: 24px;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+.add-button:hover {
+  background-color: #0056b3;
+}
+
+/* 装飾オーバーレイ */
+.decoration-overlay {
+  position: absolute;
+  background-color: rgba(255, 255, 255, 0.9);
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 5px;
+  display: none;
+  z-index: 10;
+}
+
+.decoration-overlay button {
+  background-color: transparent;
+  border: none;
+  padding: 5px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.decoration-overlay button:hover {
+  background-color: #f0f0f0;
+}
+
+/* モーダル */
+.modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 100;
+}
+
+.modal-content {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+  text-align: center;
+  width: 80%; /* 幅を調整 */
+  max-width: 600px; /* 最大幅を設定 */
+}
+
+.close-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+/* Markdownのスタイル調整 */
+#markdown-output h1 {
+  font-size: 2em;
+  margin-bottom: 0.5em;
+  border-bottom: 1px solid #eee;
+}
+
+#markdown-output h2 {
+  font-size: 1.5em;
+  margin-bottom: 0.5em;
+}
+
+#markdown-output p {
+  margin-bottom: 1em;
+}
+
+#markdown-output code {
+  background-color: #f0f0f0;
+  padding: 2px 5px;
+  border-radius: 3px;
+}
+
+#markdown-output pre {
+  background-color: #f0f0f0;
+  padding: 10px;
+  overflow-x: auto;
+  border-radius: 3px;
+}
+
+#markdown-output ul, #markdown-output ol {
+  padding-left: 20px;
+  margin-bottom: 1em;
+}
+
+#markdown-output table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+#markdown-output th,
+#markdown-output td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+#markdown-output th {
+    background-color: #f0f0f0;
+}
+
+/* 新しいページ作成モーダル */
+#add-page-modal input[type="text"],
+#add-page-modal select {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-sizing: border-box; /* パディングとボーダーを含めたサイズにする */
+}
+
+#add-page-modal button {
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+#add-page-modal button:hover {
+    background-color: #45a049;
+}

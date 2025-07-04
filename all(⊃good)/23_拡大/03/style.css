@@ -1,0 +1,31 @@
+body {
+    margin: 0;
+    overflow: hidden;
+}
+
+#controls {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    z-index: 1000;
+}
+
+#controls button {
+    font-size: 24px;
+    margin-left: 5px;
+}
+
+#contentContainer {
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    position: relative;
+}
+
+#content {
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform-origin: 0 0;
+    /* 初期表示を左上に固定 */
+}

@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ボーリングシミュレーション</title>
+    <style>
+        body { margin: 0; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // シーンの作成
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f0f0);
+
+        // カメラの設定
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 5, 10);
+        camera.lookAt(0, 0, 0);
+
+        // レンダラーの設定
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // レーンの作成
+        const laneGeometry = new THREE.BoxGeometry(2, 0.1, 20);
+        const laneMaterial = new THREE.MeshPhongMaterial({ color: 0x8B4513 });
+        const lane = new THREE.Mesh(laneGeometry, laneMaterial);
+        scene.add(lane);
+
+        // 光源の追加
+        const light = new THREE.DirectionalLight(0xffffff, 1.2);
+        light.position.set(0, 10, 10);
+        scene.add(light);
+        
+        // 補助光の追加
+        const hemisphereLight = new THREE.HemisphereLight(0xffffff, 0x404040, 1);
+        scene.add(hemisphereLight);
+        scene.add(new THREE.AmbientLight(0x404040, 1.5));
+
+        // ボール管理用の配列
+        const balls = [];
+        const velocities = [];
+        const MAX_BALLS = 10;
+        const BALL_RADIUS = 0.5;
+
+        // ボール作成関数
+        function createBall() {
+            const ballGeometry = new THREE.SphereGeometry(BALL_RADIUS, 32, 32);
+            const ballMaterial = new THREE.MeshPhongMaterial({ color: 0x000000 });
+            const ball = new THREE.Mesh(ballGeometry, ballMaterial);
+            ball.position.set(0, 1.5, 5);
+            scene.add(ball);
+            balls.push(ball);
+            velocities.push(getRandomVelocity());
+
+            // 最大数を超えた場合、最初のボールを削除
+            if (balls.length > MAX_BALLS) {
+                const oldestBall = balls.shift();
+                const oldestVelocity = velocities.shift();
+                scene.remove(oldestBall);
+            }
+        }
+
+        // ランダムな初期速度の生成
+        function getRandomVelocity() {
+            return {
+                x: (Math.random() - 0.5) * 0.1,
+                y: 0,
+                z: -0.2 - Math.random() * 0.1
+            };
+        }
+
+        // 物理パラメータ
+        const gravity = -0.01;
+        const friction = 0.995;
+        const restitution = 0.5;
+
+        // ボール同士の衝突チェックと応答
+        function handleBallCollisions() {
+            for (let i = 0; i < balls.length; i++) {
+                for (let j = i + 1; j < balls.length; j++) {
+                    const ball1 = balls[i];
+                    const ball2 = balls[j];
+                    const vel1 = velocities[i];
+                    const vel2 = velocities[j];
+
+                    // 2つのボール間の距離を計算
+                    const dx = ball2.position.x - ball1.position.x;
+                    const dy = ball2.position.y - ball1.position.y;
+                    const dz = ball2.position.z - ball1.position.z;
+                    const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+                    // 衝突判定
+                    if (distance < BALL_RADIUS * 2) {
+                        // 衝突応答
+                        const nx = dx / distance;
+                        const ny = dy / distance;
+                        const nz = dz / distance;
+
+                        // 相対速度
+                        const relativeVelX = vel1.x - vel2.x;
+                        const relativeVelY = vel1.y - vel2.y;
+                        const relativeVelZ = vel1.z - vel2.z;
+
+                        // 衝突の強さ
+                        const impactSpeed = relativeVelX * nx + relativeVelY * ny + relativeVelZ * nz;
+
+                        // 反発係数を考慮した速度変更
+                        const impulse = 2 * impactSpeed / 2; // 質量は同じと仮定
+
+                        vel1.x -= impulse * nx * restitution;
+                        vel1.y -= impulse * ny * restitution;
+                        vel1.z -= impulse * nz * restitution;
+
+                        vel2.x += impulse * nx * restitution;
+                        vel2.y += impulse * ny * restitution;
+                        vel2.z += impulse * nz * restitution;
+
+                        // めり込み防止
+                        const overlap = (BALL_RADIUS * 2 - distance) / 2;
+                        ball1.position.x -= overlap * nx;
+                        ball1.position.y -= overlap * ny;
+                        ball1.position.z -= overlap * nz;
+                        ball2.position.x += overlap * nx;
+                        ball2.position.y += overlap * ny;
+                        ball2.position.z += overlap * nz;
+                    }
+                }
+            }
+        }
+
+        // ボールのアニメーション
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // ボール同士の衝突処理
+            handleBallCollisions();
+
+            for (let i = 0; i < balls.length; i++) {
+                const ball = balls[i];
+                const velocity = velocities[i];
+
+                // 重力の影響
+                velocity.y += gravity;
+
+                // ボールの位置更新
+                ball.position.x += velocity.x;
+                ball.position.y += velocity.y;
+                ball.position.z += velocity.z;
+
+                // 床との衝突判定
+                if (ball.position.y < 0.5) {
+                    ball.position.y = 0.5;
+                    velocity.y = -velocity.y * restitution;
+                }
+
+                // 摩擦による減速
+                velocity.x *= friction;
+                velocity.z *= friction;
+
+                // ボールの回転
+                ball.rotation.x += velocity.z * 2;
+                ball.rotation.z -= velocity.x * 2;
+
+                // サイドガターとの衝突
+                if (Math.abs(ball.position.x) > 0.9) {
+                    ball.position.x = Math.sign(ball.position.x) * 0.9;
+                    velocity.x = -velocity.x * restitution;
+                }
+
+                // レーン終端での停止
+                if (ball.position.z < -8) {
+                    ball.position.z = -8;
+                    velocity.z = 0;
+                }
+            }
+
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        // スペースキーでボール投球
+        window.addEventListener('keydown', (event) => {
+            if (event.code === 'Space') {
+                if (balls.length >= MAX_BALLS) {
+                    const oldestBall = balls.shift();
+                    const oldestVelocity = velocities.shift();
+                    scene.remove(oldestBall);
+                } else {
+                    createBall();
+                }
+            }
+        });
+
+        // ウィンドウリサイズ対応
+        window.addEventListener('resize', onWindowResize, false);
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+    </script>
+</body>
+</html>

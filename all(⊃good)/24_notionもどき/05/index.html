@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8">
+  <title>Untitled</title>
+  <link rel="stylesheet" href="./style.css">
+
+</head>
+<body>
+<!-- partial:index.partial.html -->
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Markdownメモアプリ - 高機能版</title>
+  <!-- Bootstrap CSS (外部ライブラリ) -->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <!-- 独自スタイル -->
+  <link rel="stylesheet" href="style.css">
+  <!-- FontAwesome（オプション：アイコン用） -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+</head>
+<body>
+  <!-- ヘッダー：検索バーを含むナビゲーション領域 -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <a class="navbar-brand" href="#">Markdownメモアプリ</a>
+    <form class="form-inline my-2 my-lg-0 ml-auto">
+      <input id="global-search" class="form-control mr-sm-2" type="search" placeholder="ページ検索" aria-label="Search">
+    </form>
+  </nav>
+
+  <div class="container-fluid app-container">
+    <div class="row">
+      <!-- ナビゲーションパネル／サイドバー -->
+      <nav id="sidebar" class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
+        <div class="sidebar-sticky pt-3">
+          <h6 class="sidebar-heading px-3 mb-1 text-muted">ページ一覧</h6>
+          <input type="text" id="sidebar-filter" class="form-control form-control-sm mb-2" placeholder="フィルター">
+          <ul id="page-tree" class="nav flex-column">
+            <!-- ページツリーはJavaScriptで動的に生成 -->
+          </ul>
+        </div>
+      </nav>
+
+      <!-- メインコンテンツ（エディタ＆プレビュー） -->
+      <main role="main" class="col-md-9 ml-sm-auto col-lg-10 px-md-4">
+        <div class="editor-preview-container">
+          <!-- エディタ領域 -->
+          <div class="editor">
+            <textarea id="markdown-input" placeholder="Markdownを書く..."></textarea>
+            <!-- 選択テキスト装飾用オーバーレイ（初期は非表示） -->
+            <div id="text-overlay" class="overlay" style="display:none;">
+              <button class="overlay-btn" data-md="**"><strong>B</strong></button>
+              <button class="overlay-btn" data-md="*"><em>I</em></button>
+              <button class="overlay-btn" data-md="~~"><s>S</s></button>
+              <!-- 追加の装飾ボタンをここに追加 -->
+            </div>
+          </div>
+          <!-- プレビュー領域 -->
+          <div class="preview" id="preview"></div>
+        </div>
+        <!-- 下部操作パネル -->
+        <div id="controls" class="my-2">
+          <button id="convert-btn" class="btn btn-info">Markdown変換</button>
+          <button id="save-btn" class="btn btn-primary">保存</button>
+          <button id="undo-btn" class="btn btn-secondary">取り消し</button>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- 固定配置の「追加」ボタン -->
+  <button id="add-page-btn" class="fixed-btn btn btn-success">
+    <i class="fas fa-plus"></i> 追加
+  </button>
+
+  <!-- jQuery & Marked.js & Bootstrap JS の読み込み -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+  <!-- 独自スクリプト -->
+  <script src="script.js"></script>
+</body>
+</html>
+<!-- partial -->
+  <script  src="./script.js"></script>
+
+</body>
+</html>

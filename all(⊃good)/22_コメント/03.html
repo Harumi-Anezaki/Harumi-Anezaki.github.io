@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>コメント欄</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', sans-serif;
+            background: #f7f9fc;
+            color: #2c3e50;
+            line-height: 1.8;
+            padding: 20px;
+        }
+        .comment-form {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 35px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+        }
+        .comment-list {
+            max-width: 800px;
+            margin: 40px auto;
+        }
+        .comment {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+            border: 1px solid rgba(0, 0, 0, 0.03);
+        }
+        .comment:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+        textarea {
+            width: 100%;
+            height: 150px;
+            margin: 12px 0;
+            padding: 15px;
+            border: 2px solid #e1e8f0;
+            border-radius: 12px;
+            resize: vertical;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: #f8fafd;
+        }
+        textarea:focus {
+            border-color: #3498db;
+            background: white;
+            box-shadow: 0 0 0 4px rgba(52, 152, 219, 0.1);
+            outline: none;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e8f0;
+            border-radius: 12px;
+            font-size: 16px;
+            margin: 12px 0;
+            transition: all 0.3s ease;
+            background: #f8fafd;
+        }
+        input[type="text"]:focus {
+            border-color: #3498db;
+            background: white;
+            box-shadow: 0 0 0 4px rgba(52, 152, 219, 0.1);
+            outline: none;
+        }
+        button {
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.2);
+        }
+        button:hover {
+            background: linear-gradient(45deg, #2980b9, #2573a7);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(52, 152, 219, 0.3);
+        }
+        h2 {
+            color: #2c3e50;
+            font-weight: 700;
+            margin-bottom: 25px;
+            font-size: 24px;
+        }
+        .comment strong {
+            color: #2c3e50;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        .comment small {
+            color: #7f8c8d;
+            margin-left: 12px;
+            font-size: 14px;
+        }
+        .comment p {
+            margin-top: 15px;
+            color: #34495e;
+            line-height: 1.8;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="comment-form">
+        <h2>💭 コメントを投稿する</h2>
+        <form id="commentForm">
+            <div>
+                <label for="name">お名前</label>
+                <input type="text" id="name" required placeholder="お名前を入力してください">
+            </div>
+            <div>
+                <label for="comment">コメント</label>
+                <textarea id="comment" required placeholder="コメントを入力してください"></textarea>
+            </div>
+            <button type="submit">投稿する ✨</button>
+        </form>
+    </div>
+
+    <div class="comment-list" id="commentList">
+        <h2>💬 コメント一覧</h2>
+        <!-- コメントがここに表示されます -->
+    </div>
+
+    <script>
+        document.getElementById('commentForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('name').value;
+            const comment = document.getElementById('comment').value;
+            const date = new Date().toLocaleString('ja-JP', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+
+            const commentElement = document.createElement('div');
+            commentElement.className = 'comment';
+            commentElement.innerHTML = `
+                <strong>${name}</strong>
+                <small>${date}</small>
+                <p>${comment}</p>
+            `;
+
+            document.getElementById('commentList').insertBefore(commentElement, document.getElementById('commentList').firstChild.nextSibling);
+            
+            // フォームをリセット
+            this.reset();
+        });
+    </script>
+</body>
+</html>

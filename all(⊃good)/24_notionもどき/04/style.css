@@ -1,0 +1,75 @@
+/* style.css */
+body, html {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  background-color: #f4f7f9;
+  color: #333;
+}
+
+.app-container {
+  max-width: 900px;
+  margin: 50px auto;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+  background: #ffffff;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+header {
+  background: linear-gradient(135deg, #6e8efb, #a777e3);
+  color: #fff;
+  padding: 20px;
+  text-align: center;
+}
+
+.editor-container {
+  display: flex;
+  height: calc(100vh - 140px);
+}
+
+textarea {
+  width: 50%;
+  padding: 20px;
+  font-size: 1rem;
+  font-family: 'Courier New', Courier, monospace;
+  border: none;
+  border-right: 1px solid #e0e0e0;
+  outline: none;
+  resize: none;
+}
+
+#preview {
+  width: 50%;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+/* Webkit scrollbar styling */
+textarea::-webkit-scrollbar,
+#preview::-webkit-scrollbar {
+  width: 8px;
+}
+
+textarea::-webkit-scrollbar-track,
+#preview::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+textarea::-webkit-scrollbar-thumb,
+#preview::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+}
+
+@media (max-width: 768px) {
+  .editor-container {
+    flex-direction: column;
+    height: auto;
+  }
+  textarea, #preview {
+    width: 100%;
+    height: 50vh;
+  }
+}

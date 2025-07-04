@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Notion風オフラインエディタ</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <!-- ヘッダー：ロゴとグローバル検索 -->
+    <header>
+      <div class="logo">Notion風 App</div>
+      <input type="search" id="globalSearch" placeholder="グローバル検索">
+    </header>
+
+    <div class="main-container">
+      <!-- 左サイドバー：ページ階層 -->
+      <aside id="sidebar">
+        <h2>Pages</h2>
+        <ul id="pageList"></ul>
+        <button id="addPageBtn">新規ページ</button>
+      </aside>
+
+      <!-- 中央：エディタ領域＆ツールバー -->
+      <section id="editorSection">
+        <div class="toolbar">
+          <button id="boldBtn" title="Ctrl+B"><b>B</b></button>
+          <button id="italicBtn" title="Ctrl+I"><i>I</i></button>
+          <button id="underlineBtn" title="Ctrl+U"><u>U</u></button>
+          <button id="markdownToggleBtn">Markdown</button>
+          <button id="insertTableBtn">Table</button>
+          <button id="undoBtn" title="Ctrl+Z">Undo</button>
+          <button id="redoBtn">Redo</button>
+        </div>
+        <!-- 複数ブロック対応：各ブロックは drag &amp; drop 可能 -->
+        <div id="editorContainer">
+          <!-- 各ブロックはここに動的に生成 -->
+        </div>
+        <button id="addBlockBtn">ブロック追加</button>
+      </section>
+
+      <!-- 右サイドバー：タスク一覧（データ・ベース機能）-->
+      <aside id="taskSidebar">
+        <h2>Tasks</h2>
+        <ul id="taskList"></ul>
+        <button id="addTaskBtn">タスク追加</button>
+      </aside>
+    </div>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>

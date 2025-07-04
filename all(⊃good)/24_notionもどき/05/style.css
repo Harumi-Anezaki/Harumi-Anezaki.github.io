@@ -1,0 +1,131 @@
+/* style.css */
+
+/* リセットと基本スタイル */
+html, body {
+  height: 100%;
+  margin: 0;
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  background-color: #f4f7f9;
+  color: #333;
+}
+
+/* アプリ全体のコンテナ */
+.app-container {
+  height: calc(100vh - 56px); /* ヘッダー分を差し引く */
+}
+
+/* サイドバーのスタイル */
+.sidebar {
+  background-color: #fff;
+  border-right: 1px solid #e0e0e0;
+  overflow-y: auto;
+  height: 100%;
+  padding-bottom: 20px;
+}
+
+/* ページツリーのリスト */
+#page-tree li {
+  padding: 5px 15px;
+  cursor: pointer;
+}
+#page-tree li:hover,
+#page-tree li.active {
+  background-color: #e9ecef;
+}
+
+/* エディタ＆プレビュー領域のレイアウト */
+.editor-preview-container {
+  display: flex;
+  height: calc(100vh - 150px);
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  overflow: hidden;
+  background-color: #fff;
+}
+
+.editor, .preview {
+  width: 50%;
+  padding: 15px;
+  overflow-y: auto;
+}
+
+.editor {
+  position: relative;
+  border-right: 1px solid #e0e0e0;
+}
+
+textarea#markdown-input {
+  width: 100%;
+  height: 100%;
+  border: none;
+  resize: none;
+  outline: none;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 1rem;
+  padding: 10px;
+}
+
+/* プレビュー内のコンテンツ */
+.preview {
+  font-size: 1rem;
+}
+
+/* 装飾オーバーレイ */
+.overlay {
+  position: absolute;
+  top: 5%;
+  left: 5%;
+  background: rgba(255,255,255,0.95);
+  box-shadow: 0 0 8px rgba(0,0,0,0.2);
+  padding: 5px;
+  border-radius: 4px;
+  display: flex;
+  gap: 5px;
+  z-index: 10;
+}
+.overlay-btn {
+  background: #f8f9fa;
+  border: none;
+  padding: 4px 8px;
+  cursor: pointer;
+  border-radius: 2px;
+  font-size: 0.9rem;
+}
+.overlay-btn:hover {
+  background: #e2e6ea;
+}
+
+/* 下部コントロールパネル */
+#controls {
+  text-align: right;
+}
+
+/* 固定配置の追加ボタン */
+.fixed-btn {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 20;
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+  .editor-preview-container {
+    flex-direction: column;
+    height: auto;
+  }
+  .editor, .preview {
+    width: 100%;
+    height: 50vh;
+  }
+  #sidebar {
+    display: none;
+  }
+}

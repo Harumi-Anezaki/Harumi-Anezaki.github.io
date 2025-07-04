@@ -1,0 +1,99 @@
+/* 全体のリセット */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* bodyとhtmlの設定 */
+body, html {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* モダンなフォント */
+}
+
+/* コンテナのスタイル */
+#container {
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    touch-action: none; /* タッチ操作のパン・ピンチを有効化 */
+}
+
+/* コンテンツのスタイル */
+#contentWrapper {
+    transform-origin: 0 0; /* 拡大縮小の起点を左上に設定 */
+    user-select: text; /* テキスト選択を可能に */
+    position: relative;
+}
+
+/* ファイル選択ボタン */
+#fileLabel {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #4CAF50; /* グリーンの背景色 */
+    color: white;
+    border: none;
+    border-radius: 50px;
+    font-size: 16px;
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* シンプルな影 */
+    transition: transform 0.1s ease, box-shadow 0.2s ease; /* アニメーション */
+}
+
+#fileLabel:hover {
+    background-color: #45a049; /* 少し暗くなる背景色 */
+    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15); /* 少し強い影 */
+}
+
+#fileLabel:active {
+    transform: scale(0.95); /* 押し込まれた感じ */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* 影を小さく */
+}
+
+/* 隠すファイル入力 */
+#fileInput {
+    display: none; /* デフォルトのファイル入力ボタンを隠す */
+}
+
+/* ボタン群のスタイル */
+#zoomControls {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px; /* ボタンの間隔を広げる */
+}
+
+/* 各ボタンのスタイル */
+#zoomControls button {
+    width: 60px;
+    height: 60px;
+    font-size: 30px;
+    background-color: #4CAF50; /* ボタンの背景色（シンプルなグリーン） */
+    color: white;
+    border: none;
+    border-radius: 50%; /* 丸型 */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* シンプルな影 */
+    cursor: pointer;
+    transition: transform 0.1s ease, box-shadow 0.2s ease; /* アニメーション */
+}
+
+/* ホバー時のエフェクト */
+#zoomControls button:hover {
+    background-color: #45a049; /* 少し暗くなる背景色 */
+    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15); /* 少し強い影 */
+}
+
+/* ボタンが押された時のエフェクト（奥に押し込まれるように縮む） */
+#zoomControls button:active {
+    transform: scale(0.95); /* ボタンが少し小さくなる */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* 影を小さくして、押し込まれた感じを強調 */
+}
+
+/* アイコンのサイズ調整（もしアイコンを使う場合） */
+#zoomControls button i {
+    font-size: 32px;
+}

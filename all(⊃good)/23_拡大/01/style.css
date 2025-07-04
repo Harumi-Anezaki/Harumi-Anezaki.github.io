@@ -1,0 +1,69 @@
+body {
+    margin: 0;
+    overflow: hidden;
+    font-family: sans-serif;
+}
+
+#toolbar {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    z-index: 100;
+}
+
+#fileInput {
+    display: none;
+}
+
+#zoomInBtn,
+#zoomOutBtn {
+    width: 40px;
+    height: 40px;
+    background-color: #333;
+    border: none;
+    border-radius: 5px;
+    margin: 0 5px;
+    cursor: pointer;
+    position: relative;
+}
+
+#zoomInBtn::before,
+#zoomOutBtn::before {
+    content: '';
+    position: absolute;
+    background-color: #fff;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+
+#zoomInBtn::before {
+    width: 20px;
+    height: 4px;
+}
+
+#zoomInBtn::after {
+    content: '';
+    position: absolute;
+    width: 4px;
+    height: 20px;
+    background-color: #fff;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+
+#zoomOutBtn::before {
+    width: 20px;
+    height: 4px;
+}
+
+#contentContainer {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+#content {
+    transform-origin: center center;
+}

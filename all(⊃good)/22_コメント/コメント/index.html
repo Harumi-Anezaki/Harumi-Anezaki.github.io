@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>コメント投稿フォーム</title>
+</head>
+<body>
+    <div class="comments-section">
+        <h2>コメント一覧</h2>
+        <div id="commentList" class="comment-list">
+            <!-- コメントが表示される場所 -->
+            <div class="comment">
+                <div class="comment-header">
+                    <span class="commenter-name">山田太郎</span>
+                    <span class="comment-date">2023/10/20 12:34</span>
+                    <span class="comment-location">東京都渋谷区神宮前1-1-1</span>
+                </div>
+                <div class="comment-content">
+                    これは素晴らしい記事ですね！
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="comment-form">
+        <h2>コメントを投稿する</h2>
+        <form id="commentForm" onsubmit="submitComment(event)">
+            <div class="form-group">
+                <label for="name">お名前:</label><br>
+                <input type="text" id="name" name="name" required><br>
+            </div>
+            
+            <div class="form-group">
+                <label for="comment">コメント:</label><br>
+                <textarea id="comment" name="comment" rows="4" cols="50" required></textarea><br>
+            </div>
+            
+            <button type="submit">投稿する</button>
+        </form>
+    </div>
+
+    <style>
+        .comment-form, .comments-section {
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        textarea, input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .comment {
+            border-bottom: 1px solid #ddd;
+            padding: 15px 0;
+        }
+        .comment-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .commenter-name {
+            font-weight: bold;
+        }
+        .comment-date, .comment-location {
+            color: #666;
+        }
+        .comment-content {
+            line-height: 1.5;
+        }
+    </style>
+
+    <script>
+        function submitComment(event) {
+            event.preventDefault();
+            
+            const name = document.getElementById('name').value;
+            const comment = document.getElementById('comment').value;
+            const now = new Date();
+            const date = now.toLocaleDateString('ja-JP') + ' ' + 
+                        now.getHours().toString().padStart(2, '0') + ':' + 
+                        now.getMinutes().toString().padStart(2, '0');
+            
+            // 位置情報を取得
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    position => {
+                        // 位置情報から詳細な住所を取得
+                        fetch(`https://nominatim.openstreetmap.org/reverse?lat=${position.coords.latitude}&lon=${position.coords.longitude}&format=json&addressdetails=1&accept-language=ja`)
+                            .then(response => response.json())
+                            .then(data => {
+                                const address = data.address;
+                                const location = [
+                                    address.province || address.state || '',
+                                    address.county || '',
+                                    address.city || '',
+                                    address.suburb || '',
+                                    address.neighbourhood || '',
+                                    address.road || '',
+                                    address.house_number || ''
+                                ].filter(Boolean).join('');
+                                addCommentToDOM(name, comment, date, location || '不明');
+                            })
+                            .catch(() => {
+                                addCommentToDOM(name, comment, date, '不明');
+                            });
+                    },
+                    error => {
+                        addCommentToDOM(name, comment, date, '不明');
+                    }
+                );
+            } else {
+                addCommentToDOM(name, comment, date, '不明');
+            }
+        }
+
+        function addCommentToDOM(name, comment, date, location) {
+            const commentHTML = `
+                <div class="comment">
+                    <div class="comment-header">
+                        <span class="commenter-name">${name}</span>
+                        <span class="comment-date">${date}</span>
+                        <span class="comment-location">${location}</span>
+                    </div>
+                    <div class="comment-content">
+                        ${comment}
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('commentList').insertAdjacentHTML('beforeend', commentHTML);
+            document.getElementById('commentForm').reset();
+        }
+    </script>
+</body>
+</html>

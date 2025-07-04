@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>サーバレスワークスペース・ノートアプリ</title>
+    <style>
+      /* 基本リセット & レイアウト */
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        display: flex;
+        height: 100vh;
+        overflow: hidden;
+        background: #fff;
+        color: #333;
+        transition: background 0.3s, color 0.3s;
+      }
+      body.dark {
+        background: #222;
+        color: #ddd;
+      }
+      /* サイドバー */
+      #sidebar {
+        width: 250px;
+        background-color: #f7f7f7;
+        border-right: 1px solid #ddd;
+        padding: 1rem;
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+      }
+      body.dark #sidebar {
+        background-color: #333;
+        border-color: #444;
+      }
+      #sidebar .sidebar-header h2 {
+        margin: 0 0 0.5rem 0;
+        font-size: 1.2rem;
+      }
+      #sidebar input,
+      #sidebar select {
+        width: 100%;
+        margin-bottom: 0.5rem;
+        padding: 0.3rem;
+      }
+      #newPageBtn {
+        margin-bottom: 0.5rem;
+        padding: 0.5rem;
+        background-color: #4285f4;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      #pageList {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        flex: 1;
+        overflow-y: auto;
+      }
+      #pageList li {
+        padding: 0.5rem;
+        margin-bottom: 0.3rem;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      #pageList li.active {
+        background-color: #ddd;
+      }
+      body.dark #pageList li.active {
+        background-color: #555;
+      }
+      .sidebar-footer {
+        margin-top: 1rem;
+      }
+      .sidebar-footer button,
+      .sidebar-footer label {
+        display: block;
+        width: 100%;
+        padding: 0.5rem;
+        margin-top: 0.5rem;
+        background-color: #4285f4;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        text-align: center;
+        cursor: pointer;
+        font-size: 0.9rem;
+      }
+      .sidebar-footer label input {
+        display: none;
+      }
+      /* エディタ部分 */
+      #editor {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        padding: 1rem;
+        overflow: hidden;
+      }
+      #editorTitle {
+        width: 100%;
+        padding: 0.5rem;
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+      }
+      #blocks {
+        flex: 1;
+        overflow-y: auto;
+      }
+      .block {
+        border: 1px solid #ccc;
+        padding: 0.5rem;
+        margin-bottom: 1rem;
+        position: relative;
+        background: #fafafa;
+      }
+      body.dark .block {
+        background: #444;
+        border-color: #555;
+      }
+      .block textarea {
+        width: 100%;
+        min-height: 80px;
+        padding: 0.5rem;
+        font-size: 1rem;
+        resize: vertical;
+      }
+      .block-controls {
+        position: absolute;
+        top: 2px;
+        right: 2px;
+      }
+      .block-controls button {
+        font-size: 0.8rem;
+        margin-left: 0.2rem;
+        padding: 0 0.3rem;
+        cursor: pointer;
+      }
+      /* チェックリスト用 */
+      .block ul {
+        list-style: none;
+        padding: 0;
+      }
+      .block li {
+        margin-bottom: 0.3rem;
+        display: flex;
+        align-items: center;
+      }
+      .block li input[type="text"] {
+        flex: 1;
+        margin-left: 0.3rem;
+        padding: 0.2rem;
+      }
+      /* エディタフッター */
+      #editorFooter {
+        margin-top: 0.5rem;
+        display: flex;
+        align-items: center;
+      }
+      #editorFooter select,
+      #editorFooter button {
+        margin-right: 0.5rem;
+        padding: 0.5rem;
+        font-size: 1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- サイドバー -->
+    <div id="sidebar">
+      <div class="sidebar-header">
+        <h2>ノート一覧</h2>
+        <input type="text" id="searchInput" placeholder="全文検索..." />
+        <select id="templateSelect">
+          <option value="">テンプレート選択</option>
+          <option value="meeting">会議メモ</option>
+          <option value="project">プロジェクト計画</option>
+        </select>
+        <button id="newPageBtn">＋ 新規ページ</button>
+      </div>
+      <ul id="pageList"></ul>
+      <div class="sidebar-footer">
+        <button id="exportBtn">エクスポート</button>
+        <label>
+          インポート
+          <input type="file" id="importInput" accept="application/json" />
+        </label>
+        <button id="toggleThemeBtn">テーマ切替</button>
+      </div>
+    </div>
+    <!-- エディタ -->
+    <div id="editor">
+      <input
+        type="text"
+        id="editorTitle"
+        placeholder="ページタイトルを入力..."
+      />
+      <div id="blocks" ondragover="event.preventDefault();"></div>
+      <div id="editorFooter">
+        <select id="blockTypeSelect">
+          <option value="text">テキスト</option>
+          <option value="checklist">チェックリスト</option>
+          <option value="code">コード</option>
+          <option value="image">画像</option>
+        </select>
+        <button id="addBlockBtn">ブロック追加</button>
+        <button id="undoBtn">Undo</button>
+        <button id="redoBtn">Redo</button>
+      </div>
+    </div>
+
+    <script>
+      /********************
+       * データ・履歴管理 *
+       ********************/
+      let pages = []; // 全ページ（各ページ： { id, title, blocks }）
+      let currentPageId = null; // 現在編集中のページID
+      let undoStack = []; // Undo用履歴スタック（各スナップショットはページのディープコピー）
+      let redoStack = [];
+      let theme = "light"; // "light" または "dark"
+
+      // テンプレート定義
+      const templates = {
+        meeting: {
+          title: "会議メモ",
+          blocks: [
+            { id: Date.now() + 1, type: "text", content: "会議の概要を記入…" },
+            {
+              id: Date.now() + 2,
+              type: "checklist",
+              items: [
+                { text: "議題確認", done: false },
+                { text: "アクションアイテム", done: false },
+              ],
+            },
+          ],
+        },
+        project: {
+          title: "プロジェクト計画",
+          blocks: [
+            { id: Date.now() + 3, type: "text", content: "プロジェクト概要…" },
+            { id: Date.now() + 4, type: "code", content: "// サンプルコード" },
+          ],
+        },
+      };
+
+      // 深いコピー
+      function clone(obj) {
+        return JSON.parse(JSON.stringify(obj));
+      }
+
+      // LocalStorageからページデータを読み出す
+      function loadPages() {
+        const data = localStorage.getItem("pages");
+        if (data) {
+          try {
+            pages = JSON.parse(data);
+          } catch (e) {
+            pages = [];
+          }
+        }
+      }
+
+      // 保存
+      function savePages() {
+        localStorage.setItem("pages", JSON.stringify(pages));
+      }
+
+      /*********************
+       * サイドバー描画  *
+       *********************/
+      function renderPageList() {
+        const list = document.getElementById("pageList");
+        list.innerHTML = "";
+        const search = document.getElementById("searchInput").value.toLowerCase();
+        pages.forEach((page) => {
+          // タイトルまたはブロック内に検索文字列が含まれるかチェック
+          let match =
+            !search ||
+            page.title.toLowerCase().includes(search) ||
+            (page.blocks || []).some((b) => {
+              if (b.type === "text" || b.type === "code") {
+                return b.content.toLowerCase().includes(search);
+              } else if (b.type === "checklist") {
+                return (
+                  b.items &&
+                  b.items.some((i) => i.text.toLowerCase().includes(search))
+                );
+              } else if (b.type === "image") {
+                return b.src && b.src.toLowerCase().includes(search);
+              }
+              return false;
+            });
+          if (match) {
+            const li = document.createElement("li");
+            li.textContent = page.title || "無題ページ";
+            li.dataset.pageId = page.id;
+            if (page.id === currentPageId) {
+              li.classList.add("active");
+            }
+            li.addEventListener("click", () => {
+              currentPageId = page.id;
+              clearHistory();
+              renderEditor();
+              renderPageList();
+            });
+            list.appendChild(li);
+          }
+        });
+      }
+
+      /*********************
+       * エディタ描画    *
+       *********************/
+      function renderEditor() {
+        const page = pages.find((p) => p.id === currentPageId);
+        const titleInput = document.getElementById("editorTitle");
+        if (!page) {
+          titleInput.value = "";
+          document.getElementById("blocks").innerHTML = "";
+          return;
+        }
+        titleInput.value = page.title;
+        titleInput.oninput = () => {
+          page.title = titleInput.value;
+          savePages();
+          renderPageList();
+          pushUndo();
+        };
+        const blocksDiv = document.getElementById("blocks");
+        blocksDiv.innerHTML = "";
+        (page.blocks || []).forEach((block, index) => {
+          const blockElem = renderBlock(block);
+          blockElem.draggable = true;
+          blockElem.addEventListener("dragstart", (e) => {
+            e.dataTransfer.setData("text/plain", index);
+          });
+          blockElem.addEventListener("dragover", (e) => {
+            e.preventDefault();
+          });
+          blockElem.addEventListener("drop", (e) => {
+            e.preventDefault();
+            const fromIndex = e.dataTransfer.getData("text/plain");
+            moveBlock(fromIndex, index);
+          });
+          blocksDiv.appendChild(blockElem);
+        });
+      }
+
+      // 各ブロックのDOM作成：ブロックタイプごとに内容を変更
+      function renderBlock(block) {
+        const container = document.createElement("div");
+        container.className = "block";
+
+        // 共通のコントロール群（コピー／削除）
+        const controls = document.createElement("div");
+        controls.className = "block-controls";
+        const copyBtn = document.createElement("button");
+        copyBtn.textContent = "コピー";
+        copyBtn.addEventListener("click", () => {
+          // ブロック内容をクリップボードへ
+          navigator.clipboard.writeText(JSON.stringify(block));
+        });
+        const delBtn = document.createElement("button");
+        delBtn.textContent = "削除";
+        delBtn.addEventListener("click", () => {
+          deleteBlock(block.id);
+        });
+        controls.appendChild(copyBtn);
+        controls.appendChild(delBtn);
+        container.appendChild(controls);
+
+        // タイプ別の処理
+        if (block.type === "text") {
+          const ta = document.createElement("textarea");
+          ta.value = block.content;
+          ta.oninput = () => {
+            block.content = ta.value;
+            savePages();
+            pushUndo();
+          };
+          container.appendChild(ta);
+        } else if (block.type === "code") {
+          const ta = document.createElement("textarea");
+          ta.value = block.content;
+          ta.style.fontFamily = "monospace";
+          ta.style.backgroundColor = "#f0f0f0";
+          ta.oninput = () => {
+            block.content = ta.value;
+            savePages();
+            pushUndo();
+          };
+          container.appendChild(ta);
+        } else if (block.type === "checklist") {
+          const ul = document.createElement("ul");
+          (block.items || []).forEach((item, idx) => {
+            const li = document.createElement("li");
+            const checkbox = document.createElement("input");
+            checkbox.type = "checkbox";
+            checkbox.checked = item.done;
+            checkbox.addEventListener("change", () => {
+              item.done = checkbox.checked;
+              savePages();
+              pushUndo();
+            });
+            const textInput = document.createElement("input");
+            textInput.type = "text";
+            textInput.value = item.text;
+            textInput.addEventListener("input", () => {
+              item.text = textInput.value;
+              savePages();
+              pushUndo();
+            });
+            const delItem = document.createElement("button");
+            delItem.textContent = "×";
+            delItem.addEventListener("click", () => {
+              block.items.splice(idx, 1);
+              savePages();
+              renderEditor();
+              pushUndo();
+            });
+            li.appendChild(checkbox);
+            li.appendChild(textInput);
+            li.appendChild(delItem);
+            ul.appendChild(li);
+          });
+          const addItemBtn = document.createElement("button");
+          addItemBtn.textContent = "＋ 項目追加";
+          addItemBtn.addEventListener("click", () => {
+            block.items = block.items || [];
+            block.items.push({ text: "", done: false });
+            savePages();
+            renderEditor();
+            pushUndo();
+          });
+          container.appendChild(ul);
+          container.appendChild(addItemBtn);
+        } else if (block.type === "image") {
+          const img = document.createElement("img");
+          img.src = block.src || "";
+          img.alt = "画像ブロック";
+          img.style.maxWidth = "100%";
+          container.appendChild(img);
+          const urlInput = document.createElement("input");
+          urlInput.type = "text";
+          urlInput.placeholder = "画像URLを入力";
+          urlInput.value = block.src || "";
+          urlInput.addEventListener("change", () => {
+            block.src = urlInput.value;
+            img.src = block.src;
+            savePages();
+            pushUndo();
+          });
+          container.appendChild(urlInput);
+        }
+        return container;
+      }
+
+      // ブロックの並び順変更（ドラッグ＆ドロップ）
+      function moveBlock(fromIndex, toIndex) {
+        const page = pages.find((p) => p.id === currentPageId);
+        if (!page || fromIndex === toIndex) return;
+        const blocks = page.blocks;
+        const [moved] = blocks.splice(fromIndex, 1);
+        blocks.splice(toIndex, 0, moved);
+        savePages();
+        renderEditor();
+        pushUndo();
+      }
+
+      // 指定ブロックの削除
+      function deleteBlock(blockId) {
+        const page = pages.find((p) => p.id === currentPageId);
+        if (!page) return;
+        page.blocks = page.blocks.filter((b) => b.id !== blockId);
+        savePages();
+        renderEditor();
+        pushUndo();
+      }
+
+      /*********************
+       * ページ操作       *
+       *********************/
+      function addNewPage(template = null) {
+        let newPage;
+        if (template && templates[template]) {
+          newPage = clone(templates[template]);
+          newPage.id = Date.now();
+        } else {
+          newPage = { id: Date.now(), title: "新規ページ", blocks: [] };
+        }
+        pages.unshift(newPage);
+        currentPageId = newPage.id;
+        savePages();
+        clearHistory();
+        renderPageList();
+        renderEditor();
+        pushUndo();
+      }
+      function deleteCurrentPage() {
+        pages = pages.filter((p) => p.id !== currentPageId);
+        currentPageId = pages.length ? pages[0].id : null;
+        savePages();
+        renderPageList();
+        renderEditor();
+      }
+      function copyCurrentPage() {
+        const page = pages.find((p) => p.id === currentPageId);
+        if (page) {
+          const newPage = clone(page);
+          newPage.id = Date.now();
+          newPage.title += "（コピー）";
+          pages.unshift(newPage);
+          currentPageId = newPage.id;
+          savePages();
+          renderPageList();
+          renderEditor();
+        }
+      }
+
+      // ブロック追加（選択されたタイプに応じる）
+      function addBlock() {
+        const blockType =
+          document.getElementById("blockTypeSelect").value;
+        const page = pages.find((p) => p.id === currentPageId);
+        if (!page) return;
+        let newBlock;
+        if (blockType === "text") {
+          newBlock = { id: Date.now(), type: "text", content: "" };
+        } else if (blockType === "code") {
+          newBlock = { id: Date.now(), type: "code", content: "" };
+        } else if (blockType === "checklist") {
+          newBlock = { id: Date.now(), type: "checklist", items: [] };
+        } else if (blockType === "image") {
+          newBlock = { id: Date.now(), type: "image", src: "" };
+        }
+        page.blocks.push(newBlock);
+        savePages();
+        renderEditor();
+        pushUndo();
+      }
+
+      /*********************
+       * Undo / Redo      *
+       *********************/
+      function pushUndo() {
+        const page = pages.find((p) => p.id === currentPageId);
+        if (page) {
+          undoStack.push(clone(page));
+          redoStack = []; // 新たな操作でリドゥクリア
+        }
+      }
+      function clearHistory() {
+        undoStack = [];
+        redoStack = [];
+      }
+      function undo() {
+        if (undoStack.length > 1) {
+          const current = undoStack.pop();
+          redoStack.push(current);
+          const snapshot = clone(undoStack[undoStack.length - 1]);
+          const idx = pages.findIndex((p) => p.id === currentPageId);
+          pages[idx] = snapshot;
+          savePages();
+          renderEditor();
+        }
+      }
+      function redo() {
+        if (redoStack.length > 0) {
+          const snapshot = redoStack.pop();
+          undoStack.push(clone(snapshot));
+          const idx = pages.findIndex((p) => p.id === currentPageId);
+          pages[idx] = snapshot;
+          savePages();
+          renderEditor();
+        }
+      }
+
+      /*********************
+       * エクスポート／インポート *
+       *********************/
+      function exportData() {
+        const dataStr = JSON.stringify(pages, null, 2);
+        const blob = new Blob([dataStr], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "notes.json";
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+      function importData(file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          try {
+            pages = JSON.parse(e.target.result);
+            currentPageId = pages.length ? pages[0].id : null;
+            savePages();
+            clearHistory();
+            renderPageList();
+            renderEditor();
+          } catch (err) {
+            alert("インポートに失敗しました。");
+          }
+        };
+        reader.readAsText(file);
+      }
+
+      /*********************
+       * ショートカット／コマンド *
+       *********************/
+      // コマンドパレット（Ctrl+P）で簡易コマンド入力
+      function showCommandPalette() {
+        const cmd = prompt(
+          "コマンド入力 (例: deletePage, copyPage, search <キーワード>)",
+          ""
+        );
+        if (cmd) {
+          const parts = cmd.split(" ");
+          if (parts[0] === "deletePage") {
+            deleteCurrentPage();
+          } else if (parts[0] === "copyPage") {
+            copyCurrentPage();
+          } else if (parts[0] === "search") {
+            document.getElementById("searchInput").value = parts
+              .slice(1)
+              .join(" ");
+            renderPageList();
+          }
+        }
+      }
+      // グローバルキー設定
+      document.addEventListener("keydown", function (e) {
+        if (e.ctrlKey && e.key === "z") {
+          e.preventDefault();
+          undo();
+        } else if (e.ctrlKey && e.key === "y") {
+          e.preventDefault();
+          redo();
+        } else if (e.ctrlKey && e.key === "p") {
+          e.preventDefault();
+          showCommandPalette();
+        }
+      });
+
+      /*********************
+       * テーマ切替      *
+       *********************/
+      function toggleTheme() {
+        theme = theme === "light" ? "dark" : "light";
+        document.body.classList.toggle("dark", theme === "dark");
+      }
+
+      /*********************
+       * イベント登録    *
+       *********************/
+      document
+        .getElementById("newPageBtn")
+        .addEventListener("click", () => {
+          const templateSelect =
+            document.getElementById("templateSelect");
+          if (templateSelect.value) {
+            addNewPage(templateSelect.value);
+            templateSelect.value = "";
+          } else {
+            addNewPage();
+          }
+        });
+      document
+        .getElementById("addBlockBtn")
+        .addEventListener("click", addBlock);
+      document
+        .getElementById("exportBtn")
+        .addEventListener("click", exportData);
+      document
+        .getElementById("importInput")
+        .addEventListener("change", (e) => {
+          if (e.target.files.length) importData(e.target.files[0]);
+        });
+      document
+        .getElementById("undoBtn")
+        .addEventListener("click", undo);
+      document
+        .getElementById("redoBtn")
+        .addEventListener("click", redo);
+      document
+        .getElementById("toggleThemeBtn")
+        .addEventListener("click", toggleTheme);
+      document
+        .getElementById("searchInput")
+        .addEventListener("input", renderPageList);
+
+      /*********************
+       * オフライン対応    *
+       *********************/
+      // サービスワーカーのコードを文字列に定義し、Blob経由で登録する
+      const swCode = `
+        const CACHE_NAME = "notes-app-cache-v1";
+        const urlsToCache = [
+          "./"
+        ];
+        self.addEventListener("install", function(event) {
+          event.waitUntil(
+            caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache))
+          );
+        });
+        self.addEventListener("fetch", function(event) {
+          event.respondWith(
+            caches.match(event.request).then(response => response || fetch(event.request))
+          );
+        });
+      `;
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          const swBlob = new Blob([swCode], { type: "application/javascript" });
+          const swURL = URL.createObjectURL(swBlob);
+          navigator.serviceWorker.register(swURL).catch((err) =>
+            console.log("SW登録失敗", err)
+          );
+        });
+      }
+
+      /*********************
+       * 初期化           *
+       *********************/
+      loadPages();
+      if (pages.length) {
+        currentPageId = pages[0].id;
+      }
+      renderPageList();
+      renderEditor();
+      clearHistory();
+      pushUndo();
+    </script>
+  </body>
+</html>

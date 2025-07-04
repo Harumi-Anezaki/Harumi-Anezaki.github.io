@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8">
+  <title>Untitled</title>
+  <link rel="stylesheet" href="./style.css">
+
+</head>
+<body>
+<!-- partial:index.partial.html -->
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Advanced Markdown Editor</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <!-- jsPDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+  <!-- html2canvas -->
+  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+
+</head>
+<body>
+  <div class="app-container">
+    <header class="app-header">
+      <div class="search-bar">
+        <input type="text" id="search-input" placeholder="検索...">
+      </div>
+      <div class="export-buttons">
+        <button id="export-pdf"><i class="fas fa-file-pdf"></i> PDF</button>
+        <button id="export-html"><i class="fas fa-file-code"></i> HTML</button>
+        <button id="export-svg"><i class="fas fa-file-image"></i> SVG</button>
+      </div>
+    </header>
+
+    <div class="app-main">
+      <nav class="app-nav">
+        <div class="filter-input-container">
+          <input type="text" id="filter-input" placeholder="フィルタ...">
+        </div>
+        <ul id="page-list"></ul>
+      </nav>
+
+      <div class="editor-container">
+        <div class="editor-toolbar">
+          <button id="bold-btn"><i class="fas fa-bold"></i></button>
+          <button id="italic-btn"><i class="fas fa-italic"></i></button>
+          <button id="underline-btn"><i class="fas fa-underline"></i></button>
+          <button id="strikethrough-btn"><i class="fas fa-strikethrough"></i></button>
+          <button id="code-btn"><i class="fas fa-code"></i></button>
+          <button id="link-btn"><i class="fas fa-link"></i></button>
+          <button id="image-btn"><i class="fas fa-image"></i></button>
+          <button id="undo-btn"><i class="fas fa-undo"></i></button>
+          <button id="redo-btn"><i class="fas fa-redo"></i></button>
+        </div>
+        <textarea id="markdown-input" placeholder="Markdownを入力..."></textarea>
+        <div id="markdown-output"></div>
+      </div>
+    </div>
+
+    <button id="add-button" class="add-button"><i class="fas fa-plus"></i></button>
+
+    <div id="decoration-overlay" class="decoration-overlay">
+      <button data-action="bold"><i class="fas fa-bold"></i></button>
+      <button data-action="italic"><i class="fas fa-italic"></i></button>
+      <button data-action="underline"><i class="fas fa-underline"></i></button>
+      <button data-action="strikethrough"><i class="fas fa-strikethrough"></i></button>
+    </div>
+
+    <div id="template-modal" class="modal">
+      <div class="modal-content">
+        <span class="close-button">×</span>
+        <h3>テンプレートを選択</h3>
+        <button data-template="heading1">見出し1</button>
+        <button data-template="heading2">見出し2</button>
+        <button data-template="bold">太字</button>
+        <button data-template="italic">斜体</button>
+        <button data-template="link">リンク</button>
+        <button data-template="image">画像</button>
+        <button data-template="table">表</button> 
+      </div>
+    </div>
+    <div id="add-page-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">×</span>
+            <h3>新しいページ</h3>
+            <input type="text" id="new-page-title" placeholder="ページタイトル">
+            <select id="parent-page-select">
+                <option value="">(なし)</option>
+            </select>
+            <button id="create-page-button">作成</button>
+        </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
+<!-- partial -->
+  <script  src="./script.js"></script>
+
+</body>
+</html>

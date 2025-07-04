@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>SVG Zoom App</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <label for="fileInput" id="fileLabel">
+        ファイルの選択
+    </label>
+    <input type="file" id="fileInput" accept=".html" />
+    <div id="container">
+        <div id="contentWrapper">
+            <!-- 選択したHTMLファイルの内容がここに挿入されます -->
+        </div>
+    </div>
+    <!-- 右下に配置するボタン群 -->
+    <div id="zoomControls">
+        <button id="resetBtn">↺</button>
+        <button id="zoomOutBtn">―</button>
+        <button id="zoomInBtn">＋</button>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

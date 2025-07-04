@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ボーリングシミュレーション</title>
+    <style>
+        body { margin: 0; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // シーンの作成
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f0f0); // 背景色を明るいグレーに設定
+        
+        // カメラの設定
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 5, 10);
+        camera.lookAt(0, 0, 0);
+
+        // レンダラーの設定
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // ボーリング球の作成
+        const ballGeometry = new THREE.SphereGeometry(0.5, 32, 32);
+        const ballMaterial = new THREE.MeshPhongMaterial({ color: 0x000000 });
+        const ball = new THREE.Mesh(ballGeometry, ballMaterial);
+        ball.position.set(0, 1.5, 5); // 開始位置を高くする
+        scene.add(ball);
+
+        // レーンの作成
+        const laneGeometry = new THREE.BoxGeometry(2, 0.1, 20);
+        const laneMaterial = new THREE.MeshPhongMaterial({ color: 0x8B4513 });
+        const lane = new THREE.Mesh(laneGeometry, laneMaterial);
+        scene.add(lane);
+
+        // 光源の追加
+        const light = new THREE.DirectionalLight(0xffffff, 1.2); // 光の強さを増加
+        light.position.set(0, 10, 10);
+        scene.add(light);
+        
+        // 補助光の追加
+        const hemisphereLight = new THREE.HemisphereLight(0xffffff, 0x404040, 1); // 半球光を追加
+        scene.add(hemisphereLight);
+        scene.add(new THREE.AmbientLight(0x404040, 1.5)); // アンビエントライトの強さを増加
+
+        // 物理パラメータ
+        let velocity = {
+            x: 0,  // 横方向の初速
+            y: 0,     // 垂直方向の速度
+            z: -1   // 前方向の初速
+        };
+        const gravity = -0.01;  // 重力
+        const friction = 0.995; // 摩擦係数
+        const restitution = 0.5; // 反発係数
+
+        // ボールのアニメーション
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // 重力の影響
+            velocity.y += gravity;
+
+            // ボールの位置更新
+            ball.position.x += velocity.x;
+            ball.position.y += velocity.y;
+            ball.position.z += velocity.z;
+
+            // 床との衝突判定
+            if (ball.position.y < 0.5) { // ボールの半径分を考慮
+                ball.position.y = 0.5;
+                velocity.y = -velocity.y * restitution;
+            }
+
+            // 摩擦による減速
+            velocity.x *= friction;
+            velocity.z *= friction;
+
+            // ボールの回転
+            ball.rotation.x += velocity.z * 2;
+            ball.rotation.z -= velocity.x * 2;
+
+            // サイドガターとの衝突
+            if (Math.abs(ball.position.x) > 0.9) {
+                ball.position.x = Math.sign(ball.position.x) * 0.9;
+                velocity.x = -velocity.x * restitution;
+            }
+
+            // レーン終端での停止
+            if (ball.position.z < -8) {
+                ball.position.z = -8;
+                velocity.z = 0;
+            }
+
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        // ウィンドウリサイズ対応
+        window.addEventListener('resize', onWindowResize, false);
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+    </script>
+</body>
+</html>

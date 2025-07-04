@@ -1,0 +1,100 @@
+/* style.css */
+
+/* リセットと基本スタイル */
+html, body {
+  height: 100%;
+  margin: 0;
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  background-color: #eef2f7;
+  color: #333;
+}
+
+/* アプリ全体のコンテナ */
+.app-container {
+  height: calc(100vh - 56px); /* ヘッダー分を差し引く */
+  padding-top: 20px;
+}
+
+/* ヘッダーのフォントサイズ調整 */
+.navbar-brand {
+  font-weight: bold;
+  font-size: 1.5rem;
+}
+
+/* サイドバーのスタイル */
+.sidebar {
+  background-color: #fff;
+  border-right: 1px solid #ccc;
+  overflow-y: auto;
+  height: 100%;
+  box-shadow: 2px 0 5px rgba(0,0,0,0.05);
+}
+
+/* ページツリーのリスト */
+#page-tree li {
+  padding: 8px 15px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+#page-tree li:hover,
+#page-tree li.active {
+  background-color: #d9e0ee;
+}
+
+/* エディタ＆プレビュー領域 */
+.editor-preview-container {
+  display: flex;
+  height: calc(100vh - 200px);
+  margin-bottom: 20px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  overflow: hidden;
+  background-color: #fff;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+/* エディタ（テキストエリア）のスタイル */
+#markdown-input {
+  width: 50%;
+  border: none;
+  resize: none;
+  padding: 15px;
+  font-size: 1rem;
+  font-family: 'Courier New', Courier, monospace;
+  outline: none;
+  border-right: 1px solid #ccc;
+}
+
+/* プレビューエリアのスタイル */
+#preview {
+  width: 50%;
+  padding: 15px;
+  overflow-y: auto;
+  background-color: #fafafa;
+}
+
+/* 固定配置の追加ボタン */
+.fixed-btn {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 30;
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  font-size: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+/* モーダル内のテンプレート挿入ボタンのスタイル */
+.template-section p {
+  margin-bottom: 0.5rem;
+}
+
+/* ボタンホバー効果 */
+.btn-outline-secondary:hover {
+  background-color: #e1e7ee;
+}

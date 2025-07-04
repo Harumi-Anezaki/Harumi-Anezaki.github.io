@@ -1,0 +1,71 @@
+body {
+  font-family: 'Arial', sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f4f4f4;
+  color: #333;
+}
+
+.container {
+  max-width: 900px;
+  margin: 20px auto;
+  background-color: #fff;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  height: 600px; /* 固定の高さを設定 */
+}
+
+textarea {
+  flex: 1;
+  padding: 20px;
+  border: none;
+  border-right: 1px solid #ddd;
+  resize: none;
+  font-size: 16px;
+  outline: none;
+  height: 100%; /* 親要素の高さいっぱいにする */
+}
+
+#markdown-output {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  line-height: 1.6;
+  height: 100%; /* 親要素の高さいっぱいにする */
+}
+
+/* Markdownのスタイル調整 */
+#markdown-output h1 {
+  font-size: 2em;
+  margin-bottom: 0.5em;
+  border-bottom: 1px solid #eee;
+}
+
+#markdown-output h2 {
+  font-size: 1.5em;
+  margin-bottom: 0.5em;
+}
+
+#markdown-output p {
+  margin-bottom: 1em;
+}
+
+#markdown-output code {
+  background-color: #f0f0f0;
+  padding: 2px 5px;
+  border-radius: 3px;
+}
+
+#markdown-output pre {
+  background-color: #f0f0f0;
+  padding: 10px;
+  overflow-x: auto;
+  border-radius: 3px;
+}
+
+#markdown-output ul, #markdown-output ol {
+  padding-left: 20px;
+  margin-bottom: 1em;
+}
