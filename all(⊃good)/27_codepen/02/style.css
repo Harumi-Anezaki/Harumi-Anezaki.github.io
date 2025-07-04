@@ -1,0 +1,57 @@
+body {
+    font-family: sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f0f0f0;
+}
+
+.container {
+    display: flex;
+    height: 100vh; /* ビューポート全体の高さ */
+}
+
+#code-area {
+  display: flex;
+  flex-direction: column; /* コードエリアを縦並びに */
+  width: 50%;  /* 初期幅は50% */
+}
+
+.pane {
+    flex: 1;
+    overflow: auto;
+    border-bottom: 1px solid #ccc; /* 下線で区切る */
+}
+
+.pane:last-child {
+    border-bottom: none; /* 最後の要素の下線は消す */
+}
+
+h2 {
+    text-align: center;
+    margin: 0.5em;
+    padding: 0;
+    background-color: #333;
+    color: #fff;
+}
+
+.CodeMirror {
+    border: 1px solid #ccc;
+    height: auto;
+    font-family: monospace;
+}
+/* Split.jsで生成される仕切りのスタイル */
+.gutter {
+  background-color: #eee;
+  background-repeat: no-repeat;
+  background-position: 50%;
+  cursor: col-resize;
+}
+.gutter.gutter-horizontal {
+  background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAeCAYAAADkftS9AAAAIklEQVQoU2M4c+bMfxAGAgYYmwGrIIiDjrELjpo5aiZeMwF+yNnOs5KSvgAAAABJRU5ErkJggg==');
+
+}
+
+#preview-window {
+    width: 50%;  /* 初期幅は50% */
+    border: none;
+}

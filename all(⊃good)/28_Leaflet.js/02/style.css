@@ -1,0 +1,62 @@
+body {
+    margin: 0;
+    padding: 0;
+    font-family: sans-serif;
+}
+
+#map {
+    width: 100%;
+    height: 100vh; /* ビューポートの高さに合わせる */
+}
+
+#slider-container {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(255, 255, 255, 0.8);
+    padding: 10px;
+    border-radius: 5px;
+    z-index: 1000; /* 地図より前面に */
+    display: flex; /* Flexbox を使用 */
+    align-items: center; /* 垂直方向に中央揃え */
+}
+
+#opacity-slider {
+  -webkit-appearance: none;  /* スライダーのデフォルトスタイルをリセット */
+  appearance: none;
+  width: 200px; /* スライダーの幅 */
+  height: 10px; /* スライダーの高さ */
+  background: #d3d3d3; /* スライダーの背景色 */
+  outline: none; /* フォーカス時のアウトラインを消す */
+  opacity: 0.7; /* スライダーの不透明度 */
+  -webkit-transition: .2s; /* マウスオーバー時のアニメーション */
+  transition: opacity .2s;
+  border-radius: 5px;
+  margin-right: 10px; /* ラベルとの間にスペースを設ける */
+}
+
+#opacity-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;  /* 円形のつまみ */
+  background: #04AA6D;  /* つまみの色 */
+  cursor: pointer;
+}
+
+#opacity-slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #04AA6D;
+  cursor: pointer;
+}
+
+#slider-labels {
+  display: flex;
+  width: 280px; /* ラベル全体の幅 (スライダーの幅 + 余白) */
+  justify-content: space-between; /* 両端に配置 */
+  font-size: 12px;
+}

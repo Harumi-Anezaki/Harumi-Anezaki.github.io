@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<body>
+  <div id="player"></div>
+
+  <script>
+    // 1. API コードを非同期で読み込む
+    var tag = document.createElement('script');
+    tag.src = "https://www.youtube.com/iframe_api";
+    var firstScriptTag = document.getElementsByTagName('script')[0];
+    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+    // 2. API コードの読み込み完了後に、<iframe> (および YouTube プレーヤー) を作成
+    var player;
+    function onYouTubeIframeAPIReady() {
+      player = new YT.Player('player', {
+        height: '360',
+        width: '640',
+        videoId: 'M7lc1UVf-VE', // YouTube動画のID
+        playerVars: {
+          'playsinline': 1 // iOSでインライン再生を許可
+        },
+        events: {
+          'onReady': onPlayerReady,
+          'onStateChange': onPlayerStateChange
+        }
+      });
+    }
+
+    // 3. プレーヤーの準備完了後に呼び出される関数
+    function onPlayerReady(event) {
+      event.target.playVideo(); // 動画を自動再生
+    }
+
+    // 4. プレーヤーの状態が変化したときに呼び出される関数
+    var done = false;
+    function onPlayerStateChange(event) {
+      if (event.data == YT.PlayerState.PLAYING && !done) {
+        setTimeout(stopVideo, 6000); // 6秒後に動画を停止
+        done = true;
+      }
+    }
+    function stopVideo() {
+      player.stopVideo();
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Leaflet Map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        #map { height: 500px; }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // 地図の初期化
+        var map = L.map('map').setView([35.6895, 139.6917], 13); // 東京駅を中心に表示、ズームレベル13
+
+        // タイルレイヤーの追加 (OpenStreetMapを使用)
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        // マーカーの追加
+        L.marker([35.6895, 139.6917]).addTo(map)
+            .bindPopup('<b>東京駅</b><br>ここが東京駅です。')
+            .openPopup();
+
+        // クリックイベントの追加 (クリックした位置の緯度経度を表示)
+        map.on('click', function(e) {
+            alert("クリックした位置: " + e.latlng);
+        });
+
+        // その他の機能 (例: 図形描画)
+        var circle = L.circle([35.68, 139.70], {
+            color: 'red',
+            fillColor: '#f03',
+            fillOpacity: 0.5,
+            radius: 500
+        }).addTo(map);
+        circle.bindPopup("半径500mの円");
+    </script>
+</body>
+</html>

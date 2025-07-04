@@ -1,0 +1,294 @@
+html
+```
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>プログラミング学習環境</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/dracula.min.css">
+    <link rel="stylesheet" href="style.css">
+    <!-- Split.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/split.js/1.6.5/split.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div id="code-area" class="split">
+            <div class="pane">
+                <div class="icon-container">
+                    <!-- HTML5 Logo -->
+                    <svg viewBox="0 0 512 512" class="icon">
+                        <path d="M71,460 L30,0 481,0 440,460 255,512" fill="#E34F26"/>
+                        <path d="M256,472 L405,431 440,37 256,37" fill="#EF652A"/>
+                        <path d="M256,208 L181,208 176,150 256,150 256,94 255,94 114,94 119,150 139,150 144,208 79,208 44,493 256,551 256,472" fill="#EBEBEB"/>
+                        <path d="M256,208 L255,262 392,262 387,318 338,318 333,373 255,373 255,431 256,431 445,382 476,150 335,150 330,94 255,94 256,94" fill="#FFFFFF"/>
+                    </svg>
+                </div>
+                <textarea id="html-code"></textarea>
+            </div>
+            <div class="pane">
+                <div class="icon-container">
+                    <!-- CSS3 Logo -->
+                    <svg viewBox="0 0 512 512" class="icon">
+                      <path d="M71,460 L30,0 481,0 440,460 255,512" fill="#264de4"/>
+                      <path d="M256,472 L405,431 440,37 256,37" fill="#2965f1"/>
+                      <path d="M256,150 L255,208 382,208 374,295 255,327 255,382 256,382 410,339 441,150" fill="#ebebeb"/>
+                      <path d="M256,94 L255,94 124,94 132,150 255,150 255,208 136,208 145,308 255,336 255,277 256,277" fill="#ffffff"/>
+                    </svg>
+                </div>
+                <textarea id="css-code"></textarea>
+            </div>
+            <div class="pane">
+                <div class="icon-container">
+                   <!-- JavaScript Logo (シンプルなJS)-->
+                    <svg viewBox="0 0 128 128" class="icon">
+                      <rect width="128" height="128" fill="#f7df1e"/>
+                      <path d="M29.4 98.7c-5.3-6.7-14-18-2.6-36.7 5.7-9.3 14.6-15 26.6-17 5.6-1 8.7-2.8 8.7-5.5 0-5.3-14.3-6.3-26.6-2.1-8 2.8-14.8 7.5-19.4 14-8.1 11.5-7.8 24.1.7 35.2 6.3 8 16.2 14.7 30 19.9 3.6 1.4 5.7 2.9 5.7 6.3-.1 5-15 6.7-28.5 2.3zm49.7.9c-7.7-8.5-6.8-21.8 1.8-36.8 6-10.1 14.3-16.9 24.6-19.7 8.8-2.4 17.7 0 17.7 9.3 0 .7-.1 1.3-.2 2-5.7 19.4-17.5 35.5-38.9 51.5-4.5 3.3-5.5 5-3 8.7 1.4 2.2 4.6 4.3 8.8 4.1 8.8-.3 16-8.4 16-15.3 0-7.4-6.4-14.7-16.6-13.8z" fill="#000"/>
+                    </svg>
+
+                </div>
+                <textarea id="js-code"></textarea>
+            </div>
+        </div>
+        <iframe id="preview-window" class="split"></iframe>
+    </div>
+     <!-- エクスポートボタンのコンテナ -->
+    <div id="export-container">
+        <input type="text" id="folder-name" placeholder="フォルダ名">
+        <button id="create-folder-button">
+            <!-- ダウンロードアイコン -->
+            <svg viewBox="0 0 24 24" class="export-icon">
+                <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+            </svg>
+        </button>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/xml/xml.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/css/css.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/javascript/javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/closetag.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/closebrackets.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
+```
+
+css
+```
+body {
+    font-family: sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f0f0f0;
+}
+
+.container {
+    display: flex;
+    height: 100vh;
+}
+
+#code-area {
+  display: flex;
+  flex-direction: column;
+  width: 50%; /* この値はSplit.jsで上書きされる */
+}
+
+.pane {
+    flex: 1;
+    overflow: auto;
+    border-bottom: 1px solid #ccc;
+    position: relative;
+}
+
+.pane:last-child {
+    border-bottom: none;
+}
+
+h2 {
+  display: none;
+}
+
+.CodeMirror {
+    border: 1px solid #ccc;
+    height: auto;
+    font-family: monospace;
+    padding-top: 25px;
+}
+
+.gutter {
+  background-color: #eee;
+  background-repeat: no-repeat;
+  background-position: 50%;
+  cursor: col-resize;
+}
+.gutter.gutter-horizontal {
+  background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAeCAYAAADkftS9AAAAIklEQVQoU2M4c+bMfxAGAgYYmwGrIIiDjrELjpo5aiZeMwF+yNnOs5KSvgAAAABJRU5ErkJggg==');
+
+}
+
+#preview-window {
+    width: 50%; /* この値はSplit.jsで上書きされる */
+    border: none;
+}
+
+.icon-container {
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    z-index: 10;
+}
+
+.icon {
+    width: 20px;
+    height: 20px;
+    fill: #888;
+}
+
+/* エクスポートボタンのコンテナ */
+#export-container {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    z-index: 10;
+    display: flex; /* 横並びにする */
+    align-items: center;/*上下中央揃え*/
+    gap: 10px; /* ボタン間のスペース */
+}
+
+/*フォルダ名入力欄*/
+#folder-name{
+  padding: 5px;
+  width: 70px;
+}
+
+/* エクスポートボタン */
+ #create-folder-button {
+    padding: 10px 15px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+/*ホバー時*/
+#create-folder-button:hover {
+    background-color: #367c39;
+}
+
+/* SVGアイコンのスタイル */
+.export-icon {
+    width: 24px;
+    height: 24px;
+    fill: white; /* アイコンの色 */
+}
+```
+
+js
+```
+// CodeMirrorエディタの初期化 (変更なし)
+const htmlEditor = CodeMirror.fromTextArea(document.getElementById("html-code"), {
+    mode: "xml",
+    theme: "dracula",
+    lineNumbers: true,
+    autoCloseTags: true,
+    autoCloseBrackets: true,
+});
+
+const cssEditor = CodeMirror.fromTextArea(document.getElementById("css-code"), {
+    mode: "css",
+    theme: "dracula",
+    lineNumbers: true,
+    autoCloseBrackets: true,
+});
+
+const jsEditor = CodeMirror.fromTextArea(document.getElementById("js-code"), {
+    mode: "javascript",
+    theme: "dracula",
+    lineNumbers: true,
+    autoCloseBrackets: true,
+});
+
+// プレビューを更新する関数 (変更なし)
+function updatePreview() {
+    const previewWindow = document.getElementById("preview-window").contentWindow.document;
+    previewWindow.open();
+    previewWindow.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <style>${cssEditor.getValue()}</style>
+        </head>
+        <body>
+            ${htmlEditor.getValue()}
+            <script>${jsEditor.getValue()}</script>
+        </body>
+        </html>
+    `);
+    previewWindow.close();
+}
+
+// 各エディタの内容が変更されたときにプレビューを更新 (変更なし)
+htmlEditor.on("change", updatePreview);
+cssEditor.on("change", updatePreview);
+jsEditor.on("change", updatePreview);
+
+// 初期プレビューの表示 (変更なし)
+updatePreview();
+
+// Split.jsの初期化 (変更なし)
+Split(['#code-area', '#preview-window'], {
+    sizes: [20, 80],
+    minSize: [200, 200],
+    gutterSize: 8,
+    cursor: 'col-resize',
+    direction: 'horizontal',
+});
+
+// フォルダ作成＆エクスポートボタンのクリックイベント
+document.getElementById('create-folder-button').addEventListener('click', async () => {
+   try {
+    const folderName = document.getElementById('folder-name').value;
+    if (!folderName) {
+      alert("フォルダ名を入力してください。");
+      return;
+    }
+    // フォルダ選択はユーザーに任せる
+    const dirHandle = await window.showDirectoryPicker();
+    // フォルダ作成
+    const folderHandle = await dirHandle.getDirectoryHandle(folderName, { create: true });
+    await exportCode(folderHandle); //作成したフォルダをexportCodeに渡す
+
+   } catch(error){
+    console.error("フォルダ作成中にエラーが発生しました:", error);
+        alert("フォルダ作成に失敗しました。");
+   }
+});
+
+// File System Access API を使ってコードをエクスポートする関数
+// 引数にdirHandle(またはfolderHandle)を受け取る
+async function exportCode(dirHandle) {
+    // HTMLファイルを保存
+    const htmlFileHandle = await dirHandle.getFileHandle("index.html", { create: true });
+    const htmlWritable = await htmlFileHandle.createWritable();
+    await htmlWritable.write(htmlEditor.getValue());
+    await htmlWritable.close();
+
+    // CSSファイルを保存
+    const cssFileHandle = await dirHandle.getFileHandle("style.css", { create: true });
+    const cssWritable = await cssFileHandle.createWritable();
+    await cssWritable.write(cssEditor.getValue());
+    await cssWritable.close();
+
+    // JavaScriptファイルを保存
+    const jsFileHandle = await dirHandle.getFileHandle("script.js", { create: true });
+    const jsWritable = await jsFileHandle.createWritable();
+    await jsWritable.write(jsEditor.getValue());
+    await jsWritable.close();
+}
+```
