@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>反射神経チャレンジ</title>
+    <link rel="stylesheet" href="game1.css">
+    <!-- フォントの追加 -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="game-container">
+        <h1>反射神経チャレンジ</h1>
+        <div id="difficulty-selection">
+            <p>難易度を選択してください:</p>
+            <button class="difficulty-button" data-level="easy">簡単</button>
+            <button class="difficulty-button" data-level="normal">普通</button>
+            <button class="difficulty-button" data-level="hard">難しい</button>
+        </div>
+        <p id="message">スタートボタンを押してゲームを開始します。</p>
+        <button id="start-button">スタート</button>
+        <p id="best-record">最高記録: -- ms</p>
+    </div>
+    <script src="game1.js"></script>
+</body>
+</html>

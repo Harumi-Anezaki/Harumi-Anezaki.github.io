@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>ミニゲームコレクション</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- フォントの追加 -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <div class="logo">Game<span>Hub</span></div>
+        <input type="text" placeholder="検索">
+        <nav>
+            <ul>
+                <li>ホーム</li>
+                <li>人気</li>
+                <li>新着</li>
+                <li>カテゴリ</li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <section class="games">
+            <div class="game-card" onclick="startGame('game1')">
+                <img src="game1_thumbnail.jpg" alt="反射神経チャレンジ">
+                <h3>反射神経チャレンジ</h3>
+            </div>
+            <div class="game-card" onclick="startGame('game2')">
+                <img src="game2_thumbnail.jpg" alt="記憶力トレーナー">
+                <h3>記憶力トレーナー</h3>
+            </div>
+            <!-- 他のゲームカードも同様に追加 -->
+        </section>
+    </main>
+    <div id="game-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" onclick="closeGame()">×</span>
+            <iframe id="game-frame" src=""></iframe>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

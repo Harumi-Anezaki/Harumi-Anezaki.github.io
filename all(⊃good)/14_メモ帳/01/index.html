@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>未来感メモアプリ</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="modal-overlay" id="modal-overlay">
+        <div class="modal" id="modal">
+            <div class="modal-header">
+                <h2 id="modal-title">モーダルタイトル</h2>
+                <span class="close-button" id="close-modal">&times;</span>
+            </div>
+            <div class="modal-body" id="modal-body">
+                モーダル内容
+            </div>
+            <div class="modal-footer" id="modal-footer">
+                <!-- ボタンがここに追加されます -->
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <header>
+            <h1>未来感メモ</h1>
+            <div class="header-controls">
+                <button id="theme-toggle" class="icon-button" title="テーマ切替">
+                    &#9776;
+                </button>
+                <button id="export-button" class="icon-button" title="データをエクスポート">
+                    &#8681;
+                </button>
+                <button id="import-button" class="icon-button" title="データをインポート">
+                    &#8682;
+                </button>
+                <button id="view-toggle" class="icon-button" title="表示モード切替">
+                    &#x1F5C2;
+                </button>
+            </div>
+        </header>
+        <main>
+            <div class="toolbar">
+                <button id="new-note-button" class="primary-button">新規メモ</button>
+                <select id="sort-select">
+                    <option value="createdAt_desc">作成日 (新しい順)</option>
+                    <option value="createdAt_asc">作成日 (古い順)</option>
+                    <option value="updatedAt_desc">更新日 (新しい順)</option>
+                    <option value="updatedAt_asc">更新日 (古い順)</option>
+                    <option value="title_asc">タイトル (A-Z)</option>
+                    <option value="title_desc">タイトル (Z-A)</option>
+                </select>
+            </div>
+            <ul id="notes-list" class="list-view">
+                <!-- メモがここに追加されます -->
+            </ul>
+        </main>
+    </div>
+
+    <!-- メモ編集モーダル -->
+    <div class="modal-overlay" id="edit-modal-overlay">
+        <div class="modal" id="edit-modal">
+            <div class="modal-header">
+                <h2 id="edit-modal-title">メモ編集</h2>
+                <span class="close-button" id="close-edit-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="note-title" placeholder="タイトルを入力..." />
+                <div class="editor-toolbar">
+                    <button class="editor-button" data-command="bold"><b>B</b></button>
+                    <button class="editor-button" data-command="italic"><i>I</i></button>
+                    <button class="editor-button" data-command="underline"><u>U</u></button>
+                    <button class="editor-button" data-command="undo">&#x21B6;</button>
+                    <button class="editor-button" data-command="redo">&#x21B7;</button>
+                </div>
+                <div id="note-content" contenteditable="true" class="note-content"></div>
+            </div>
+            <div class="modal-footer">
+                <button id="save-note-button" class="primary-button">保存</button>
+                <button id="cancel-note-button" class="secondary-button">キャンセル</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- インポート用ファイル入力 -->
+    <input type="file" id="import-file-input" accept=".json" style="display: none;">
+
+    <script src="script.js"></script>
+</body>
+</html>

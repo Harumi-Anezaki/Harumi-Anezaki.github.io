@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>未来感のあるメモアプリ</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- ビューポート設定 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+    <div class="app-container">
+        <!-- ヘッダー -->
+        <header class="app-header">
+            <h1 class="app-title">メモアプリ</h1>
+            <div class="header-right">
+                <!-- テーマ切り替えトグルボタン -->
+                <label class="theme-switch">
+                    <input type="checkbox" id="toggle-theme">
+                    <span class="slider"></span>
+                </label>
+                <!-- ビュー切り替えボタン -->
+                <button id="view-toggle" class="icon-button" aria-label="表示切り替え">
+                    <!-- リストビューアイコン -->
+                    <svg id="view-icon" viewBox="0 0 24 24">
+                        <rect x="3" y="4" width="18" height="2"/>
+                        <rect x="3" y="11" width="18" height="2"/>
+                        <rect x="3" y="18" width="18" height="2"/>
+                    </svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- メインコンテンツ -->
+        <main class="app-main">
+            <!-- 新規作成ボタン -->
+            <button id="new-memo" class="floating-button" aria-label="新規作成">
+                <!-- プラスアイコン -->
+                <svg viewBox="0 0 24 24">
+                    <path d="M12 5V19M5 12H19"/>
+                </svg>
+            </button>
+
+            <!-- ソートオプション -->
+            <div class="sort-options">
+                <select id="sort-select" aria-label="ソートオプション">
+                    <option value="updatedDesc">更新日（新しい順）</option>
+                    <option value="updatedAsc">更新日（古い順）</option>
+                    <option value="createdDesc">作成日（新しい順）</option>
+                    <option value="createdAsc">作成日（古い順）</option>
+                    <option value="titleAsc">タイトル（昇順）</option>
+                    <option value="titleDesc">タイトル（降順）</option>
+                </select>
+            </div>
+
+            <!-- メモ一覧 -->
+            <div id="memo-list" class="memo-list list-view" aria-label="メモ一覧">
+                <!-- メモがここに表示されます -->
+            </div>
+        </main>
+    </div>
+
+    <!-- モーダルオーバーレイ -->
+    <div id="modal-overlay" class="modal-overlay hidden" aria-hidden="true">
+        <!-- モーダルコンテンツ -->
+        <div id="modal-content" class="modal-content" role="dialog" aria-modal="true">
+            <!-- 動的に内容を設定します -->
+        </div>
+    </div>
+
+    <!-- 隠しファイル入力（インポート用） -->
+    <input type="file" id="file-input" accept=".json" style="display: none;">
+
+    <script src="script.js"></script>
+</body>
+</html>

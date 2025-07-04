@@ -1,0 +1,165 @@
+/* フォントの設定 */
+body {
+    margin: 0;
+    font-family: 'Poppins', sans-serif;
+    background-color: #0D0D0D;
+    color: #FFFFFF;
+}
+
+/* ヘッダー */
+header {
+    display: flex;
+    align-items: center;
+    background-color: #1A1A1A;
+    padding: 10px 20px;
+    position: fixed;
+    width: 100%;
+    top: 0;
+    z-index: 100;
+}
+
+.logo {
+    font-size: 26px;
+    font-weight: 600;
+    color: #00FFFF;
+    margin-right: 30px;
+}
+
+.logo span {
+    color: #FF00FF;
+}
+
+header input[type="text"] {
+    flex-grow: 1;
+    padding: 8px 15px;
+    background-color: #333333;
+    border: none;
+    border-radius: 20px;
+    color: #FFFFFF;
+    margin-right: 30px;
+}
+
+header input[type="text"]::placeholder {
+    color: #AAAAAA;
+}
+
+nav ul {
+    list-style: none;
+    display: flex;
+    margin: 0;
+}
+
+nav ul li {
+    margin-left: 25px;
+    cursor: pointer;
+    font-weight: 500;
+    position: relative;
+}
+
+nav ul li::after {
+    content: '';
+    display: block;
+    width: 0%;
+    height: 2px;
+    background-color: #00FFFF;
+    transition: width 0.3s;
+    position: absolute;
+    bottom: -5px;
+    left: 0;
+}
+
+nav ul li:hover::after {
+    width: 100%;
+}
+
+/* メインコンテンツ */
+main {
+    margin-top: 80px;
+    padding: 20px;
+}
+
+.games {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.game-card {
+    background-color: #1A1A1A;
+    width: 250px;
+    margin: 15px;
+    border-radius: 10px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.3s;
+    position: relative;
+}
+
+.game-card:hover {
+    transform: translateY(-10px);
+}
+
+.game-card img {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+}
+
+.game-card h3 {
+    text-align: center;
+    padding: 15px 0;
+    font-weight: 600;
+    font-size: 18px;
+}
+
+/* モーダルウィンドウ */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 200;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.9);
+}
+
+.modal-content {
+    position: relative;
+    margin: auto;
+    top: 50px;
+    width: 80%;
+    height: 80%;
+    background-color: #000;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.close-button {
+    position: absolute;
+    top: 15px;
+    right: 25px;
+    font-size: 32px;
+    cursor: pointer;
+    color: #FFFFFF;
+}
+
+#game-frame {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+
+/* スクロールバーのカスタマイズ */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #333333;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #555555;
+}
