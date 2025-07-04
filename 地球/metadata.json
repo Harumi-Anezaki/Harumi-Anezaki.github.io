@@ -1,6 +1,0 @@
-{
-  "name": "地球",
-  "description": "A React web application that displays an interactive 3D model of the Earth using Three.js and Tailwind CSS. Users can rotate and zoom the globe.",
-  "requestFramePermissions": [],
-  "prompt": ""
-}
