@@ -1,0 +1,120 @@
+body {
+    font-family: 'Noto Sans JP', Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+header {
+    position: relative;
+    background-color: #f0f0f0;
+    padding: 10px;
+}
+
+header h1 {
+    font-family: 'Lobster', cursive;
+    font-size: 2em;
+    text-align: center;
+    margin: 0;
+}
+
+.hamburger-menu {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+}
+
+.hamburger-icon {
+    cursor: pointer;
+    width: 30px;
+    height: 25px;
+    position: relative;
+}
+
+.hamburger-icon span {
+    background: #333;
+    display: block;
+    height: 4px;
+    width: 100%;
+    margin-bottom: 5px;
+    position: relative;
+}
+
+.menu {
+    display: none;
+    position: absolute;
+    top: 40px;
+    left: 10px;
+    background: #fff;
+    border: 1px solid #ccc;
+    padding: 20px;
+}
+
+.menu h2 {
+    margin-top: 0;
+}
+
+main {
+    padding: 20px;
+}
+
+.calendar-container {
+    overflow-x: auto;
+}
+
+#calendar-table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+#calendar-table th, #calendar-table td {
+    border: 1px solid #ccc;
+    padding: 5px;
+    text-align: center;
+    min-width: 100px;
+}
+
+#calendar-table th:first-child, #calendar-table td:first-child {
+    position: sticky;
+    left: 0;
+    background: #fff;
+}
+
+.today-row {
+    background-color: #ffffe0; /* 淡い黄色 */
+}
+
+.modal {
+    display: none; /* デフォルトでは非表示 */
+    position: fixed; /* 画面全体に固定 */
+    z-index: 1; /* 最前面 */
+    padding-top: 60px;
+    left: 0;
+    top: 0;
+    width: 100%; /* 幅100% */
+    height: 100%; /* 高さ100% */
+    overflow: auto;
+    background-color: rgba(0,0,0,0.4); /* 背景を半透明に */
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 5% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+}
+
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close:hover,
+.close:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}

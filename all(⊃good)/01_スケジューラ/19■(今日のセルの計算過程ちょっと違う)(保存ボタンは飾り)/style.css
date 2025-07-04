@@ -1,0 +1,329 @@
+body {
+    font-family: 'Noto Sans JP', sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #1a1a1a;
+    color: #f0f0f0;
+}
+
+.title {
+    font-family: 'Great Vibes', cursive;
+    text-align: center;
+    margin: 0;
+    padding: 20px 0;
+    font-size: 48px;
+    color: #00bfff;
+    background: linear-gradient(45deg, #0d0d0d, #333);
+    border-bottom: 1px solid #333;
+}
+
+.save-button {
+    position: fixed;
+    top: 15px;
+    right: 15px;
+    padding: 10px 20px;
+    font-size: 16px;
+    background-color: #00bfff;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    z-index: 1001;
+    transition: background-color 0.3s;
+}
+
+.save-button:hover {
+    background-color: #009acd;
+}
+
+#sidebar {
+    position: fixed;
+    width: 300px;
+    height: 100%;
+    background: #262626;
+    left: -300px;
+    transition: left 0.3s;
+    color: #f0f0f0;
+    padding: 20px;
+    box-sizing: border-box;
+    overflow-y: auto;
+    z-index: 1000;
+}
+
+#sidebar.active {
+    left: 0;
+}
+
+.toggle-btn {
+    position: fixed;
+    left: 15px;
+    top: 15px;
+    cursor: pointer;
+    z-index: 1001;
+}
+
+.toggle-btn span {
+    display: block;
+    width: 30px;
+    height: 4px;
+    background: #00bfff;
+    margin: 5px 0;
+    transition: background-color 0.3s;
+}
+
+.toggle-btn:hover span {
+    background: #009acd;
+}
+
+.sidebar-content h2 {
+    margin-top: 0;
+    color: #00bfff;
+    text-align: center;
+}
+
+.sidebar-content input, .sidebar-content button {
+    width: 100%;
+    margin-bottom: 15px;
+    padding: 10px;
+    background-color: #333;
+    border: none;
+    color: #f0f0f0;
+    box-sizing: border-box;
+    font-size: 16px;
+}
+
+.sidebar-content button {
+    background-color: #00bfff;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.sidebar-content button:hover {
+    background-color: #009acd;
+}
+
+.sidebar-content label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 700;
+}
+
+#曜日指定 {
+    margin-bottom: 15px;
+}
+
+#曜日指定 p {
+    margin-bottom: 10px;
+    font-weight: 700;
+}
+
+.weekday-buttons {
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.weekday-buttons button {
+    margin-right: 10px;
+    padding: 8px 12px;
+    background-color: #00bfff;
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.weekday-buttons button:hover {
+    background-color: #009acd;
+}
+
+.weekday-checkboxes {
+    display: flex;
+    justify-content: space-around;
+}
+
+.weekday-checkboxes label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+}
+
+.weekday-checkboxes input[type="checkbox"] {
+    margin-bottom: 5px;
+    width: 20px;
+    height: 20px;
+}
+
+.table-container {
+    margin: 80px 20px 20px 20px;
+    overflow-x: auto;
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+    min-width: 800px;
+}
+
+th, td {
+    border: 1px solid #333;
+    text-align: center;
+    padding: 10px;
+    min-width: 80px;
+    color: #f0f0f0;
+}
+
+th {
+    background-color: #262626;
+    font-weight: normal;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+
+#fixed-header {
+    left: 0;
+    position: sticky;
+    z-index: 3;
+    background-color: #262626;
+}
+
+th:first-child, td:first-child {
+    position: sticky;
+    left: 0;
+    background-color: #1a1a1a;
+    z-index: 1;
+}
+
+td {
+    position: relative;
+}
+
+.today-cell {
+    background-color: #a78b94;
+}
+
+.assigned-cell {
+    background-color: #5b9094;
+}
+
+.completed-cell {
+    background-color: #7bc2c8;
+}
+
+.completed-today-cell {
+    background-color: #72b5ba;
+}
+
+input[type="number"] {
+    width: 100px;
+}
+
+.bar-container {
+    width: 100%;
+    background-color: #333;
+    height: 20px;
+    position: relative;
+    margin-top: 5px;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    background-color: #00bfff;
+    height: 100%;
+    width: 0%;
+    transition: width 0.3s;
+}
+
+.bar-text {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+}
+
+td button {
+    margin-top: 10px;
+    padding: 5px 10px;
+    background-color: #6a6a6a;
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+td button:hover {
+    background-color: #cc0000;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.6);
+}
+
+.modal-content {
+    background-color: #1a1a1a;
+    margin: 15% auto;
+    padding: 20px;
+    width: 90%;
+    max-width: 400px;
+    position: relative;
+    color: #f0f0f0;
+    border: 1px solid #333;
+}
+
+.close {
+    color: #aaa;
+    position: absolute;
+    right: 15px;
+    top: 10px;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close:hover {
+    color: #fff;
+}
+
+.modal-content h2 {
+    margin-top: 0;
+    color: #00bfff;
+}
+
+.modal-content input, .modal-content button {
+    width: 100%;
+    margin-bottom: 15px;
+    padding: 10px;
+    background-color: #333;
+    border: none;
+    color: #f0f0f0;
+    box-sizing: border-box;
+    font-size: 16px;
+}
+
+.modal-content button {
+    background-color: #00bfff;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.modal-content button:hover {
+    background-color: #009acd;
+}
+
+.modal-content p {
+    margin-bottom: 20px;
+}

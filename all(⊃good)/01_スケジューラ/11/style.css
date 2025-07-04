@@ -1,0 +1,253 @@
+/* フォント指定 */
+body {
+    font-family: 'Noto Serif', 'Noto Serif JP', serif;
+    margin: 0;
+    padding: 0;
+}
+
+h1 {
+    font-family: 'Great Vibes', cursive;
+}
+
+/* ヘッダー */
+header {
+    display: flex;
+    align-items: center;
+    background-color: #f0f0f0;
+    padding: 10px;
+}
+
+.menu-icon {
+    font-size: 24px;
+    cursor: pointer;
+    margin-right: 10px;
+}
+
+header h1 {
+    margin: 0;
+    font-size: 36px;
+}
+
+/* サイドメニュー */
+#sidebar {
+    position: fixed;
+    top: 0;
+    left: -320px;
+    width: 300px;
+    height: 100%;
+    background-color: #fff;
+    box-shadow: 2px 0 5px rgba(0,0,0,0.3);
+    padding: 20px;
+    box-sizing: border-box;
+    transition: left 0.3s;
+    overflow-y: auto;
+    z-index: 1000;
+}
+
+#sidebar.open {
+    left: 0;
+}
+
+#sidebar .close-btn {
+    font-size: 28px;
+    cursor: pointer;
+    position: absolute;
+    right: 15px;
+    top: 10px;
+}
+
+#sidebar h2 {
+    margin-top: 0;
+}
+
+#sidebar form {
+    display: flex;
+    flex-direction: column;
+}
+
+#sidebar label {
+    margin-top: 10px;
+}
+
+#sidebar input[type="text"],
+#sidebar input[type="number"],
+#sidebar input[type="date"] {
+    padding: 5px;
+    font-size: 16px;
+}
+
+#sidebar button {
+    margin-top: 20px;
+    padding: 10px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+/* メインコンテンツ */
+main {
+    padding: 20px;
+}
+
+.table-container {
+    overflow-x: auto;
+    max-width: 100%;
+    border: 1px solid #ccc;
+}
+
+#schedule-table {
+    border-collapse: collapse;
+    width: 100%;
+    table-layout: fixed;
+}
+
+#schedule-table th,
+#schedule-table td {
+    border: 1px solid #ccc;
+    padding: 5px;
+    text-align: center;
+    min-width: 80px;
+    position: relative;
+}
+
+#schedule-table th {
+    background-color: #f9f9f9;
+}
+
+#schedule-table th.date-header {
+    background-color: #f9f9f9;
+}
+
+#schedule-table th.today-header {
+    background-color: #ffecec;
+}
+
+#schedule-table td.material-cell {
+    white-space: nowrap;
+    text-align: left;
+    position: relative;
+}
+
+#schedule-table td.material-cell .delete-btn {
+    position: absolute;
+    right: 5px;
+    top: 5px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+/* プログレスバー */
+.progress-container {
+    background-color: #e0e0e0;
+    border-radius: 5px;
+    overflow: hidden;
+    margin-top: 5px;
+}
+
+.progress-bar {
+    background-color: green;
+    height: 20px;
+    line-height: 20px;
+    color: #fff;
+    text-align: center;
+    white-space: nowrap;
+}
+
+/* セルの色付け */
+.today-cell {
+    background-color: #ffecec;
+}
+
+.allocated-cell {
+    background-color: #fffacd;
+    cursor: pointer;
+}
+
+.past-cell {
+    cursor: pointer;
+}
+
+.completed-cell {
+    background-color: #e0ffe0;
+}
+
+.completed-today-cell {
+    background-color: #ccffcc;
+}
+
+.overdue-cell {
+    background-color: #f0e68c; /* 未完了の過去セル */
+}
+
+/* 固定列 */
+.table-container {
+    position: relative;
+}
+
+.table-container th:first-child,
+.table-container td:first-child {
+    position: sticky;
+    left: 0;
+    background-color: #f9f9f9;
+    z-index: 1;
+    min-width: 100px;
+}
+
+/* 2列目以降のスクロール */
+.table-container table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+}
+
+.table-container th,
+.table-container td {
+    min-width: 80px;
+}
+
+/* 保存ボタン */
+#save-button {
+    margin-top: 20px;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+/* モーダル */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.4);
+}
+
+.modal-content {
+    background-color: #fff;
+    margin: 15% auto;
+    padding: 20px;
+    width: 300px;
+    position: relative;
+}
+
+.modal-close {
+    position: absolute;
+    right: 10px;
+    top: 5px;
+    font-size: 28px;
+    cursor: pointer;
+}
+
+.modal h2 {
+    margin-top: 0;
+}
+
+.modal button {
+    margin-top: 20px;
+    padding: 10px;
+    font-size: 16px;
+    cursor: pointer;
+}

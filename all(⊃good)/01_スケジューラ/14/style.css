@@ -1,0 +1,164 @@
+/* フォント設定 */
+body {
+    font-family: 'Noto Serif', 'Noto Serif JP', serif;
+    margin: 0;
+    padding: 0;
+}
+
+h1 {
+    font-family: 'Great Vibes', cursive;
+    font-size: 48px;
+    text-align: center;
+    margin: 20px 0;
+}
+
+/* ハンバーガーメニュー */
+#menu-toggle {
+    display: none;
+}
+
+.menu-icon {
+    font-size: 30px;
+    cursor: pointer;
+    position: absolute;
+    top: 20px;
+    left: 20px;
+}
+
+.menu {
+    display: none;
+    position: absolute;
+    top: 60px;
+    left: 0;
+    background-color: #fff;
+    width: 300px;
+    padding: 20px;
+    border: 1px solid #ccc;
+    max-height: 80vh;
+    overflow-y: auto;
+    z-index: 1000;
+}
+
+#menu-toggle:checked + .menu-icon + .menu {
+    display: block;
+}
+
+/* カレンダーUI */
+.calendar-container {
+    overflow-x: auto;
+    margin: 20px;
+}
+
+#study-calendar {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+#study-calendar th, #study-calendar td {
+    border: 1px solid #ccc;
+    padding: 10px;
+    text-align: center;
+    min-width: 100px;
+    position: relative;
+}
+
+#study-calendar th:first-child, #study-calendar td:first-child {
+    position: sticky;
+    left: 0;
+    background-color: #f9f9f9;
+    z-index: 1;
+}
+
+#study-calendar th {
+    background-color: #f1f1f1;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+
+.today-date {
+    background-color: #ffe5e5;
+}
+
+.assigned-cell {
+    background-color: #ffffe0;
+}
+
+.completed-cell {
+    background-color: #e0ffe0;
+}
+
+.completed-today-cell {
+    background-color: #d0ffd0;
+}
+
+/* 進捗バー */
+.progress-bar {
+    width: 100%;
+    background-color: #ddd;
+    height: 20px;
+    position: relative;
+}
+
+.progress-fill {
+    background-color: green;
+    height: 100%;
+    width: 0%;
+    transition: width 0.3s;
+}
+
+.progress-text {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    line-height: 20px;
+    color: #fff;
+    text-align: center;
+    font-size: 14px;
+}
+
+/* モーダル */
+#modal-background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    z-index: 1000;
+}
+
+#modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #fff;
+    padding: 20px;
+    border: 1px solid #ccc;
+    z-index: 1001;
+}
+
+.modal-hidden {
+    display: none;
+}
+
+/* その他のスタイル */
+label {
+    margin-right: 10px;
+}
+
+button {
+    margin-top: 10px;
+}
+
+@media (max-width: 600px) {
+    .menu {
+        width: 100%;
+    }
+
+    #study-calendar th, #study-calendar td {
+        min-width: 80px;
+    }
+}

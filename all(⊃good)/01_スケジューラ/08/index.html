@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Study Scheduler</title>
+    <!-- フォントの読み込み -->
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Noto+Sans+JP&display=swap" rel="stylesheet">
+    <!-- CSSのリンク -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- ヘッダー -->
+    <header>
+        <div class="menu-icon" id="menu-icon">
+            &#9776;
+        </div>
+        <h1 class="title">Study Scheduler</h1>
+    </header>
+
+    <!-- ハンバーガーメニュー -->
+    <div class="sidebar" id="sidebar">
+        <div class="close-btn" id="close-btn">&times;</div>
+        <h2>教材の追加</h2>
+        <form id="course-form">
+            <label for="course-name">教材名:</label>
+            <input type="text" id="course-name" required>
+
+            <label for="problem-count">問題数:</label>
+            <input type="number" id="problem-count" required min="1">
+
+            <label for="start-date">学習期間 開始日:</label>
+            <input type="date" id="start-date" required>
+
+            <label for="end-date">学習期間 終了日:</label>
+            <input type="date" id="end-date" required>
+
+            <label>曜日指定:</label>
+            <div id="weekdays">
+                <label><input type="checkbox" value="0" checked>日</label>
+                <label><input type="checkbox" value="1" checked>月</label>
+                <label><input type="checkbox" value="2" checked>火</label>
+                <label><input type="checkbox" value="3" checked>水</label>
+                <label><input type="checkbox" value="4" checked>木</label>
+                <label><input type="checkbox" value="5" checked>金</label>
+                <label><input type="checkbox" value="6" checked>土</label>
+            </div>
+
+            <button type="submit">教材を追加</button>
+        </form>
+    </div>
+
+    <!-- メインコンテンツ -->
+    <main>
+        <!-- カレンダーUI -->
+        <div class="calendar-container">
+            <table id="calendar-table">
+                <thead>
+                    <!-- コース名が入る -->
+                </thead>
+                <tbody>
+                    <!-- 日付と割り当て問題数が入る -->
+                </tbody>
+            </table>
+        </div>
+        <!-- 保存ボタン -->
+        <button id="save-button">保存</button>
+    </main>
+
+    <!-- 完了問題数入力モーダル -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <span id="modal-close" class="modal-close">&times;</span>
+            <h2>完了した問題数を入力</h2>
+            <form id="completion-form">
+                <label for="completed-count">完了問題数:</label>
+                <input type="number" id="completed-count" required min="0">
+                <button type="submit">送信</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- スクリプトの読み込み -->
+    <script src="script.js"></script>
+</body>
+</html>

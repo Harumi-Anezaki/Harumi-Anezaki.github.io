@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Study Scheduler</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- フォントの読み込み -->
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif&family=Noto+Serif+JP&display=swap" rel="stylesheet">
+    <!-- Ionicons（ハンバーガーメニュー用） -->
+    <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+</head>
+<body>
+    <!-- ヘッダー -->
+    <header>
+        <div class="menu-icon" id="menu-icon">
+            <ion-icon name="menu"></ion-icon>
+        </div>
+        <h1>Study Scheduler</h1>
+    </header>
+
+    <!-- サイドメニュー -->
+    <nav id="sidebar">
+        <div class="close-btn" id="close-btn">&times;</div>
+        <h2>教材の追加</h2>
+        <form id="material-form">
+            <label for="material-name">教材名:</label>
+            <input type="text" id="material-name" required>
+
+            <label for="problem-count">問題数:</label>
+            <input type="number" id="problem-count" min="1" required>
+
+            <label for="date-range">学習期間:</label>
+            <input type="date" id="start-date" required> 〜
+            <input type="date" id="end-date" required>
+
+            <label>曜日指定:</label>
+            <div class="weekdays">
+                <div class="weekday-actions">
+                    <button type="button" id="select-all-weekdays">全て選択</button>
+                    <button type="button" id="clear-all-weekdays">全て解除</button>
+                </div>
+                <label><input type="checkbox" value="日">日</label>
+                <label><input type="checkbox" value="月">月</label>
+                <label><input type="checkbox" value="火">火</label>
+                <label><input type="checkbox" value="水">水</label>
+                <label><input type="checkbox" value="木">木</label>
+                <label><input type="checkbox" value="金">金</label>
+                <label><input type="checkbox" value="土">土</label>
+            </div>
+
+            <button type="submit">追加</button>
+        </form>
+    </nav>
+
+    <!-- メインコンテンツ -->
+    <main>
+        <div class="table-container">
+            <table id="schedule-table">
+                <!-- テーブルはJavaScriptで動的に生成 -->
+            </table>
+        </div>
+        <button id="save-button">保存</button>
+    </main>
+
+    <!-- 完了入力モーダル -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <span id="modal-close" class="modal-close">&times;</span>
+            <h2>完了した問題数を入力</h2>
+            <p id="modal-info"></p>
+            <input type="number" id="completed-count" min="0">
+            <button id="modal-submit">確定</button>
+        </div>
+    </div>
+
+    <!-- 教材削除モーダル -->
+    <div id="delete-modal" class="modal">
+        <div class="modal-content">
+            <span id="delete-modal-close" class="modal-close">&times;</span>
+            <h2>教材の削除</h2>
+            <p id="delete-modal-info"></p>
+            <button id="delete-modal-confirm">削除</button>
+            <button id="delete-modal-cancel">キャンセル</button>
+        </div>
+    </div>
+
+    <!-- 保存モーダル -->
+    <div id="save-modal" class="modal">
+        <div class="modal-content">
+            <span id="save-modal-close" class="modal-close">&times;</span>
+            <h2>データの保存</h2>
+            <p>データを保存しました。</p>
+            <button id="save-modal-ok">OK</button>
+        </div>
+    </div>
+
+    <!-- スクリプトの読み込み -->
+    <script src="script.js"></script>
+</body>
+</html>

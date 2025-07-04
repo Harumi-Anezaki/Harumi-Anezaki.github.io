@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Study Scheduler</title>
+    <!-- Googleフォントの読み込み -->
+    <link href="https://fonts.googleapis.com/css?family=Lobster&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Noto+Sans+JP&display=swap" rel="stylesheet">
+    <!-- CSSの読み込み -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- ヘッダー -->
+    <header>
+        <div class="hamburger-menu" id="hamburger-menu">
+            <div class="hamburger-icon" id="hamburger-icon">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+            <!-- メニューの内容 -->
+            <div class="menu" id="menu">
+                <!-- 教材追加フォーム -->
+                <h2>教材を追加</h2>
+                <form id="material-form">
+                    <label for="material-name">教材名:</label>
+                    <input type="text" id="material-name" name="material-name" required><br><br>
+
+                    <label for="problem-count">問題数:</label>
+                    <input type="number" id="problem-count" name="problem-count" required><br><br>
+
+                    <label for="start-date">開始日:</label>
+                    <input type="date" id="start-date" name="start-date" required><br><br>
+
+                    <label for="end-date">終了日:</label>
+                    <input type="date" id="end-date" name="end-date" required><br><br>
+
+                    <label for="weekdays">曜日指定:</label><br>
+                    <input type="checkbox" id="weekday-all" name="weekday-all">
+                    <label for="weekday-all">全曜日選択</label><br>
+                    <input type="checkbox" id="weekday-mon" name="weekdays" value="1">
+                    <label for="weekday-mon">月曜日</label><br>
+                    <input type="checkbox" id="weekday-tue" name="weekdays" value="2">
+                    <label for="weekday-tue">火曜日</label><br>
+                    <input type="checkbox" id="weekday-wed" name="weekdays" value="3">
+                    <label for="weekday-wed">水曜日</label><br>
+                    <input type="checkbox" id="weekday-thu" name="weekdays" value="4">
+                    <label for="weekday-thu">木曜日</label><br>
+                    <input type="checkbox" id="weekday-fri" name="weekdays" value="5">
+                    <label for="weekday-fri">金曜日</label><br>
+                    <input type="checkbox" id="weekday-sat" name="weekdays" value="6">
+                    <label for="weekday-sat">土曜日</label><br>
+                    <input type="checkbox" id="weekday-sun" name="weekdays" value="0">
+                    <label for="weekday-sun">日曜日</label><br><br>
+
+                    <button type="submit">追加</button>
+                </form>
+                <button id="save-button">保存</button>
+            </div>
+        </div>
+        <h1>Study Scheduler</h1>
+    </header>
+
+    <!-- メインコンテンツ -->
+    <main>
+        <div class="calendar-container">
+            <table id="calendar-table">
+                <!-- テーブルはJavaScriptで動的に生成 -->
+            </table>
+        </div>
+    </main>
+
+    <!-- 完了した問題数入力用のモーダル -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <span id="close-modal" class="close">&times;</span>
+            <h2>完了した問題数を入力</h2>
+            <p id="modal-material-date"></p>
+            <label for="completed-count">完了した問題数:</label>
+            <input type="number" id="completed-count" name="completed-count">
+            <button id="modal-submit">送信</button>
+        </div>
+    </div>
+
+    <!-- JavaScriptの読み込み -->
+    <script src="script.js"></script>
+</body>
+</html>

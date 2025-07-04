@@ -1,0 +1,195 @@
+body {
+    font-family: 'Noto Serif JP', serif;
+    margin: 0;
+    padding: 0;
+}
+
+.title {
+    font-family: 'Great Vibes', cursive;
+    text-align: center;
+    background-color: #f0f0f0;
+    margin: 0;
+    padding: 20px 0;
+    font-size: 48px;
+}
+
+.save-button {
+    position: fixed;
+    top: 15px;
+    right: 15px;
+    padding: 10px 20px;
+    font-size: 16px;
+}
+
+#sidebar {
+    position: fixed;
+    width: 300px;
+    height: 100%;
+    background: #333;
+    left: -300px;
+    transition: left 0.3s;
+    color: white;
+    padding: 20px;
+    box-sizing: border-box;
+    overflow-y: auto;
+    z-index: 1000;
+}
+
+#sidebar.active {
+    left: 0;
+}
+
+.toggle-btn {
+    position: fixed;
+    left: 15px;
+    top: 15px;
+    cursor: pointer;
+    z-index: 1001;
+}
+
+.toggle-btn span {
+    display: block;
+    width: 30px;
+    height: 4px;
+    background: #333;
+    margin: 5px 0;
+}
+
+.sidebar-content h2 {
+    margin-top: 0;
+}
+
+.sidebar-content input, .sidebar-content button {
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+.sidebar-content label {
+    display: block;
+    margin-bottom: 5px;
+}
+
+#曜日指定 {
+    margin-bottom: 10px;
+}
+
+.weekday-buttons {
+    margin-bottom: 10px;
+}
+
+.weekday-buttons button {
+    margin-right: 10px;
+}
+
+.weekday-checkboxes label {
+    display: inline-block;
+    margin-right: 10px;
+}
+
+.table-container {
+    margin: 80px 20px 20px 20px;
+    overflow-x: auto;
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+    min-width: 800px;
+}
+
+th, td {
+    border: 1px solid #ccc;
+    text-align: center;
+    padding: 10px;
+    min-width: 80px;
+}
+
+th {
+    background-color: #f9f9f9;
+    font-weight: normal;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+
+#fixed-header {
+    left: 0;
+    position: sticky;
+    z-index: 3;
+    background-color: #f9f9f9;
+}
+
+th:first-child, td:first-child {
+    position: sticky;
+    left: 0;
+    background-color: #fff;
+    z-index: 1;
+}
+
+td {
+    position: relative;
+}
+
+.today-cell {
+    background-color: #ffe5e5;
+}
+
+.assigned-cell {
+    background-color: #ffffe0;
+}
+
+.completed-cell {
+    background-color: #e0ffe0;
+}
+
+.completed-today-cell {
+    background-color: #c0ffc0;
+}
+
+input[type="number"] {
+    width: 60px;
+}
+
+.bar-container {
+    width: 100%;
+    background-color: #ccc;
+    height: 20px;
+    position: relative;
+    margin-top: 5px;
+}
+
+.progress-bar {
+    background-color: green;
+    height: 100%;
+    width: 0%;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.4);
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 15% auto;
+    padding: 20px;
+    width: 300px;
+    position: relative;
+}
+
+.close {
+    color: #aaa;
+    position: absolute;
+    right: 15px;
+    top: 10px;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}

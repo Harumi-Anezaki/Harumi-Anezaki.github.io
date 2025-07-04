@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Study Scheduler</title>
+    <!-- フォントの読み込み -->
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Noto+Serif&family=Noto+Serif+JP&display=swap" rel="stylesheet">
+    <!-- CSSの読み込み -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- ヘッダー -->
+    <header>
+        <h1>Study Scheduler</h1>
+        <!-- ハンバーガーメニュー -->
+        <input type="checkbox" id="menu-toggle">
+        <label for="menu-toggle" class="menu-icon">&#9776;</label>
+        <nav class="menu">
+            <h2>教材を追加</h2>
+            <form id="material-form">
+                <label for="material-name">教材名：</label>
+                <input type="text" id="material-name" required><br>
+
+                <label for="problem-count">問題数：</label>
+                <input type="number" id="problem-count" required><br>
+
+                <label for="start-date">学習期間：</label>
+                <input type="date" id="start-date" required> 〜 
+                <input type="date" id="end-date" required><br>
+
+                <label for="weekdays">曜日指定：</label><br>
+                <input type="checkbox" id="mon" value="月"><label for="mon">月</label>
+                <input type="checkbox" id="tue" value="火"><label for="tue">火</label>
+                <input type="checkbox" id="wed" value="水"><label for="wed">水</label>
+                <input type="checkbox" id="thu" value="木"><label for="thu">木</label>
+                <input type="checkbox" id="fri" value="金"><label for="fri">金</label>
+                <input type="checkbox" id="sat" value="土"><label for="sat">土</label>
+                <input type="checkbox" id="sun" value="日"><label for="sun">日</label><br>
+
+                <button type="submit">追加</button>
+            </form>
+        </nav>
+    </header>
+
+    <!-- メインコンテンツ -->
+    <main>
+        <!-- カレンダーUI -->
+        <div class="calendar-container">
+            <table id="study-calendar">
+                <!-- 動的に生成される -->
+            </table>
+        </div>
+    </main>
+
+    <!-- モーダル -->
+    <div id="modal-background" class="modal-hidden"></div>
+    <div id="modal" class="modal-hidden">
+        <div id="modal-content">
+            <!-- 動的に生成される -->
+        </div>
+    </div>
+
+    <!-- JavaScriptの読み込み -->
+    <script src="script.js"></script>
+</body>
+</html>
