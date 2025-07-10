@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentTyped = null;
 
     // 【非常に危険】APIキーをここに直接記述しないでください！
-    const geminiApiKey = 'AIzaSyB03GJSLQsPg6wsNkeV5Qcb1nE1ZSwbC84'; // あなたのGemini APIキーに置き換えてください
+    const geminiApiKey = ''; // あなたのGemini APIキーに置き換えてください
 
     // Gemini APIにリクエストを送信する関数
     async function sendMessageToGemini(message) {
