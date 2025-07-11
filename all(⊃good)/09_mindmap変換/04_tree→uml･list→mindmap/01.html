@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>TREE→UML→mindmap</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>TREE→UML→mindmap</h1>
+        <div class="template-area">
+            <div class="template-box">
+                <textarea id="template1" readonly>
+「」についてplantumlのマインドマップ形式ですごく非常に詳細に出力｡
+空白行を作らないこと｡
+
+# 出力例
+@startmindmap
+* 就活
+** 1. 準備段階
+*** 自己分析
+**** 強み・弱み・価値観・適性の把握
+*** 業界・企業研究
+**** 業界動向・企業情報収集
+***** (HP, 説明会, OB/OG訪問, インターン等)
+*** キャリアプランニング
+**** 目標設定・必要スキル確認
+** 2. 企業探し・情報収集
+*** 情報源の活用
+**** 就活サイト, 大学キャリアセンター, 説明会, インターン等
+*** 企業選びの軸設定
+**** (業種, 職種, 規模, 待遇, 社風, 働き方等)
+*** 情報整理と比較検討
+** 3. 応募・選考
+*** 応募書類作成
+**** ES (自己PR, ガクチカ, 志望動機)
+**** 履歴書
+*** 筆記試験・Webテスト対策
+**** (SPI, 玉手箱等)
+*** 面接対策
+**** 形式 (個人, 集団, GD, オンライン等)
+**** 想定問答・逆質問準備
+**** マナー・模擬面接
+*** その他選考
+**** (適性検査, 小論文等)
+** 4. 内定・入社準備
+*** 内定
+**** 通知確認・承諾/辞退
+**** オファー面談 (条件確認)
+*** 入社準備
+**** 手続き・卒業準備
+**** 新生活準備
+** 5. その他
+*** メンタルヘルスケア
+*** 服装・身だしなみ
+*** スケジュール管理
+*** 周囲との連携 (相談・情報交換)
+*** 就活サービス活用 (エージェント等)
+*** キャリア観の深化
+@endmindmap
+                </textarea>
+                <button id="copyTemplate1">コピー</button>
+            </div>
+            <div class="template-box">
+                <textarea id="template2" readonly>よりすごく非常に詳細にして。</textarea>
+                <button id="copyTemplate2">コピー</button>
+            </div>
+        </div>
+        <div class="input-area">
+            <textarea id="treeInput" placeholder="TREEを入力して下さい..."></textarea>
+            <textarea id="umlInput" placeholder="UMLを入力してください..."></textarea>
+        </div>
+        <div class="button-area">
+            <button id="convertButton">tree→uml</button>
+            <button id="copyButton">umlをコピー</button>
+            <button id="generateButton">uml→mindmap</button>
+            <button id="saveSvgButton" disabled>SVG</button>
+            <button id="saveJpgButton" disabled>JPG</button>
+        </div>
+        <div class="output-area">
+            <div id="mindMap"></div>
+        </div>
+    </div>
+</body>
+
+
+<style>
+@font-face {
+    font-family: 'Roboto';
+    src: url('fonts/Roboto-Regular.ttf') format('truetype');
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    background: #ffffff;
+    font-family: 'Roboto', sans-serif;
+    color: #fff;
+}
+
+.container {
+    width: 90%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding-top: 30px;
+    text-align: center;
+}
+
+h1 {
+    font-weight: 500;
+    margin-bottom: 20px;
+    color: #000000;
+}
+
+.template-area {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 20px;
+}
+
+.template-box {
+    width: 45%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#template1, #template2 {
+    width: 100%;
+    height: 60px;
+    padding: 10px;
+    margin-bottom: 10px;
+    border: none;
+    border-radius: 10px;
+    background: #f5f5f5;
+    color: #000000;
+    font-size: 14px;
+    resize: none;
+    outline: none;
+}
+
+.input-area {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 20px;
+}
+
+#treeInput, #umlInput {
+    width: 45%;
+    height: 200px;
+    padding: 15px;
+    border: none;
+    border-radius: 10px;
+    background: #e8e8e8;
+    color: #000000;
+    font-size: 16px;
+    resize: none;
+    outline: none;
+}
+
+.button-area {
+    margin-top: 10px;
+}
+
+button {
+    margin: 10px 5px;
+    padding: 12px 25px;
+    border: none;
+    border-radius: 50px;
+    background: #6dd5ed;
+    background: #2196f3;
+    color: #fff;
+    font-size: 16px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+button:disabled {
+    background: #555;
+    cursor: not-allowed;
+}
+
+button:hover:not(:disabled) {
+    transform: scale(1.05);
+}
+
+.output-area {
+    margin-top: 30px;
+    overflow-x: auto;
+}
+
+#mindMap {
+    display: inline-block;
+    margin-top: 20px;
+}
+
+.error-message {
+    color: #ff6b6b;
+    margin-top: 10px;
+}
+
+.loading {
+    display: inline-block;
+    margin-left: 10px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #6dd5ed;
+    border-radius: 50%;
+    width: 15px;
+    height: 15px;
+    animation: spin 1s linear infinite;
+    vertical-align: middle;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+</style>
+
+
+<script>
+document.getElementById('copyTemplate1').addEventListener('click', function() {
+    const template = document.getElementById('template1');
+    template.select();
+    template.setSelectionRange(0, 99999);
+    document.execCommand('copy');
+    alert('テンプレート1をクリップボードにコピーしました。');
+});
+
+document.getElementById('copyTemplate2').addEventListener('click', function() {
+    const template = document.getElementById('template2');
+    template.select();
+    template.setSelectionRange(0, 99999);
+    document.execCommand('copy');
+    alert('テンプレート2をクリップボードにコピーしました。');
+});
+
+document.getElementById('convertButton').addEventListener('click', function() {
+    const treeInput = document.getElementById('treeInput').value;
+    const plantUmlOutput = convertTreeToPlantUml(treeInput);
+    document.getElementById('umlInput').value = plantUmlOutput;
+});
+
+document.getElementById('copyButton').addEventListener('click', function() {
+    const output = document.getElementById('umlInput');
+    output.select();
+    output.setSelectionRange(0, 99999); // モバイルデバイス対応
+    document.execCommand('copy');
+    alert('出力をクリップボードにコピーしました。');
+});
+
+function convertTreeToPlantUml(treeText) {
+    const lines = treeText.split('\n');
+    let result = '@startmindmap\n';
+    const stack = [];
+    const indentStack = [];
+
+    for (let line of lines) {
+        // 空行をスキップ
+        if (!line.trim()) continue;
+
+        // 特殊文字とスペースを除去してテキストを取得
+        const contentMatch = line.match(/([^\s│├─└─]+.*)$/);
+        if (!contentMatch) continue;
+        const content = contentMatch[1].trim();
+
+        // 行頭の特殊文字とスペースをカウントしてインデントレベルを計算
+        const indentMatch = line.match(/^(\s*(?:│|\s|├─|└─)*)/);
+        const indentStr = indentMatch ? indentMatch[1] : '';
+        // インデントレベルを計算（4文字ごとに1レベルと仮定）
+        const indentLevel = (indentStr.replace(/├─|└─|│/g, '    ').length) / 4;
+
+        // スタックの調整
+        while (indentStack.length > 0 && indentStack[indentStack.length - 1] >= indentLevel) {
+            indentStack.pop();
+            stack.pop();
+        }
+
+        indentStack.push(indentLevel);
+        stack.push(content);
+
+        // アスタリスクの数はスタックの長さ
+        const asterisks = '*'.repeat(indentStack.length);
+
+        result += `${asterisks} ${content}\n`;
+    }
+
+    result += '@endmindmap';
+    return result;
+}
+</script>
+
+
+<script>
+/**
+ * 入力テキストを解析し、アスタリスク形式に統一する前処理関数。
+ * - アスタリスク形式の場合はそのまま返す。
+ * - インデント形式の場合はアスタリスク形式に変換する。
+ * - @startmindmap/@endmindmap は無視する。
+ */
+function preprocessAndUnifyInput(text) {
+    let lines = text.split(/\r?\n/);
+
+    // @startmindmap, @endmindmap, 空行を除去
+    lines = lines.filter(line => {
+        const trimmedLine = line.trim();
+        return trimmedLine !== '' && trimmedLine !== '@startmindmap' && trimmedLine !== '@endmindmap';
+    });
+
+    if (lines.length === 0) return '';
+
+    // 最初の行がアスタリスクで始まっていれば、既存の形式とみなし、そのまま結合して返す
+    if (lines[0].trim().startsWith('*')) {
+        return lines.join('\n');
+    }
+
+    // インデント形式をアスタリスク形式に変換
+    let convertedText = '';
+    const indentLevels = new Map(); // インデントの深さとレベルをマッピング
+    let levelCounter = 1;
+
+    for (const line of lines) {
+        const indent = line.match(/^\s*/)[0].length;
+        const content = line.trim().replace(/^- /, ''); // 先頭の "- " を除去
+
+        if (!indentLevels.has(indent)) {
+            // 新しいインデントレベルを発見した場合、レベルを割り当てる
+            // 既存のレベルをソートし、適切な位置に挿入
+            const sortedIndents = Array.from(indentLevels.keys()).sort((a, b) => a - b);
+            let assignedLevel = 1;
+            for (const sortedIndent of sortedIndents) {
+                if (indent > sortedIndent) {
+                    assignedLevel = indentLevels.get(sortedIndent) + 1;
+                }
+            }
+            indentLevels.set(indent, assignedLevel);
+        }
+        
+        const level = indentLevels.get(indent);
+        convertedText += '*'.repeat(level) + ' ' + content + '\n';
+    }
+    return convertedText;
+}
+// メイン処理開始
+document.getElementById('generateButton').addEventListener('click', function() {
+  const rawUmlText = document.getElementById('umlInput').value;
+  const umlText = preprocessAndUnifyInput(rawUmlText); // ★★★ ここで前処理を呼び出す ★★★
+  const mindMapArea = document.getElementById('mindMap');
+  const saveSvgButton = document.getElementById('saveSvgButton');
+  const saveJpgButton = document.getElementById('saveJpgButton');
+  const generateButton = document.getElementById('generateButton');
+
+  // エラーメッセージのクリア
+  clearErrorMessage();
+
+  if (umlText.trim() === '') {
+    displayErrorMessage('UMLテキストが入力されていません。');
+    return;
+  }
+
+  // ボタンの無効化とローディング表示
+  generateButton.disabled = true;
+  showLoadingIndicator(generateButton);
+
+  // テキスト解析とマインドマップ生成
+  try {
+    const nodes = parseUmlText(umlText);
+    const treeData = buildTree(nodes);
+    const svgElement = drawMindMap(treeData);
+
+    // 以前のマインドマップをクリアして新しいものを表示
+    mindMapArea.innerHTML = '';
+    mindMapArea.appendChild(svgElement);
+
+    // 保存ボタンを有効化
+    saveSvgButton.disabled = false;
+    saveJpgButton.disabled = false;
+
+    // SVG保存機能
+    saveSvgButton.onclick = function() {
+      saveSvg(svgElement);
+    };
+
+    // JPG保存機能
+    saveJpgButton.onclick = function() {
+      saveJpg(svgElement);
+    };
+
+  } catch (error) {
+    displayErrorMessage('エラーが発生しました: ' + error.message);
+    console.error(error);
+  } finally {
+    // ボタンの有効化とローディング非表示
+    generateButton.disabled = false;
+    hideLoadingIndicator(generateButton);
+  }
+});
+
+// エラーメッセージの表示
+function displayErrorMessage(message) {
+  let errorElem = document.querySelector('.error-message');
+  if (!errorElem) {
+    errorElem = document.createElement('div');
+    errorElem.classList.add('error-message');
+    document.querySelector('.input-area').appendChild(errorElem);
+  }
+  errorElem.textContent = message;
+}
+
+// エラーメッセージのクリア
+function clearErrorMessage() {
+  const errorElem = document.querySelector('.error-message');
+  if (errorElem) {
+    errorElem.remove();
+  }
+}
+
+// ローディングインジケータの表示
+function showLoadingIndicator(button) {
+  let loading = document.createElement('span');
+  loading.classList.add('loading');
+  button.parentNode.insertBefore(loading, button.nextSibling);
+}
+
+// ローディングインジケータの非表示
+function hideLoadingIndicator(button) {
+  const loading = document.querySelector('.loading');
+  if (loading) {
+    loading.remove();
+  }
+}
+
+// UMLテキストの解析
+function parseUmlText(umlText) {
+  let lines = umlText.split(/\r?\n/);
+
+  // 開始・終了タグの除去
+  if (lines[0].trim() === '@startmindmap') {
+    lines.shift();
+  }
+  if (lines[lines.length - 1].trim() === '@endmindmap') {
+    lines.pop();
+  }
+
+  // 空白行の除去
+  lines = lines.filter(line => line.trim() !== '');
+
+  // ノードリストの生成
+  let nodes = [];
+  let idCounter = 0;
+
+  lines.forEach(line => {
+    const levelMatch = line.match(/^\*+/);
+    if (!levelMatch) {
+      throw new Error('ノードのレベルを示すアスタリスクがありません: ' + line);
+    }
+
+    const level = levelMatch[0].length;
+    const name = line.replace(/^\*+/, '').trim();
+    const node = {
+      id: idCounter++,
+      name: name,
+      level: level,
+      parentId: null,
+      children: [],
+      width: 0,
+      height: 0,
+      x: 0,
+      y: 0
+    };
+    nodes.push(node);
+  });
+
+  return nodes;
+}
+
+// ノード間の親子関係の構築
+function buildTree(nodes) {
+    if (nodes.length === 0) return null;
+
+    // 仮想的なルートノードを作成。レベルは0とする。
+    const virtualRoot = {
+        id: -1,
+        name: 'virtualRoot',
+        level: 0, // 最上位レベル
+        parentId: null,
+        children: [],
+        width: 0, height: 0, x: 0, y: 0
+    };
+
+    // スタックの最初に仮想ルートを入れておく
+    let stack = [virtualRoot];
+
+    nodes.forEach(node => {
+        // 現在のノードのレベルに応じて、親が見つかるまでスタックを遡る
+        while (stack.length > 1 && stack[stack.length - 1].level >= node.level) {
+            stack.pop();
+        }
+
+        // この時点でスタックのトップが親になる
+        const parent = stack[stack.length - 1];
+        node.parentId = parent.id;
+        parent.children.push(node);
+        
+        // 現在のノードをスタックに追加
+        stack.push(node);
+    });
+
+    return virtualRoot; // 常に仮想ルートを返す
+}
+
+// ノードサイズと位置の計算
+function calculateNodePositions(node, ctx, config) {
+  // テキスト幅の計測
+  ctx.font = `${config.fontSize}px ${config.fontFamily}`;
+  const textMetrics = ctx.measureText(node.name);
+  node.width = textMetrics.width + config.nodePadding * 2;
+  node.height = config.fontSize + config.nodePadding * 2;
+
+  // 子ノードの処理
+  if (node.children.length > 0) {
+    node.children.forEach(child => {
+      calculateNodePositions(child, ctx, config);
+    });
+
+    // 子ノードの高さ合計
+    const totalHeight = node.children.reduce((sum, child) => sum + child.height + config.verticalGap, -config.verticalGap);
+    node.height = Math.max(node.height, totalHeight);
+  }
+}
+
+// ノード位置の計算（座標設定）
+function setNodeCoordinates(node, x, y, config) {
+  node.x = x;
+  if (node.children.length === 0) {
+    node.y = y;
+  } else {
+    let childY = y;
+    node.children.forEach(child => {
+      setNodeCoordinates(child, x + node.width + config.horizontalGap, childY, config);
+      childY += child.height + config.verticalGap;
+    });
+    // 親ノードのY座標を子ノードの中央に
+    const firstChild = node.children[0];
+    const lastChild = node.children[node.children.length - 1];
+    node.y = (firstChild.y + lastChild.y + lastChild.height) / 2 - node.height / 2;
+  }
+}
+
+// マインドマップの描画
+function drawMindMap(virtualRootNode) {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+
+    const config = {
+        fontSize: 14,
+        fontFamily: 'Roboto, sans-serif',
+        nodePadding: 10,
+        horizontalGap: 50,
+        verticalGap: 3,
+        nodeMinWidth: 30,
+        nodeMinHeight: 30,
+        nodeCornerRadius: 5,
+        nodeFillColor: '#e8e8e8',
+        nodeStrokeColor: '#000000',
+        nodeTextColor: '#000000',
+        lineColor: '#000000',
+        lineWidth: 2,
+        treeGap: 100 // ★★★ 複数のツリー間のギャップを追加 ★★★
+    };
+
+    if (!virtualRootNode || virtualRootNode.children.length === 0) {
+        const emptySvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        emptySvg.setAttribute('width', '0');
+        emptySvg.setAttribute('height', '0');
+        return emptySvg;
+    }
+
+    // --- 複数ツリーのレイアウト計算 ---
+    const actualRoots = virtualRootNode.children;
+    let currentX = 0;
+    let maxTreeHeight = 0;
+
+    actualRoots.forEach(root => {
+        calculateNodePositions(root, ctx, config);
+        setNodeCoordinates(root, currentX, 0, config);
+
+        const treeWidth = getMaxX(root) - currentX;
+        const treeHeight = getMaxY(root);
+
+        currentX += treeWidth + config.treeGap;
+        if (treeHeight > maxTreeHeight) {
+            maxTreeHeight = treeHeight;
+        }
+    });
+
+    const svgWidth = currentX - config.treeGap; // 最後のギャップは不要
+    const svgHeight = maxTreeHeight;
+
+    // --- SVG要素の作成 ---
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('width', svgWidth);
+    svg.setAttribute('height', svgHeight);
+    svg.setAttribute('viewBox', `0 0 ${svgWidth} ${svgHeight}`);
+
+    const defs = document.createElementNS(svgNS, 'defs');
+    const style = document.createElementNS(svgNS, 'style');
+    style.textContent = `
+    .node-rect { fill: ${config.nodeFillColor}; stroke: ${config.nodeStrokeColor}; stroke-width: 1; }
+    .node-text { fill: ${config.nodeTextColor}; font-size: ${config.fontSize}px; font-family: ${config.fontFamily}; text-anchor: middle; dominant-baseline: middle; }
+    .link-line { stroke: ${config.lineColor}; stroke-width: ${config.lineWidth}; fill: none; }
+    `;
+    defs.appendChild(style);
+    svg.appendChild(defs);
+
+    // --- ノードと線の描画 ---
+    const allNodes = [];
+    actualRoots.forEach(root => {
+        traverseNodes(root, node => allNodes.push(node));
+    });
+
+    // 線の描画
+    allNodes.forEach(node => {
+        // 親が仮想ルートでない場合のみ線を描画
+        if (node.parentId !== null && node.parentId !== -1) {
+            const parentNode = allNodes.find(n => n.id === node.parentId);
+            if (!parentNode) return;
+
+            const path = document.createElementNS(svgNS, 'path');
+            path.setAttribute('class', 'link-line');
+            
+            const startX = node.x;
+            const startY = node.y + node.height / 2;
+            const parentX = parentNode.x + parentNode.width;
+            const parentY = parentNode.y + parentNode.height / 2;
+            const midX1 = parentX + config.horizontalGap / 2;
+            const midX2 = startX - config.horizontalGap / 2;
+
+            const d = `M ${parentX} ${parentY} C ${midX1} ${parentY} ${midX2} ${startY} ${startX} ${startY}`;
+            path.setAttribute('d', d);
+            svg.appendChild(path);
+        }
+    });
+
+    // ノードの描画
+    allNodes.forEach(node => {
+        const group = document.createElementNS(svgNS, 'g');
+        const rect = document.createElementNS(svgNS, 'rect');
+        rect.setAttribute('class', 'node-rect');
+        rect.setAttribute('x', node.x);
+        rect.setAttribute('y', node.y);
+        rect.setAttribute('width', node.width);
+        rect.setAttribute('height', node.height);
+        rect.setAttribute('rx', config.nodeCornerRadius);
+        group.appendChild(rect);
+
+        const text = document.createElementNS(svgNS, 'text');
+        text.setAttribute('class', 'node-text');
+        text.setAttribute('x', node.x + node.width / 2);
+        text.setAttribute('y', node.y + node.height / 2);
+        text.textContent = node.name;
+        group.appendChild(text);
+
+        svg.appendChild(group);
+    });
+
+    return svg;
+}
+
+// ノードの巡回
+function traverseNodes(node, callback) {
+  callback(node);
+  node.children.forEach(child => {
+    traverseNodes(child, callback);
+  });
+}
+
+// 最大X座標の取得
+function getMaxX(node) {
+  let maxX = node.x + node.width;
+  node.children.forEach(child => {
+    const childMaxX = getMaxX(child);
+    if (childMaxX > maxX) {
+      maxX = childMaxX;
+    }
+  });
+  return maxX;
+}
+
+// 最大Y座標の取得
+function getMaxY(node) {
+  let maxY = node.y + node.height;
+  node.children.forEach(child => {
+    const childMaxY = getMaxY(child);
+    if (childMaxY > maxY) {
+      maxY = childMaxY;
+    }
+  });
+  return maxY;
+}
+
+// SVGの保存
+function saveSvg(svgElement) {
+  const serializer = new XMLSerializer();
+  let source = serializer.serializeToString(svgElement);
+
+  // 名前空間の追加
+  if (!source.match(/^<svg[^>]+xmlns="http:\/\/www\.w3\.org\/2000\/svg"/)) {
+    source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
+  }
+
+  // スタイルのインライン化は既に行っています
+
+  const blob = new Blob([source], { type: 'image/svg+xml;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+
+  // ダウンロードリンクの作成とクリック
+  const downloadLink = document.createElement('a');
+  downloadLink.href = url;
+  downloadLink.download = 'mindmap.svg';
+  document.body.appendChild(downloadLink);
+  downloadLink.click();
+  document.body.removeChild(downloadLink);
+}
+
+// JPGの保存
+function saveJpg(svgElement) {
+  const svgString = new XMLSerializer().serializeToString(svgElement);
+  const svgData = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgString)));
+
+  const img = new Image();
+  img.src = svgData;
+
+  img.onload = function() {
+    const canvas = document.createElement('canvas');
+    canvas.width = svgElement.getAttribute('width');
+    canvas.height = svgElement.getAttribute('height');
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0);
+
+    // ダウンロードリンクの作成とクリック
+    canvas.toBlob(function(blob) {
+      const url = URL.createObjectURL(blob);
+      const downloadLink = document.createElement('a');
+      downloadLink.href = url;
+      downloadLink.download = 'mindmap.jpg';
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+    }, 'image/jpeg', 1.0);
+  };
+
+  img.onerror = function() {
+    displayErrorMessage('JPGの生成に失敗しました。');
+  };
+}
+
+</script>
+
+</html>

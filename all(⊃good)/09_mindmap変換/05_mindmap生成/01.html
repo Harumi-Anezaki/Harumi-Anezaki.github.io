@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>01</title>
+</head>
+<body>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GUIマインドマップエディタ</title>
+    <style>
+        :root {
+            --border-color: #ccc;
+            --toolbar-bg: #f4f4f4;
+            --button-bg: #e0e0e0;
+            --button-hover-bg: #d0d0d0;
+            --font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        body {
+            font-family: var(--font-family);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background-color: #f9f9f9;
+        }
+        header {
+            padding: 10px 20px;
+            background-color: #fff;
+            border-bottom: 1px solid var(--border-color);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        h1 {
+            margin: 0;
+            font-size: 1.5em;
+            color: #333;
+        }
+        .container {
+            display: flex;
+            flex-grow: 1;
+            overflow: hidden;
+        }
+        .editor-pane, .viewer-pane {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        .editor-pane {
+            border-right: 1px solid var(--border-color);
+        }
+        .toolbar {
+            padding: 8px;
+            background-color: var(--toolbar-bg);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .toolbar button {
+            font-family: var(--font-family);
+            padding: 6px 12px;
+            border: 1px solid #bbb;
+            border-radius: 4px;
+            background-color: var(--button-bg);
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .toolbar button:hover {
+            background-color: var(--button-hover-bg);
+        }
+        .toolbar label {
+            font-size: 14px;
+            margin-left: 10px;
+        }
+        #editor {
+            flex-grow: 1;
+            border: none;
+            padding: 15px;
+            font-family: "SF Mono", "Fira Code", "Fira Mono", "Roboto Mono", monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            resize: none;
+            outline: none;
+        }
+        #markmap-container {
+            flex-grow: 1;
+            width: 100%;
+            height: 100%;
+        }
+        .instructions {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 5px;
+        }
+    </style>
+    <!-- MarkmapのライブラリをCDNから読み込み -->
+    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+    <script src="https://cdn.jsdelivr.net/npm/markmap-view@0.15.4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/markmap-lib@0.15.4"></script>
+</head>
+<body>
+
+    <header>
+        <h1>GUIマインドマップエディタ</h1>
+        <p class="instructions">左のテキストエリアを編集すると、右側のマインドマップがリアルタイムで更新されます。ツールバーのボタンで編集を補助できます。</p>
+    </header>
+
+    <div class="container">
+        <div class="editor-pane">
+            <div class="toolbar">
+                <button id="addNodeBtn">子ノード追加</button>
+                <button id="addSiblingBtn">兄弟ノード追加</button>
+                <button id="indentBtn">インデント (階層下げ)</button>
+                <button id="outdentBtn">アウトデント (階層上げ)</button>
+                <button id="deleteNodeBtn">ノード削除</button>
+            </div>
+            <textarea id="editor"></textarea>
+        </div>
+        <div class="viewer-pane">
+            <svg id="markmap-container"></svg>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const { Markmap, Transformer } = window.markmap;
+            const transformer = new Transformer();
+            const editor = document.getElementById('editor');
+            const markmapContainer = document.getElementById('markmap-container');
+
+            // 初期データ (提供されたHTMLの例を参考に作成)
+            const initialValue = `# My super title
+
+## 💡 Debian
+- **🌐 Ubuntu**
+  - Linux Mint
+  - Kubuntu
+  - Lubuntu
+  - ~~KDE Neon~~
+- **📊 LMDE**
+- **💓 SolydXK**
+- **👥 SteamOS**
+- **⭐ Raspbian**
+  - ~~Raspmbc~~ => OSMC
+  - ~~Raspyfi~~ => Volumio
+
+## 📝 Creole記法
+- **太字**
+- *イタリック*
+- \`\`monospace\`\`
+- ~~取り消し線~~
+- __下線__
+- <mark>ハイライト</mark>
+- リンク [PlantUML](https://plantuml.com)
+
+## 🎨 色とスタイル
+- <span style="color:red">赤色のテキスト</span>
+- <span style="background:lightgreen">緑の背景</span>
+`;
+
+            editor.value = initialValue;
+            let markmap;
+
+            // テキストエリアの内容からMarkmapを更新する関数
+            function updateMarkmap() {
+                const { root, features } = transformer.transform(editor.value);
+                if (markmap) {
+                    markmap.setData(root);
+                } else {
+                    markmap = Markmap.create(markmapContainer, { autoFit: true }, root);
+                }
+            }
+
+            // テキストエリアの入力イベントでMarkmapを更新
+            editor.addEventListener('input', updateMarkmap);
+
+            // 初期表示
+            updateMarkmap();
+
+            // --- ツールバーの機能 ---
+
+            // 現在のカーソル行を取得するヘルパー関数
+            function getCurrentLineInfo() {
+                const text = editor.value;
+                const pos = editor.selectionStart;
+                const textToCursor = text.substring(0, pos);
+                const lines = textToCursor.split('\n');
+                const currentLineNumber = lines.length - 1;
+                const currentLine = editor.value.split('\n')[currentLineNumber];
+                return {
+                    lineNumber: currentLineNumber,
+                    lineContent: currentLine,
+                    lines: editor.value.split('\n')
+                };
+            }
+
+            // テキストエリアを更新して再描画するヘルパー関数
+            function updateEditorAndMarkmap(newLines, newCursorLine) {
+                editor.value = newLines.join('\n');
+                // カーソル位置を再設定
+                const newPos = newLines.slice(0, newCursorLine).join('\n').length + (newCursorLine > 0 ? 1 : 0);
+                editor.focus();
+                editor.setSelectionRange(newPos, newPos);
+                updateMarkmap();
+            }
+
+            // 子ノードを追加
+            document.getElementById('addNodeBtn').addEventListener('click', () => {
+                const { lineNumber, lineContent, lines } = getCurrentLineInfo();
+                const indentMatch = lineContent.match(/^(\s*)/);
+                const currentIndent = indentMatch ? indentMatch[1] : '';
+                const newIndent = currentIndent + '  '; // 2スペースインデント
+                const newNodeText = `${newIndent}- 新規ノード`;
+                
+                lines.splice(lineNumber + 1, 0, newNodeText);
+                updateEditorAndMarkmap(lines, lineNumber + 1);
+            });
+
+            // 兄弟ノードを追加
+            document.getElementById('addSiblingBtn').addEventListener('click', () => {
+                const { lineNumber, lineContent, lines } = getCurrentLineInfo();
+                const indentMatch = lineContent.match(/^(\s*)/);
+                const currentIndent = indentMatch ? indentMatch[1] : '';
+                const newNodeText = `${currentIndent}- 新規ノード`;
+
+                lines.splice(lineNumber + 1, 0, newNodeText);
+                updateEditorAndMarkmap(lines, lineNumber + 1);
+            });
+
+            // インデント
+            document.getElementById('indentBtn').addEventListener('click', () => {
+                const { lineNumber, lineContent, lines } = getCurrentLineInfo();
+                if (lineContent.trim() !== '') {
+                    lines[lineNumber] = '  ' + lineContent;
+                    updateEditorAndMarkmap(lines, lineNumber);
+                }
+            });
+
+            // アウトデント
+            document.getElementById('outdentBtn').addEventListener('click', () => {
+                const { lineNumber, lineContent, lines } = getCurrentLineInfo();
+                if (lineContent.startsWith('  ')) {
+                    lines[lineNumber] = lineContent.substring(2);
+                    updateEditorAndMarkmap(lines, lineNumber);
+                }
+            });
+
+            // ノード削除
+            document.getElementById('deleteNodeBtn').addEventListener('click', () => {
+                const { lineNumber, lines } = getCurrentLineInfo();
+                if (lines.length > 1) {
+                    lines.splice(lineNumber, 1);
+                    const newCursorLine = Math.max(0, lineNumber - 1);
+                    updateEditorAndMarkmap(lines, newCursorLine);
+                }
+            });
+        });
+    </script>
+</body>
+</html>
+</body>
+</html>

@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>TREE→UML→mindmap</title>
+    <!-- Tailwind CSSの導入 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans">
+    <div class="container max-w-6xl mx-auto p-4 sm:p-8">
+        <h1 class="text-3xl sm:text-4xl font-bold text-center text-slate-700 mb-8">TREE / List → Mind Map</h1>
+        
+        <!-- Template Area -->
+        <div class="template-area grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div class="template-box bg-white p-4 rounded-lg shadow-sm border border-slate-200">
+                <textarea id="template1" readonly class="w-full h-24 p-3 text-xs text-slate-600 bg-slate-50 rounded-md border border-slate-300 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500">
+「」についてplantumlのマインドマップ形式ですごく非常に詳細に出力｡
+空白行を作らないこと｡
+
+# 出力例
+@startmindmap
+* 就活
+** 1. 準備段階
+*** 自己分析
+**** 強み・弱み・価値観・適性の把握
+*** 業界・企業研究
+**** 業界動向・企業情報収集
+***** (HP, 説明会, OB/OG訪問, インターン等)
+*** キャリアプランニング
+**** 目標設定・必要スキル確認
+** 2. 企業探し・情報収集
+*** 情報源の活用
+**** 就活サイト, 大学キャリアセンター, 説明会, インターン等
+*** 企業選びの軸設定
+**** (業種, 職種, 規模, 待遇, 社風, 働き方等)
+*** 情報整理と比較検討
+** 3. 応募・選考
+*** 応募書類作成
+**** ES (自己PR, ガクチカ, 志望動機)
+**** 履歴書
+*** 筆記試験・Webテスト対策
+**** (SPI, 玉手箱等)
+*** 面接対策
+**** 形式 (個人, 集団, GD, オンライン等)
+**** 想定問答・逆質問準備
+**** マナー・模擬面接
+*** その他選考
+**** (適性検査, 小論文等)
+** 4. 内定・入社準備
+*** 内定
+**** 通知確認・承諾/辞退
+**** オファー面談 (条件確認)
+*** 入社準備
+**** 手続き・卒業準備
+**** 新生活準備
+** 5. その他
+*** メンタルヘルスケア
+*** 服装・身だしなみ
+*** スケジュール管理
+*** 周囲との連携 (相談・情報交換)
+*** 就活サービス活用 (エージェント等)
+*** キャリア観の深化
+@endmindmap
+                
+                </textarea>
+                <button id="copyTemplate1" class="mt-3 w-full px-4 py-2 text-sm font-semibold text-white bg-slate-600 rounded-md hover:bg-slate-700 transition-colors">テンプレート1をコピー</button>
+            </div>
+            <div class="template-box bg-white p-4 rounded-lg shadow-sm border border-slate-200">
+                <textarea id="template2" readonly class="w-full h-24 p-3 text-xs text-slate-600 bg-slate-50 rounded-md border border-slate-300 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500">よりすごく非常に詳細にして。</textarea>
+                <button id="copyTemplate2" class="mt-3 w-full px-4 py-2 text-sm font-semibold text-white bg-slate-600 rounded-md hover:bg-slate-700 transition-colors">テンプレート2をコピー</button>
+            </div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="input-area grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <textarea id="treeInput" placeholder="TREE形式のテキストを入力..." class="w-full h-64 p-4 text-base bg-white rounded-lg shadow-sm border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"></textarea>
+            <textarea id="umlInput" placeholder="UML / リスト形式のテキストを入力..." class="w-full h-64 p-4 text-base bg-white rounded-lg shadow-sm border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"></textarea>
+        </div>
+
+        <!-- Button Area -->
+        <div class="button-area flex justify-center items-center gap-3 sm:gap-4 flex-wrap mb-8">
+            <button id="convertButton" class="px-5 py-2.5 font-semibold text-white bg-indigo-600 rounded-full hover:bg-indigo-700 transition-all duration-300 shadow-md hover:shadow-lg transform hover:scale-105">tree → uml</button>
+            <button id="copyButton" class="px-5 py-2.5 font-semibold text-white bg-gray-500 rounded-full hover:bg-gray-600 transition-all duration-300 shadow-md hover:shadow-lg transform hover:scale-105">umlをコピー</button>
+            <button id="generateButton" class="px-8 py-3 font-bold text-lg text-white bg-blue-600 rounded-full hover:bg-blue-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center justify-center">
+                <span>mindmap生成</span>
+            </button>
+            <button id="saveSvgButton" disabled class="px-5 py-2.5 font-semibold text-white bg-green-600 rounded-full transition-all duration-300 shadow-md disabled:bg-slate-400 disabled:cursor-not-allowed disabled:scale-100 hover:enabled:bg-green-700 hover:enabled:shadow-lg hover:enabled:scale-105">SVG</button>
+            <button id="saveJpgButton" disabled class="px-5 py-2.5 font-semibold text-white bg-teal-600 rounded-full transition-all duration-300 shadow-md disabled:bg-slate-400 disabled:cursor-not-allowed disabled:scale-100 hover:enabled:bg-teal-700 hover:enabled:shadow-lg hover:enabled:scale-105">JPG</button>
+        </div>
+
+        <!-- Output Area -->
+        <div class="output-area mt-8 p-4 sm:p-8 bg-white rounded-lg shadow-xl border border-slate-200 min-h-[300px] w-full overflow-x-auto">
+            <div id="mindMap" class="mx-auto"></div>
+        </div>
+    </div>
+</body>
+
+
+<style>
+/* Tailwind CSSはキーフレームアニメーションの直接定義が冗長なため、ローディングスピナーのスタイルのみ残します */
+.loading {
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-top-color: #ffffff;
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+</style>
+
+
+<script>
+// --- スクリプト1 (UI操作とTREE→UML変換) ---
+document.getElementById('copyTemplate1').addEventListener('click', function() {
+    const template = document.getElementById('template1');
+    template.select();
+    template.setSelectionRange(0, 99999);
+    document.execCommand('copy');
+});
+
+document.getElementById('copyTemplate2').addEventListener('click', function() {
+    const template = document.getElementById('template2');
+    template.select();
+    template.setSelectionRange(0, 99999);
+    document.execCommand('copy');
+});
+
+document.getElementById('convertButton').addEventListener('click', function() {
+    const treeInput = document.getElementById('treeInput').value;
+    const plantUmlOutput = convertTreeToPlantUml(treeInput);
+    document.getElementById('umlInput').value = plantUmlOutput;
+});
+
+document.getElementById('copyButton').addEventListener('click', function() {
+    const output = document.getElementById('umlInput');
+    output.select();
+    output.setSelectionRange(0, 99999);
+    document.execCommand('copy');
+});
+
+function convertTreeToPlantUml(treeText) {
+    const lines = treeText.split('\n');
+    let result = '';
+    const stack = [];
+    const indentStack = [];
+
+    for (let line of lines) {
+        if (!line.trim()) continue;
+        const contentMatch = line.match(/([^\s│├─└─]+.*)$/);
+        if (!contentMatch) continue;
+        const content = contentMatch[1].trim();
+        const indentMatch = line.match(/^(\s*(?:│|\s|├─|└─)*)/);
+        const indentStr = indentMatch ? indentMatch[1] : '';
+        const indentLevel = (indentStr.replace(/├─|└─|│/g, '    ').length) / 4;
+        while (indentStack.length > 0 && indentStack[indentStack.length - 1] >= indentLevel) {
+            indentStack.pop();
+            stack.pop();
+        }
+        indentStack.push(indentLevel);
+        stack.push(content);
+        const asterisks = '*'.repeat(indentStack.length);
+        result += `${asterisks} ${content}\n`;
+    }
+    return result;
+}
+</script>
+
+
+<script>
+// --- スクリプト2 (マインドマップ生成・描画・保存) ---
+
+/**
+ * 入力テキストを解析し、アスタリスク形式に統一する前処理関数。
+ */
+function preprocessAndUnifyInput(text) {
+    let lines = text.split(/\r?\n/);
+    lines = lines.filter(line => {
+        const trimmedLine = line.trim();
+        return trimmedLine !== '' && trimmedLine !== '@startmindmap' && trimmedLine !== '@endmindmap';
+    });
+    if (lines.length === 0) return '';
+    if (lines[0].trim().startsWith('*')) {
+        return lines.join('\n');
+    }
+    let convertedText = '';
+    const indentLevels = new Map();
+    for (const line of lines) {
+        const indent = line.match(/^\s*/)[0].length;
+        const content = line.trim().replace(/^- /, '');
+        if (!indentLevels.has(indent)) {
+            const sortedIndents = Array.from(indentLevels.keys()).sort((a, b) => a - b);
+            let assignedLevel = 1;
+            for (const sortedIndent of sortedIndents) {
+                if (indent > sortedIndent) {
+                    assignedLevel = indentLevels.get(sortedIndent) + 1;
+                }
+            }
+            indentLevels.set(indent, assignedLevel);
+        }
+        const level = indentLevels.get(indent);
+        convertedText += '*'.repeat(level) + ' ' + content + '\n';
+    }
+    return convertedText;
+}
+
+// メイン処理開始
+document.getElementById('generateButton').addEventListener('click', function() {
+  const rawUmlText = document.getElementById('umlInput').value;
+  const umlText = preprocessAndUnifyInput(rawUmlText);
+  const mindMapArea = document.getElementById('mindMap');
+  const saveSvgButton = document.getElementById('saveSvgButton');
+  const saveJpgButton = document.getElementById('saveJpgButton');
+  const generateButton = document.getElementById('generateButton');
+
+  clearErrorMessage();
+  if (umlText.trim() === '') {
+    displayErrorMessage('テキストが入力されていません。');
+    return;
+  }
+
+  generateButton.disabled = true;
+  showLoadingIndicator(generateButton);
+
+  try {
+    const nodes = parseUmlText(umlText);
+    const treeData = buildTree(nodes);
+    const svgElement = drawMindMap(treeData);
+    mindMapArea.innerHTML = '';
+    mindMapArea.appendChild(svgElement);
+    saveSvgButton.disabled = false;
+    saveJpgButton.disabled = false;
+    saveSvgButton.onclick = () => saveSvg(svgElement);
+    saveJpgButton.onclick = () => saveJpg(svgElement);
+  } catch (error) {
+    displayErrorMessage('エラーが発生しました: ' + error.message);
+    console.error(error);
+  } finally {
+    generateButton.disabled = false;
+    hideLoadingIndicator(generateButton);
+  }
+});
+
+// エラーメッセージの表示 (Tailwind CSS対応)
+function displayErrorMessage(message) {
+  let errorElem = document.querySelector('.error-message');
+  if (!errorElem) {
+    errorElem = document.createElement('div');
+    errorElem.className = 'error-message text-red-500 font-semibold mt-4 text-center w-full';
+    document.querySelector('.button-area').insertAdjacentElement('afterend', errorElem);
+  }
+  errorElem.textContent = message;
+}
+
+// エラーメッセージのクリア
+function clearErrorMessage() {
+  const errorElem = document.querySelector('.error-message');
+  if (errorElem) errorElem.remove();
+}
+
+// ローディングインジケータの表示 (Tailwind CSS対応)
+function showLoadingIndicator(button) {
+  const loading = document.createElement('span');
+  loading.className = 'loading inline-block ml-2';
+  button.appendChild(loading);
+}
+
+// ローディングインジケータの非表示 (Tailwind CSS対応)
+function hideLoadingIndicator(button) {
+  const loading = button.querySelector('.loading');
+  if (loading) loading.remove();
+}
+
+// UMLテキストの解析
+function parseUmlText(umlText) {
+  const lines = umlText.split(/\r?\n/).filter(line => line.trim() !== '');
+  const nodes = [];
+  let idCounter = 0;
+  lines.forEach(line => {
+    const levelMatch = line.match(/^\*+/);
+    if (!levelMatch) throw new Error('ノードのレベルを示すアスタリスクがありません: ' + line);
+    const level = levelMatch[0].length;
+    const name = line.replace(/^\*+/, '').trim();
+    nodes.push({ id: idCounter++, name, level, parentId: null, children: [], width: 0, height: 0, x: 0, y: 0 });
+  });
+  return nodes;
+}
+
+// ノード間の親子関係の構築 (仮想ルート使用)
+function buildTree(nodes) {
+    if (nodes.length === 0) return null;
+    const virtualRoot = { id: -1, name: 'virtualRoot', level: 0, parentId: null, children: [], width: 0, height: 0, x: 0, y: 0 };
+    const stack = [virtualRoot];
+    nodes.forEach(node => {
+        while (stack.length > 1 && stack[stack.length - 1].level >= node.level) {
+            stack.pop();
+        }
+        const parent = stack[stack.length - 1];
+        node.parentId = parent.id;
+        parent.children.push(node);
+        stack.push(node);
+    });
+    return virtualRoot;
+}
+
+// ノードサイズと位置の計算
+function calculateNodePositions(node, ctx, config) {
+  ctx.font = `${config.fontSize}px ${config.fontFamily}`;
+  const textMetrics = ctx.measureText(node.name);
+  node.width = textMetrics.width + config.nodePadding * 2;
+  node.height = config.fontSize + config.nodePadding * 2;
+  if (node.children.length > 0) {
+    node.children.forEach(child => calculateNodePositions(child, ctx, config));
+    const totalHeight = node.children.reduce((sum, child) => sum + child.height + config.verticalGap, -config.verticalGap);
+    node.height = Math.max(node.height, totalHeight);
+  }
+}
+
+// ノード位置の計算（座標設定）
+function setNodeCoordinates(node, x, y, config) {
+  node.x = x;
+  if (node.children.length === 0) {
+    node.y = y;
+  } else {
+    let childY = y;
+    node.children.forEach(child => {
+      setNodeCoordinates(child, x + node.width + config.horizontalGap, childY, config);
+      childY += child.height + config.verticalGap;
+    });
+    const firstChild = node.children[0];
+    const lastChild = node.children[node.children.length - 1];
+    node.y = (firstChild.y + lastChild.y + lastChild.height) / 2 - node.height / 2;
+  }
+}
+
+// マインドマップの描画 (縦並び対応)
+function drawMindMap(virtualRootNode) {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const config = {
+        fontSize: 14, fontFamily: 'sans-serif', nodePadding: 10, horizontalGap: 30, verticalGap: 5,
+        nodeCornerRadius: 8, nodeFillColor: '#f1f5f9', nodeStrokeColor: '#cbd5e1', nodeTextColor: '#1e293b',
+        lineColor: '#94a3b8', lineWidth: 1.5, treeGap: 6
+    };
+    if (!virtualRootNode || virtualRootNode.children.length === 0) {
+        const emptySvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        emptySvg.setAttribute('width', '0'); emptySvg.setAttribute('height', '0');
+        return emptySvg;
+    }
+    const actualRoots = virtualRootNode.children;
+    let currentY = 0;
+    let maxTreeWidth = 0;
+    actualRoots.forEach(root => {
+        calculateNodePositions(root, ctx, config);
+        setNodeCoordinates(root, 0, currentY, config);
+        const treeWidth = getMaxX(root);
+        const treeHeight = getMaxY(root) - root.y;
+        currentY += treeHeight + config.treeGap;
+        if (treeWidth > maxTreeWidth) maxTreeWidth = treeWidth;
+    });
+    const svgWidth = maxTreeWidth;
+    const svgHeight = currentY - config.treeGap;
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('width', svgWidth);
+    svg.setAttribute('height', svgHeight);
+    svg.setAttribute('viewBox', `0 0 ${svgWidth} ${svgHeight}`);
+    const defs = document.createElementNS(svgNS, 'defs');
+    const style = document.createElementNS(svgNS, 'style');
+    style.textContent = `
+    .node-rect { fill: ${config.nodeFillColor}; stroke: ${config.nodeStrokeColor}; stroke-width: 1; }
+    .node-text { fill: ${config.nodeTextColor}; font-size: ${config.fontSize}px; font-family: ${config.fontFamily}; text-anchor: middle; dominant-baseline: middle; font-weight: 500; }
+    .link-line { stroke: ${config.lineColor}; stroke-width: ${config.lineWidth}; fill: none; }
+    `;
+    defs.appendChild(style);
+    svg.appendChild(defs);
+    const allNodes = [];
+    actualRoots.forEach(root => traverseNodes(root, node => allNodes.push(node)));
+    allNodes.forEach(node => {
+        if (node.parentId !== null && node.parentId !== -1) {
+            const parentNode = allNodes.find(n => n.id === node.parentId);
+            if (!parentNode) return;
+            const path = document.createElementNS(svgNS, 'path');
+            path.setAttribute('class', 'link-line');
+            const startX = node.x;
+            const startY = node.y + node.height / 2;
+            const parentX = parentNode.x + parentNode.width;
+            const parentY = parentNode.y + parentNode.height / 2;
+            const d = `M ${parentX} ${parentY} C ${parentX + config.horizontalGap / 2} ${parentY} ${startX - config.horizontalGap / 2} ${startY} ${startX} ${startY}`;
+            path.setAttribute('d', d);
+            svg.appendChild(path);
+        }
+    });
+    allNodes.forEach(node => {
+        const group = document.createElementNS(svgNS, 'g');
+        const rect = document.createElementNS(svgNS, 'rect');
+        rect.setAttribute('class', 'node-rect');
+        rect.setAttribute('x', node.x); rect.setAttribute('y', node.y);
+        rect.setAttribute('width', node.width); rect.setAttribute('height', node.height);
+        rect.setAttribute('rx', config.nodeCornerRadius);
+        group.appendChild(rect);
+        const text = document.createElementNS(svgNS, 'text');
+        text.setAttribute('class', 'node-text');
+        text.setAttribute('x', node.x + node.width / 2);
+        text.setAttribute('y', node.y + node.height / 2);
+        text.textContent = node.name;
+        group.appendChild(text);
+        svg.appendChild(group);
+    });
+    return svg;
+}
+
+// ノードの巡回
+function traverseNodes(node, callback) {
+  callback(node);
+  node.children.forEach(child => traverseNodes(child, callback));
+}
+
+// 最大X座標の取得
+function getMaxX(node) {
+  let maxX = node.x + node.width;
+  node.children.forEach(child => {
+    maxX = Math.max(maxX, getMaxX(child));
+  });
+  return maxX;
+}
+
+// 最大Y座標の取得
+function getMaxY(node) {
+  let maxY = node.y + node.height;
+  node.children.forEach(child => {
+    maxY = Math.max(maxY, getMaxY(child));
+  });
+  return maxY;
+}
+
+// SVGの保存
+function saveSvg(svgElement) {
+  const serializer = new XMLSerializer();
+  let source = serializer.serializeToString(svgElement);
+  if (!source.match(/^<svg[^>]+xmlns="http:\/\/www\.w3\.org\/2000\/svg"/)) {
+    source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
+  }
+  const blob = new Blob([source], { type: 'image/svg+xml;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'mindmap.svg';
+  link.click();
+}
+
+// JPGの保存
+function saveJpg(svgElement) {
+  const svgString = new XMLSerializer().serializeToString(svgElement);
+  const svgData = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgString)));
+  const img = new Image();
+  img.onload = function() {
+    const canvas = document.createElement('canvas');
+    canvas.width = svgElement.getAttribute('width');
+    canvas.height = svgElement.getAttribute('height');
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0);
+    canvas.toBlob(function(blob) {
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'mindmap.jpg';
+      link.click();
+    }, 'image/jpeg', 1.0);
+  };
+  img.onerror = () => displayErrorMessage('JPGの生成に失敗しました。');
+  img.src = svgData;
+}
+
+</script>
+
+</html>

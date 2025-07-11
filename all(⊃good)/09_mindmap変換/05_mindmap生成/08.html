@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>08</title>
+</head>
+<body>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GUIマインドマップエディタ for PlantUML</title>
+    
+    <!-- React & Babel (for JSX in browser) -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- React Flow (Mindmap library) -->
+    <script src="https://unpkg.com/react-flow-renderer@10.3.17/dist/umd/react-flow-renderer.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/react-flow-renderer@10.3.17/dist/style.css" />
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Custom Styles -->
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            color: #373f49;
+            background-color: #f8fafc; /* slate-50 */
+        }
+        .react-flow__node {
+            border-radius: 8px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            border: 1px solid #e2e8f0; /* slate-200 */
+            font-size: 14px;
+            background-color: white;
+            padding: 10px 15px;
+            text-align: center;
+        }
+        .react-flow__node.selected {
+            border: 2px solid #3b82f6; /* blue-500 */
+        }
+        .react-flow__handle {
+            opacity: 0; /* Hide default handles */
+        }
+        .react-flow__edge-path {
+            stroke: #94a3b8; /* slate-400 */
+            stroke-width: 2;
+        }
+        .node-button {
+             width: 20px; height: 20px; color: white; border-radius: 9999px; 
+             display: flex; align-items: center; justify-content: center; 
+             font-size: 14px; line-height: 1; cursor: pointer;
+             transition: transform 0.1s ease-in-out;
+        }
+        .node-button:hover {
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <!-- Helper Libraries (inline for single-file deployment) -->
+    <script>
+      // plantuml-encoder (minified) to generate preview URL
+      !function(t){function e(t){this.message=t}if("object"!=typeof exports||"undefined"==typeof module)var r="undefined"!=typeof window?window:void 0!==this?this:global;else r=exports;e.prototype=new Error,e.prototype.name="InvalidCharacterError",r.btoa||(r.btoa=function(t){for(var r,o,n="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=",i=0,a=String(t),d="";a.charAt(0|i)||(n="=",i%1);d+=n.charAt(63&r>>8-i%1*8)){if(o=a.charCodeAt(i+=.75),o>255)throw new e("'btoa' failed: The string to be encoded contains characters outside of the Latin1 range.");r=r<<8|o}return d}),r.plantuml_encoder={encode:function(t){var e,r,o,n,i,a,d,h="",f=0,c=function(t){var e,r,o,n,i,a,d,h="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz01234GHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_",f=t.length,c=0,s="";for(;c<f;){for(e=t.charCodeAt(c++)&255,r=t.charCodeAt(c++)&255,o=t.charCodeAt(c++)&255,n=e>>2,i=(3&e)<<4|r>>4,a=(15&r)<<2|o>>6,d=63&o,isNaN(r)?a=d=64:isNaN(o)&&(d=64),s=s+h.charAt(n)+h.charAt(i)+h.charAt(a)+h.charAt(d);c-2<f;);return s}(function(t){var e,r,o,n,i,a,d,h=[],f=t.length;for(i=0;i<f;i++)e=t.charCodeAt(i),e>=2048?(o=e-2048,h.push(224|(o>>12)+240),h.push(128|(o>>6&63)),h.push(128|(63&o))):e>=128?(r=e-128,h.push(192|(r>>6)+49),h.push(128|(63&r))):h.push(e);return pako.deflate(new Uint8Array(h),{level:9,to:"string"})}(t));for(;f<c.length;)e=c.charCodeAt(f++),r=c.charCodeAt(f++),o=c.charCodeAt(f++),n=(e=e<256?e: -1)>>2,i=((3&e)<<4|(r=r<256?r:-1)>>4),a=((15&r)<<2|(o=o<256?o:-1)>>6),d=63&o,h+=function(t){if(t<0)return" ";if(t<64)return"0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_".charAt(t)
+;throw new Error("Cannot encode "+t)}(n)+function(t){if(t<0)return" ";if(t<64)return"0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_".charAt(t);throw new Error("Cannot encode "+t)}(i)+function(t){if(t<0)return" ";if(t<64)return"0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_".charAt(t);throw new Error("Cannot encode "+t)}(a)+function(t){if(t<0)return" ";if(t<64)return"0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_".charAt(t);throw new Error("Cannot encode "+t)}(d);return h.replace(/ /g,"~")}}}("undefined"==typeof module?this:module.exports);
+      // pako (deflate library for plantuml-encoder)
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
+    <!-- uuid -->
+    <script>
+      function v4(){var r,e,t,o="0123456789abcdef";for(t="-",e=o[15&Math.random()|0],e+=o[15&Math.random()|0],e+=o[15&Math.random()|0],e+=o[15&Math.random()|0],e+=o[15&Math.random()|0],e+=o[15&Math.random()|0],e+=o[15&Math.random()|0],e+=o[15&Math.random()|0],e+=t,e+=o[15&Math.random()|0],e+=o[15&Math.random()|0],e+=o[15&Math.random()|0],e+=o[15&Math.random()|0],e+=t,e+=o[15&Math.random()|0],e+=o[15&Math.random()|0],e+=o[15&Math.random()|0],e+=o[15&Math.random()|0],e+=t,r=o[8|3&Math.random()],e+=r,e+=o[15&Math.random()|0],e+=o[15&Math.random()|0],e+=o[15&Math.random()|0],e+=t,e+=o[15&Math.random()|0],e+=o[15&Math.random()|0],e+=o[15&Math.random()|0],e+=o[15&Math.random()|0],e+=o[15&Math.random()|0],e+=o[15&Math.random()|0],e+=o[15&Math.random()|0],e+=o[15&Math.random()|0],e+=o[15&Math.random()|0],e+=o[15&Math.random()|0],e+=o[15&Math.random()|0],e+=o[15&Math.random()|0];return e}window.uuidv4=v4;
+    </script>
+    
+    <script type="text/babel">
+        const { useState, useEffect, useCallback, memo } = React;
+        const { ReactFlow, ReactFlowProvider, useNodesState, useEdgesState, useReactFlow, Controls, Background, Handle, Position } = ReactFlowRenderer;
+
+        // --- Initial Data ---
+        const initialNodes = [
+            { id: 'root', type: 'custom', position: { x: 100, y: 200 }, data: { label: 'Debian' } }
+        ];
+
+        // --- Custom Node Component ---
+        const CustomNode = memo(({ id, data }) => {
+            const { setNodes, setEdges, getNode } = useReactFlow();
+            const [isEditing, setIsEditing] = useState(false);
+            const [label, setLabel] = useState(data.label);
+
+            const onDoubleClick = () => setIsEditing(true);
+            
+            const onBlur = () => {
+                setNodes((nodes) =>
+                    nodes.map((node) => {
+                        if (node.id === id) {
+                            node.data = { ...node.data, label };
+                        }
+                        return node;
+                    })
+                );
+                setIsEditing(false);
+            };
+
+            const onKeyDown = (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    onBlur();
+                }
+            };
+
+            const addChildNode = (e) => {
+                e.stopPropagation();
+                const parentNode = getNode(id);
+                if (!parentNode) return;
+
+                const newNodeId = uuidv4();
+                const newNode = {
+                    id: newNodeId,
+                    type: 'custom',
+                    position: {
+                        x: parentNode.position.x + 200,
+                        y: parentNode.position.y,
+                    },
+                    data: { label: 'New Node' },
+                    parentNode: id,
+                };
+
+                const newEdge = { id: `e-${id}-${newNodeId}`, source: id, target: newNodeId };
+                
+                setNodes((nodes) => [...nodes, newNode]);
+                setEdges((edges) => [...edges, newEdge]);
+            };
+            
+            const deleteNode = (e) => {
+                e.stopPropagation();
+                // Recursively find all children to delete
+                const nodesToDelete = new Set([id]);
+                const edgesToDelete = new Set();
+                
+                const findChildren = (nodeId) => {
+                    const childrenEdges = getEdges().filter(edge => edge.source === nodeId);
+                    childrenEdges.forEach(edge => {
+                        nodesToDelete.add(edge.target);
+                        edgesToDelete.add(edge.id);
+                        findChildren(edge.target);
+                    });
+                };
+                
+                findChildren(id);
+                
+                setNodes((nodes) => nodes.filter((node) => !nodesToDelete.has(node.id)));
+                setEdges((edges) => edges.filter((edge) => !nodesToDelete.has(edge.id) && edge.target !== id));
+            };
+
+            return (
+                <div onDoubleClick={onDoubleClick} className="group relative">
+                    <Handle type="target" position={Position.Left} />
+                    {isEditing ? (
+                        <input
+                            type="text"
+                            value={label}
+                            onChange={(e) => setLabel(e.target.value)}
+                            onBlur={onBlur}
+                            onKeyDown={onKeyDown}
+                            autoFocus
+                            className="w-full text-center border-2 border-blue-500 rounded-md px-2 py-1 bg-white"
+                        />
+                    ) : (
+                        <span>{data.label}</span>
+                    )}
+                    <div className="absolute -top-3 -right-3 flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onClick={addChildNode} className="node-button bg-green-500 hover:bg-green-600 focus:outline-none">+</button>
+                        {id !== 'root' && <button onClick={deleteNode} className="node-button bg-red-500 hover:bg-red-600 focus:outline-none">-</button>}
+                    </div>
+                    <Handle type="source" position={Position.Right} />
+                </div>
+            );
+        });
+
+        const nodeTypes = { custom: CustomNode };
+
+        // --- Main Editor Component ---
+        function MindMapEditor({ setPumlCode, setPreviewUrl }) {
+            const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
+            const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+            const reactFlowInstance = useReactFlow();
+
+            useEffect(() => {
+                // Function to generate PlantUML code from nodes and edges
+                function generatePuml() {
+                    const allNodes = reactFlowInstance.getNodes();
+                    const allEdges = reactFlowInstance.getEdges();
+
+                    function generateNodePuml(nodeId, level, visited) {
+                        if (visited.has(nodeId)) return '';
+                        visited.add(nodeId);
+
+                        const node = allNodes.find(n => n.id === nodeId);
+                        if (!node) return '';
+                        
+                        const pumlChar = '*';
+                        let puml = `${pumlChar.repeat(level)} ${node.data.label}\n`;
+
+                        const childEdges = allEdges.filter(e => e.source === nodeId);
+                        for (const edge of childEdges) {
+                            puml += generateNodePuml(edge.target, level + 1, visited);
+                        }
+                        return puml;
+                    }
+
+                    const rootNode = allNodes.find(n => n.id === 'root');
+                    if (rootNode) {
+                        const code = `@startmindmap\n${generatePuml('root', 1, new Set())}@endmindmap`;
+                        setPumlCode(code);
+                        try {
+                            const encoded = plantuml_encoder.encode(code);
+                            setPreviewUrl(`https://www.plantuml.com/plantuml/svg/${encoded}`);
+                        } catch (e) {
+                            console.error("PUML encoding failed:", e);
+                            setPreviewUrl('');
+                        }
+                    }
+                }
+                generatePuml();
+            }, [nodes, edges, setPumlCode, setPreviewUrl, reactFlowInstance]);
+
+            return (
+                <div className="w-full h-full">
+                    <ReactFlow
+                        nodes={nodes}
+                        edges={edges}
+                        onNodesChange={onNodesChange}
+                        onEdgesChange={onEdgesChange}
+                        nodeTypes={nodeTypes}
+                        fitView
+                        className="bg-slate-100"
+                    >
+                        <Background variant="dots" gap={12} size={1} />
+                        <Controls />
+                    </ReactFlow>
+                </div>
+            );
+        }
+
+        // --- Sidebar for Code and Preview ---
+        function CodeAndPreview({ pumlCode, previewUrl }) {
+            const [activeTab, setActiveTab] = useState('code');
+
+            const copyToClipboard = () => {
+              navigator.clipboard.writeText(pumlCode).then(() => {
+                alert('PlantUMLコードをクリップボードにコピーしました！');
+              }, (err) => {
+                alert('コピーに失敗しました: ', err);
+              });
+            };
+
+            return (
+                <div className="bg-white p-4 flex-grow flex flex-col h-full overflow-hidden">
+                    <div className="flex border-b border-gray-200 mb-4">
+                        <button onClick={() => setActiveTab('code')} className={`px-4 py-2 text-sm font-medium ${activeTab === 'code' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}>
+                            PlantUML コード
+                        </button>
+                        <button onClick={() => setActiveTab('preview')} className={`px-4 py-2 text-sm font-medium ${activeTab === 'preview' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}>
+                            プレビュー
+                        </button>
+                    </div>
+                    <div className="flex-grow overflow-auto">
+                        {activeTab === 'code' && (
+                            <div className="h-full flex flex-col">
+                                <textarea
+                                    readOnly
+                                    value={pumlCode}
+                                    className="w-full flex-grow p-2 font-mono text-sm bg-gray-100 border border-gray-300 rounded-md resize-none"
+                                ></textarea>
+                                <button 
+                                  onClick={copyToClipboard}
+                                  className="mt-2 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+                                >
+                                  コードをコピー
+                                </button>
+                            </div>
+                        )}
+                        {activeTab === 'preview' && (
+                            <div className="p-2 border border-gray-200 rounded-md bg-gray-50 flex items-center justify-center h-full">
+                                {previewUrl ? <img src={previewUrl} alt="PlantUML Preview" className="max-w-full max-h-full" /> : <p>プレビューを生成中...</p>}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        // --- Main App Component ---
+        function App() {
+            const [pumlCode, setPumlCode] = useState('');
+            const [previewUrl, setPreviewUrl] = useState('');
+
+            return (
+                <ReactFlowProvider>
+                    <div className="h-screen w-screen flex flex-col bg-gray-50">
+                        <header className="p-4 bg-white border-b border-gray-200 shadow-sm">
+                            <h1 className="text-2xl font-bold text-gray-800">PlantUML マインドマップエディタ</h1>
+                            <p className="text-sm text-gray-500">ノードをダブルクリックして編集、+/-ボタンでノードを追加/削除します。</p>
+                        </header>
+                        <main className="flex-grow flex flex-col md:flex-row overflow-hidden">
+                            <div className="md:w-3/5 h-full border-r border-gray-200">
+                                <MindMapEditor setPumlCode={setPumlCode} setPreviewUrl={setPreviewUrl} />
+                            </div>
+                            <div className="md:w-2/5 h-full flex flex-col">
+                                <CodeAndPreview pumlCode={pumlCode} previewUrl={previewUrl} />
+                            </div>
+                        </main>
+                    </div>
+                </ReactFlowProvider>
+            );
+        }
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
+</body>
+</html>

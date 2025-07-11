@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>04</title>
+</head>
+<body>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GUI マインドマップエディタ (PlantUML対応)</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- React & Babel -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  
+  <!-- React Flow v11 -->
+  <link rel="stylesheet" href="https://unpkg.com/reactflow@11/dist/style.css" />
+  <script src="https://unpkg.com/reactflow@11/dist/umd/reactflow.js"></script>
+
+  <!-- Dagre (for layouting) -->
+  <script src="https://unpkg.com/dagre@0.8.5/dist/dagre.min.js"></script>
+  <!-- uuid (for unique ids) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/uuid/8.3.2/uuid.min.js"></script>
+  <style>
+    .react-flow__handle { width: 8px; height: 8px; border-radius: 50%; background-color: #9ca3af; }
+    .react-flow__handle-connecting { background-color: #3b82f6; }
+    .react-flow__edge-path { stroke: #9ca3af; stroke-width: 2; }
+    .selected .custom-node { box-shadow: 0 0 0 2px #3b82f6; }
+  </style>
+</head>
+<body>
+  <div id="root" class="w-screen h-screen flex justify-center items-center text-gray-500">
+    ライブラリを読み込み中...
+  </div>
+
+  <script type="text/babel">
+    const { useState, useCallback, useEffect, memo } = React;
+
+    // --- ライブラリが読み込まれるまで待機するラッパーコンポーネント ---
+    function AppWrapper() {
+      const [isLibReady, setIsLibReady] = useState(false);
+
+      useEffect(() => {
+        const interval = setInterval(() => {
+          if (window.ReactFlow) {
+            setIsLibReady(true);
+            clearInterval(interval);
+          }
+        }, 100);
+        return () => clearInterval(interval);
+      }, []);
+
+      if (!isLibReady) {
+        return <div>React Flowを読み込んでいます...</div>;
+      }
+      
+      return <App />;
+    }
+
+    // --- 初期データ ---
+    const initialNodes = [
+      { id: 'root', type: 'custom', position: { x: 100, y: 200 }, data: { label: 'Debian' } },
+      { id: '2', type: 'custom', position: { x: 350, y: 100 }, data: { label: 'Ubuntu' } },
+      { id: '3', type: 'custom', position: { x: 350, y: 200 }, data: { label: 'LMDE' } },
+      { id: '4', type: 'custom', position: { x: 350, y: 300 }, data: { label: 'SteamOS' } },
+      { id: '5', type: 'custom', position: { x: 600, y: 50 }, data: { label: 'Linux Mint' } },
+      { id: '6', type: 'custom', position: { x: 600, y: 150 }, data: { label: 'Kubuntu' } },
+    ];
+
+    const initialEdges = [
+      { id: 'e-root-2', source: 'root', target: '2', type: 'smoothstep' },
+      { id: 'e-root-3', source: 'root', target: '3', type: 'smoothstep' },
+      { id: 'e-root-4', source: 'root', target: '4', type: 'smoothstep' },
+      { id: 'e-2-5', source: '2', target: '5', type: 'smoothstep' },
+      { id: 'e-2-6', source: '2', target: '6', type: 'smoothstep' },
+    ];
+
+    // --- カスタムノードコンポーネント ---
+    const CustomNode = memo(({ data, id }) => {
+      const [isEditing, setIsEditing] = useState(false);
+      const [label, setLabel] = useState(data.label);
+      const { setNodes } = window.ReactFlow.useReactFlow();
+
+      const handleDoubleClick = () => setIsEditing(true);
+
+      const handleBlur = () => {
+        setIsEditing(false);
+        setNodes((nds) =>
+          nds.map((node) => {
+            if (node.id === id) {
+              node.data = { ...node.data, label };
+            }
+            return node;
+          })
+        );
+      };
+
+      const handleChange = (e) => setLabel(e.target.value);
+
+      return (
+        <>
+          <window.ReactFlow.Handle type="target" position={window.ReactFlow.Position.Left} />
+          <div className="custom-node bg-white p-3 rounded-lg shadow-md border-2 border-gray-300 min-w-[150px] text-center">
+            {isEditing ? (
+              <input
+                type="text"
+                value={label}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                autoFocus
+                className="w-full text-center bg-blue-50 border border-blue-300 rounded"
+              />
+            ) : (
+              <div onDoubleClick={handleDoubleClick}>{data.label}</div>
+            )}
+          </div>
+          <window.ReactFlow.Handle type="source" position={window.ReactFlow.Position.Right} />
+        </>
+      );
+    });
+
+    const nodeTypes = { custom: CustomNode };
+
+    // --- PlantUMLコード生成 ---
+    const generatePlantUML = (nodes, edges) => {
+      let uml = '@startmindmap\n';
+      const nodeMap = new Map(nodes.map(node => [node.id, { ...node, children: [], depth: 0 }]));
+      const roots = new Set(nodes.map(n => n.id));
+
+      edges.forEach(edge => {
+        const sourceNode = nodeMap.get(edge.source);
+        const targetNode = nodeMap.get(edge.target);
+        if (sourceNode && targetNode) {
+          sourceNode.children.push(targetNode);
+          roots.delete(edge.target);
+        }
+      });
+
+      const buildUmlString = (node, depth) => {
+        let str = `${'*'.repeat(depth + 1)} ${node.data.label}\n`;
+        node.children.sort((a, b) => a.position.y - b.position.y).forEach(child => {
+          str += buildUmlString(child, depth + 1);
+        });
+        return str;
+      };
+
+      roots.forEach(rootId => {
+        const rootNode = nodeMap.get(rootId);
+        uml += buildUmlString(rootNode, 0);
+      });
+
+      uml += '@endmindmap';
+      return uml;
+    };
+
+    // --- 自動レイアウト ---
+    const getLayoutedElements = (nodes, edges, direction = 'LR') => {
+      const dagreGraph = new dagre.graphlib.Graph();
+      dagreGraph.setDefaultEdgeLabel(() => ({}));
+      dagreGraph.setGraph({ rankdir: direction, nodesep: 100, ranksep: 120 });
+
+      nodes.forEach((node) => {
+        dagreGraph.setNode(node.id, { width: 150, height: 50 });
+      });
+
+      edges.forEach((edge) => {
+        dagreGraph.setEdge(edge.source, edge.target);
+      });
+
+      dagre.layout(dagreGraph);
+
+      const layoutedNodes = nodes.map((node) => {
+        const nodeWithPosition = dagreGraph.node(node.id);
+        return {
+          ...node,
+          position: {
+            x: nodeWithPosition.x - 150 / 2,
+            y: nodeWithPosition.y - 50 / 2,
+          },
+        };
+      });
+
+      return { nodes: layoutedNodes, edges };
+    };
+
+    // --- メインのMindMapコンポーネント ---
+    function MindMapEditor() {
+      const [nodes, setNodes, onNodesChange] = window.ReactFlow.useNodesState(initialNodes);
+      const [edges, setEdges, onEdgesChange] = window.ReactFlow.useEdgesState(initialEdges);
+      const [plantUML, setPlantUML] = useState('');
+      const { getNodes } = window.ReactFlow.useReactFlow();
+
+      useEffect(() => {
+        setPlantUML(generatePlantUML(nodes, edges));
+      }, [nodes, edges]);
+
+      const onConnect = useCallback((params) => setEdges((eds) => window.ReactFlow.addEdge(params, eds)), [setEdges]);
+
+      const addNode = useCallback(() => {
+        const selectedNodes = getNodes().filter(n => n.selected);
+        const parentNode = selectedNodes.length > 0 ? selectedNodes[0] : nodes[nodes.length - 1];
+        
+        const newNode = {
+          id: uuid.v4(),
+          type: 'custom',
+          data: { label: '新しいノード' },
+          position: {
+            x: parentNode.position.x + 250,
+            y: parentNode.position.y + Math.random() * 100 - 50,
+          },
+        };
+        setNodes((nds) => nds.concat(newNode));
+        setEdges((eds) => eds.concat({ id: uuid.v4(), source: parentNode.id, target: newNode.id, type: 'smoothstep' }));
+      }, [getNodes, nodes, setNodes, setEdges]);
+
+      const deleteNode = useCallback(() => {
+        const selectedNodes = getNodes().filter(n => n.selected);
+        if (selectedNodes.length === 0) return;
+
+        const nodeIdsToDelete = new Set(selectedNodes.map(n => n.id));
+        
+        setNodes(nds => nds.filter(n => !nodeIdsToDelete.has(n.id)));
+        setEdges(eds => eds.filter(e => !nodeIdsToDelete.has(e.source) && !nodeIdsToDelete.has(e.target)));
+      }, [getNodes, setNodes, setEdges]);
+
+      const onLayout = useCallback((direction) => {
+        const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
+          nodes,
+          edges,
+          direction
+        );
+        setNodes([...layoutedNodes]);
+        setEdges([...layoutedEdges]);
+      }, [nodes, edges, setNodes, setEdges]);
+
+      return (
+        <div className="w-screen h-screen flex flex-col md:flex-row bg-gray-50">
+          <div className="w-full md:w-1/4 p-4 bg-white border-r border-gray-200 shadow-lg overflow-y-auto">
+            <h2 className="text-xl font-bold mb-4 text-gray-700">コントロールパネル</h2>
+            <div className="space-y-3">
+              <button onClick={addNode} className="w-full bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors">
+                ノード追加
+              </button>
+              <button onClick={deleteNode} className="w-full bg-red-500 text-white py-2 px-4 rounded-lg hover:bg-red-600 transition-colors">
+                選択ノード削除
+              </button>
+              <button onClick={() => onLayout('LR')} className="w-full bg-green-500 text-white py-2 px-4 rounded-lg hover:bg-green-600 transition-colors">
+                レイアウト適用 (L→R)
+              </button>
+               <button onClick={() => onLayout('TB')} className="w-full bg-green-500 text-white py-2 px-4 rounded-lg hover:bg-green-600 transition-colors">
+                レイアウト適用 (T→B)
+              </button>
+            </div>
+            <div className="mt-6">
+              <h3 className="text-lg font-semibold mb-2 text-gray-700">PlantUML コード</h3>
+              <textarea
+                readOnly
+                value={plantUML}
+                className="w-full h-64 p-2 border border-gray-300 rounded-lg bg-gray-100 font-mono text-sm"
+              ></textarea>
+            </div>
+          </div>
+          <div className="w-full md:w-3/4 h-full">
+            <window.ReactFlow.ReactFlow
+              nodes={nodes}
+              edges={edges}
+              onNodesChange={onNodesChange}
+              onEdgesChange={onEdgesChange}
+              onConnect={onConnect}
+              nodeTypes={nodeTypes}
+              fitView
+            >
+              <window.ReactFlow.Controls />
+              <window.ReactFlow.Background />
+              <window.ReactFlow.MiniMap />
+            </window.ReactFlow.ReactFlow>
+          </div>
+        </div>
+      );
+    }
+
+    // --- アプリケーションのルート ---
+    function App() {
+      return (
+        <window.ReactFlow.ReactFlowProvider>
+          <MindMapEditor />
+        </window.ReactFlow.ReactFlowProvider>
+      );
+    }
+
+    ReactDOM.render(<AppWrapper />, document.getElementById('root'));
+  </script>
+</body>
+</html>
+</body>
+</html>

@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>09(編集可能)(改行可能)(ノード不可動)(ノード追加)(コピーボタン)(削除ボタン)(ショートカット)(連携)■</title>
+</head>
+<body>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>TREE→UML･list→mindmap</title>
+</head>
+<body>
+    <div class="container">
+        <h1>TREE→UML･list→mindmap</h1>
+        <div class="template-area">
+            <div class="template-box">
+                <div class="textarea-wrapper">
+                    <textarea id="template1" readonly>
+「」についてplantumlのマインドマップ形式ですごく非常に詳細に出力｡
+空白行を作らないこと｡
+各項目は簡潔に改行を使い箇条書きで出力すること｡
+
+# 出力例
+@startmindmap
+* 就活
+** 1. 準備段階
+*** 自己分析
+**** 強み・弱み
+**** 価値観
+**** 適性の把握
+*** 業界・企業研究
+**** 業界動向
+**** 企業情報収集
+@endmindmap
+                    </textarea>
+                    <button class="copy-btn-inner" data-target="template1">コピー</button>
+                </div>
+            </div>
+            <div class="template-box">
+                 <div class="textarea-wrapper">
+                    <textarea id="template2" readonly>よりすごく非常に詳細にして。</textarea>
+                    <button class="copy-btn-inner" data-target="template2">コピー</button>
+                </div>
+            </div>
+        </div>
+        <div class="input-area">
+            <div class="textarea-wrapper">
+                <textarea id="treeInput" placeholder="TREEを入力してください..."></textarea>
+                <button class="copy-btn-inner" data-target="treeInput">コピー</button>
+            </div>
+            <div class="textarea-wrapper">
+                <textarea id="umlInput" placeholder="UML･listを入力してください..."></textarea>
+                <button class="copy-btn-inner" data-target="umlInput">コピー</button>
+            </div>
+        </div>
+        <div class="button-area">
+            <button id="convertButton">tree→uml</button>
+            <button id="generateButton">uml･list→mindmap</button>
+            <button id="saveSvgButton" disabled>SVG</button>
+            <button id="saveJpgButton" disabled>JPG</button>
+        </div>
+        <div class="output-area">
+            <div id="mindMap"></div>
+        </div>
+    </div>
+</body>
+
+
+<style>
+body {
+    margin: 0;
+    padding: 0;
+    background: #ffffff;
+    font-family: "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+    color: #333;
+}
+
+.container {
+    width: 90%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding-top: 30px;
+    text-align: center;
+}
+
+h1 {
+    font-weight: 500;
+    margin-bottom: 20px;
+    color: #000000;
+}
+
+.template-area, .input-area {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 20px;
+    gap: 20px;
+}
+
+.template-box, .input-area > .textarea-wrapper {
+    width: 45%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.textarea-wrapper {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+#template1, #template2 {
+    height: 100px;
+}
+
+#treeInput, #umlInput, #template1, #template2 {
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    padding: 10px;
+    padding-right: 60px; /* ボタンのスペース確保 */
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    background: #f9f9f9;
+    color: #000000;
+    font-size: 14px;
+    resize: vertical;
+    outline: none;
+}
+
+#treeInput, #umlInput {
+    height: 200px;
+}
+
+.copy-btn-inner {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    padding: 4px 10px;
+    font-size: 12px;
+    background-color: #e0e0e0;
+    color: #333;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+.copy-btn-inner:hover {
+    opacity: 1;
+}
+
+
+.button-area {
+    margin-top: 10px;
+}
+
+button {
+    margin: 10px 5px;
+    padding: 12px 25px;
+    border: none;
+    border-radius: 50px;
+    background: #2196f3;
+    color: #fff;
+    font-size: 16px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+button:disabled {
+    background: #9E9E9E;
+    cursor: not-allowed;
+}
+
+button:hover:not(:disabled) {
+    transform: scale(1.05);
+    opacity: 0.9;
+}
+
+.output-area {
+    margin-top: 30px;
+    overflow: auto;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    padding: 10px;
+    min-height: 300px;
+    background-color: #fafafa;
+    resize: both;
+}
+
+#mindMap {
+    display: inline-block;
+    margin-top: 20px;
+}
+
+.error-message { color: #ff6b6b; margin-top: 10px; font-weight: bold; }
+.loading { display: inline-block; margin-left: 10px; border: 3px solid #f3f3f3; border-top: 3px solid #2196f3; border-radius: 50%; width: 15px; height: 15px; animation: spin 1s linear infinite; vertical-align: middle; }
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+/* --- Mindmap Styles --- */
+.node-group {
+    cursor: pointer;
+}
+.node-group.selected .node-rect {
+    stroke: #2196f3;
+    stroke-width: 2.5px;
+}
+
+.text-input { width: 100%; height: 100%; box-sizing: border-box; border: 1px solid #2196f3; background: #fff; color: #000; font-family: "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif; font-size: 14px; text-align: center; outline: none; resize: none; padding: 5px; line-height: 1.4; }
+
+.context-menu-btn {
+    cursor: pointer;
+}
+.context-menu-btn .btn-rect {
+    fill: #5c6bc0;
+    stroke: #3f51b5;
+    rx: 5;
+    transition: fill 0.2s;
+}
+.context-menu-btn:hover .btn-rect {
+    fill: #7986cb;
+}
+.context-menu-btn.delete-btn .btn-rect {
+    fill: #ef5350;
+    stroke: #d32f2f;
+}
+.context-menu-btn.delete-btn:hover .btn-rect {
+    fill: #e57373;
+}
+.context-menu-btn .btn-text {
+    fill: white;
+    font-size: 12px;
+    text-anchor: middle;
+    dominant-baseline: central;
+    pointer-events: none;
+}
+</style>
+
+
+<script>
+// --- UI操作とTREE→UML変換スクリプト ---
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('copy-btn-inner')) {
+        const targetId = e.target.dataset.target;
+        const textarea = document.getElementById(targetId);
+        if (textarea) {
+            textarea.select();
+            textarea.setSelectionRange(0, 99999);
+            document.execCommand('copy');
+            const originalText = e.target.textContent;
+            e.target.textContent = 'Copied!';
+            setTimeout(() => { e.target.textContent = originalText; }, 1500);
+        }
+    }
+});
+
+document.getElementById('convertButton').addEventListener('click', function() {
+    const treeInput = document.getElementById('treeInput').value;
+    const plantUmlOutput = convertTreeToPlantUml(treeInput);
+    document.getElementById('umlInput').value = plantUmlOutput;
+});
+
+function convertTreeToPlantUml(treeText) {
+    const lines = treeText.split('\n');
+    let result = '@startmindmap\n';
+    const stack = [];
+    const indentStack = [];
+    for (let line of lines) {
+        if (!line.trim()) continue;
+        const contentMatch = line.match(/([^\s│├─└─]+.*)$/);
+        if (!contentMatch) continue;
+        const content = contentMatch[1].trim();
+        const indentMatch = line.match(/^(\s*(?:│|\s|├─|└─)*)/);
+        const indentStr = indentMatch ? indentMatch[1] : '';
+        const indentLevel = (indentStr.replace(/├─|└─|│/g, '    ').length) / 4;
+        while (indentStack.length > 0 && indentStack[indentStack.length - 1] >= indentLevel) {
+            indentStack.pop();
+            stack.pop();
+        }
+        indentStack.push(indentLevel);
+        stack.push(content);
+        const asterisks = '*'.repeat(indentStack.length);
+        result += `${asterisks} ${content}\n`;
+    }
+    result += '@endmindmap';
+    return result;
+}
+</script>
+
+
+<script>
+// --- マインドマップ生成とGUI編集のスクリプト ---
+
+let currentTreeData = null;
+let currentSvgElement = null;
+let allNodes = [];
+let selectedNodeData = null;
+let contextMenu = null;
+
+document.getElementById('generateButton').addEventListener('click', function() {
+  const rawUmlText = document.getElementById('umlInput').value;
+  const umlText = preprocessAndUnifyInput(rawUmlText);
+  if (umlText.trim() === '') {
+    displayErrorMessage('UMLテキストが入力されていません。');
+    return;
+  }
+  const generateButton = document.getElementById('generateButton');
+  clearErrorMessage();
+  generateButton.disabled = true;
+  showLoadingIndicator(generateButton);
+  setTimeout(() => {
+    try {
+      const nodes = parseUmlText(umlText);
+      currentTreeData = buildTree(nodes);
+      redrawMindMap(); // ここでは同期は不要
+      document.getElementById('saveSvgButton').disabled = false;
+      document.getElementById('saveJpgButton').disabled = false;
+    } catch (error) {
+      displayErrorMessage('エラーが発生しました: ' + error.message);
+      console.error(error);
+    } finally {
+      generateButton.disabled = false;
+      hideLoadingIndicator(generateButton);
+    }
+  }, 10);
+});
+
+// ★★★ ショートカットキーのハンドラを追加 ★★★
+document.addEventListener('keydown', function(e) {
+    // テキスト入力中はショートカットを無効化
+    const activeElement = document.activeElement;
+    if (activeElement.tagName === 'TEXTAREA' || activeElement.tagName === 'INPUT') {
+        return;
+    }
+
+    if (!selectedNodeData) return; // ノードが選択されていなければ何もしない
+
+    if (e.ctrlKey && e.code === 'Space') {
+        e.preventDefault();
+        addChildNode();
+    } else if (e.ctrlKey && e.shiftKey && e.key === 'Enter') {
+        e.preventDefault();
+        addSiblingNode();
+    } else if (e.key === 'Delete' || e.key === 'Backspace') {
+        e.preventDefault();
+        deleteNode();
+    }
+});
+
+// ★★★ 再描画とUMLテキスト同期を行う統合関数 ★★★
+function redrawAndSync() {
+    redrawMindMap();
+    updateUmlInput();
+}
+
+function redrawMindMap() {
+    const mindMapArea = document.getElementById('mindMap');
+    currentSvgElement = drawMindMap(currentTreeData);
+    mindMapArea.innerHTML = '';
+    mindMapArea.appendChild(currentSvgElement);
+    document.getElementById('saveSvgButton').onclick = () => saveSvg(currentSvgElement);
+    document.getElementById('saveJpgButton').onclick = () => saveJpg(currentSvgElement);
+}
+
+// ★★★ データからUMLテキストを生成し、テキストエリアを更新する関数 ★★★
+function updateUmlInput() {
+    const umlText = generateUmlTextFromData(currentTreeData);
+    document.getElementById('umlInput').value = umlText;
+}
+
+function generateUmlTextFromData(rootNode) {
+    let text = '';
+    if (rootNode && rootNode.children) {
+        rootNode.children.forEach(child => {
+            text += generateNodeTextRecursive(child);
+        });
+    }
+    return text;
+}
+
+function generateNodeTextRecursive(node) {
+    let nodeText = '*'.repeat(node.level) + ' ' + node.name + '\n';
+    if (node.children && node.children.length > 0) {
+        node.children.forEach(child => {
+            nodeText += generateNodeTextRecursive(child);
+        });
+    }
+    return nodeText;
+}
+
+
+function displayErrorMessage(message) { /* ...変更なし... */ }
+function clearErrorMessage() { /* ...変更なし... */ }
+function showLoadingIndicator(button) { /* ...変更なし... */ }
+function hideLoadingIndicator(button) { /* ...変更なし... */ }
+function preprocessAndUnifyInput(text) { /* ...変更なし... */ }
+function parseUmlText(umlText) { /* ...変更なし... */ }
+function buildTree(nodes) { /* ...変更なし... */ }
+
+const config = { fontSize: 14, fontFamily: '"Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif', lineHeight: 1.4, nodePadding: 10, horizontalGap: 50, verticalGap: 5, nodeCornerRadius: 5, nodeFillColor: '#e8e8e8', nodeStrokeColor: '#bdbdbd', nodeTextColor: '#333333', lineColor: '#616161', lineWidth: 1.5, treeGap: 40 };
+
+function calculateNodePositions(node, ctx) { /* ...変更なし... */ }
+function setNodeCoordinates(node, x, y) { /* ...変更なし... */ }
+
+function drawMindMap(virtualRootNode) {
+    if (!virtualRootNode || !virtualRootNode.children || virtualRootNode.children.length === 0) {
+        const emptySvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        emptySvg.setAttribute('width', '0'); emptySvg.setAttribute('height', '0');
+        return emptySvg;
+    }
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const actualRoots = virtualRootNode.children;
+    let currentY = 0, maxTreeWidth = 0;
+    actualRoots.forEach(root => {
+        calculateNodePositions(root, ctx);
+        setNodeCoordinates(root, 0, currentY);
+        const treeWidth = getMaxX(root);
+        const treeHeight = getMaxY(root) - getMinY(root);
+        currentY += treeHeight + config.treeGap;
+        if (treeWidth > maxTreeWidth) maxTreeWidth = treeWidth;
+    });
+    const svgWidth = maxTreeWidth + 200;
+    const svgHeight = currentY;
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('width', svgWidth);
+    svg.setAttribute('height', svgHeight);
+    svg.setAttribute('viewBox', `0 0 ${svgWidth} ${svgHeight}`);
+    currentSvgElement = svg;
+
+    allNodes = [];
+    traverseNodes(virtualRootNode, node => allNodes.push(node));
+
+    allNodes.forEach(node => {
+        if (node.parentId !== null && node.parentId !== -1) {
+            const parentNode = allNodes.find(n => n.id === node.parentId);
+            if (!parentNode) return;
+            const path = document.createElementNS(svgNS, 'path');
+            path.setAttribute('id', `path-from-${parentNode.id}-to-${node.id}`);
+            path.setAttribute('d', getPathData(parentNode, node));
+            path.style.stroke = config.lineColor; path.style.strokeWidth = config.lineWidth; path.style.fill = 'none';
+            svg.appendChild(path);
+        }
+    });
+
+    allNodes.forEach(node => {
+        if (node.id === -1) return;
+        const group = document.createElementNS(svgNS, 'g');
+        group.setAttribute('id', `node-group-${node.id}`);
+        group.setAttribute('class', 'node-group');
+        group.setAttribute('transform', `translate(${node.x}, ${node.y})`);
+        const rect = document.createElementNS(svgNS, 'rect');
+        rect.setAttribute('class', 'node-rect');
+        rect.setAttribute('width', node.width); rect.setAttribute('height', node.height); rect.setAttribute('rx', config.nodeCornerRadius);
+        rect.style.fill = config.nodeFillColor; rect.style.stroke = config.nodeStrokeColor;
+        group.appendChild(rect);
+        const textLines = node.name.split('\n');
+        const textGroup = document.createElementNS(svgNS, 'g');
+        const lineHeight = config.fontSize * config.lineHeight;
+        const startY = (node.height - (textLines.length * lineHeight) + lineHeight) / 2;
+        textLines.forEach((line, index) => {
+            const text = document.createElementNS(svgNS, 'text');
+            text.setAttribute('x', node.width / 2); text.setAttribute('y', startY + (index * lineHeight));
+            text.style.fill = config.nodeTextColor; text.style.fontSize = `${config.fontSize}px`; text.style.fontFamily = config.fontFamily;
+            text.style.textAnchor = 'middle'; text.style.dominantBaseline = 'middle';
+            text.textContent = line;
+            textGroup.appendChild(text);
+        });
+        group.appendChild(textGroup);
+        svg.appendChild(group);
+        makeNodeInteractive(group, node);
+    });
+
+    contextMenu = createContextMenu(svg);
+    svg.appendChild(contextMenu);
+    svg.addEventListener('click', (e) => { if (e.target === svg) deselectAllNodes(); });
+    return svg;
+}
+
+function getPathData(sourceNode, targetNode) { /* ...変更なし... */ }
+
+function makeNodeInteractive(group, node) {
+    group.addEventListener('click', (e) => { e.stopPropagation(); selectNode(group, node); });
+    group.addEventListener('dblclick', (e) => { e.stopPropagation(); editText(group, node); });
+}
+
+function selectNode(group, node) {
+    deselectAllNodes();
+    selectedNodeData = node;
+    group.classList.add('selected');
+    contextMenu.setAttribute('transform', `translate(${node.x + node.width + 10}, ${node.y})`);
+    contextMenu.style.display = 'block';
+}
+
+function deselectAllNodes() {
+    if (selectedNodeData) {
+        const oldSelectedGroup = document.getElementById(`node-group-${selectedNodeData.id}`);
+        if (oldSelectedGroup) oldSelectedGroup.classList.remove('selected');
+    }
+    selectedNodeData = null;
+    if (contextMenu) contextMenu.style.display = 'none';
+}
+
+function createContextMenu(svg) {
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const menu = document.createElementNS(svgNS, 'g');
+    menu.setAttribute('id', 'context-menu');
+    menu.style.display = 'none';
+
+    const btnWidth = 50, btnHeight = 25, btnGap = 5;
+    const childBtn = createButton('＋子', 0, 0, btnWidth, btnHeight, '', addChildNode);
+    const siblingBtn = createButton('＋兄弟', 0, btnHeight + btnGap, btnWidth, btnHeight, '', addSiblingNode);
+    const deleteBtn = createButton('削除', 0, (btnHeight + btnGap) * 2, btnWidth, btnHeight, 'delete-btn', deleteNode);
+
+    menu.appendChild(childBtn);
+    menu.appendChild(siblingBtn);
+    menu.appendChild(deleteBtn);
+    return menu;
+}
+
+function createButton(label, x, y, width, height, className, onClick) {
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const button = document.createElementNS(svgNS, 'g');
+    button.setAttribute('class', `context-menu-btn ${className}`);
+    button.setAttribute('transform', `translate(${x}, ${y})`);
+    const rect = document.createElementNS(svgNS, 'rect');
+    rect.setAttribute('class', 'btn-rect');
+    rect.setAttribute('width', width); rect.setAttribute('height', height);
+    const text = document.createElementNS(svgNS, 'text');
+    text.setAttribute('class', 'btn-text');
+    text.setAttribute('x', width / 2); text.setAttribute('y', height / 2);
+    text.textContent = label;
+    button.appendChild(rect);
+    button.appendChild(text);
+    button.addEventListener('click', (e) => { e.stopPropagation(); onClick(); });
+    return button;
+}
+
+function getNewId() {
+    return allNodes.length > 0 ? Math.max(...allNodes.map(n => n.id)) + 1 : 0;
+}
+
+function addChildNode() {
+    if (!selectedNodeData) return;
+    const newId = getNewId();
+    const newNode = { id: newId, name: 'New Child', level: selectedNodeData.level + 1, parentId: selectedNodeData.id, children: [], width: 0, height: 0, x: 0, y: 0 };
+    selectedNodeData.children.push(newNode);
+    deselectAllNodes();
+    redrawAndSync(); // ★★★ 同期実行
+}
+
+function addSiblingNode() {
+    if (!selectedNodeData) return;
+    const parent = allNodes.find(n => n.id === selectedNodeData.parentId);
+    if (!parent) return;
+
+    const newId = getNewId();
+    const newNode = { id: newId, name: 'New Sibling', level: selectedNodeData.level, parentId: parent.id, children: [], width: 0, height: 0, x: 0, y: 0 };
+    const index = parent.children.findIndex(child => child.id === selectedNodeData.id);
+    parent.children.splice(index + 1, 0, newNode);
+    
+    deselectAllNodes();
+    redrawAndSync(); // ★★★ 同期実行
+}
+
+function deleteNode() {
+    if (!selectedNodeData) return;
+    if (selectedNodeData.parentId === -1) {
+        alert('ルートノードは削除できません。');
+        return;
+    }
+    const parent = allNodes.find(n => n.id === selectedNodeData.parentId);
+    if (!parent) return;
+    const index = parent.children.findIndex(child => child.id === selectedNodeData.id);
+    if (index > -1) {
+        parent.children.splice(index, 1);
+    }
+    deselectAllNodes();
+    redrawAndSync(); // ★★★ 同期実行
+}
+
+function editText(group, node) {
+    const textGroup = group.querySelector('g');
+    if (textGroup) textGroup.style.display = 'none';
+    const foreignObject = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
+    foreignObject.setAttribute('x', 0);
+    foreignObject.setAttribute('y', 0);
+    foreignObject.setAttribute('width', node.width);
+    foreignObject.setAttribute('height', node.height);
+    const textarea = document.createElement('textarea');
+    textarea.setAttribute('class', 'text-input');
+    textarea.value = node.name;
+    foreignObject.appendChild(textarea);
+    group.appendChild(foreignObject);
+    textarea.focus();
+    textarea.select();
+    const finishEditing = () => {
+        const newName = textarea.value;
+        if (newName !== node.name) {
+            node.name = newName;
+            redrawAndSync(); // ★★★ 同期実行
+        } else {
+            group.removeChild(foreignObject);
+            if (textGroup) textGroup.style.display = 'block';
+        }
+    };
+    textarea.addEventListener('blur', finishEditing);
+    textarea.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+            finishEditing();
+        } else if (e.key === 'Escape') {
+            group.removeChild(foreignObject);
+            if (textGroup) textGroup.style.display = 'block';
+        }
+    });
+}
+
+function traverseNodes(node, callback) { /* ...変更なし... */ }
+function getMaxX(node) { /* ...変更なし... */ }
+function getMaxY(node) { /* ...変更なし... */ }
+function getMinY(node) { /* ...変更なし... */ }
+function saveSvg(svgElement) { /* ...変更なし... */ }
+function saveJpg(svgElement) { /* ...変更なし... */ }
+
+// --- 変更のない関数の再掲 ---
+traverseNodes = (node, callback) => { callback(node); if(node.children) node.children.forEach(child => traverseNodes(child, callback)); };
+getMaxX = (node) => { let maxX = node.x + node.width; if(node.children) node.children.forEach(child => { maxX = Math.max(maxX, getMaxX(child)); }); return maxX; };
+getMaxY = (node) => { let maxY = node.y + node.height; if(node.children) node.children.forEach(child => { maxY = Math.max(maxY, getMaxY(child)); }); return maxY; };
+getMinY = (node) => { let minY = node.y; if (node.children && node.children.length > 0) { minY = Math.min(node.y, ...node.children.map(getMinY)); } return minY; };
+saveSvg = (svgElement) => { const serializer = new XMLSerializer(); let source = serializer.serializeToString(svgElement); if (!source.match(/^<svg[^>]+xmlns="http:\/\/www\.w3\.org\/2000\/svg"/)) { source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"'); } const blob = new Blob([source], { type: 'image/svg+xml;charset=utf-8' }); const url = URL.createObjectURL(blob); const downloadLink = document.createElement('a'); downloadLink.href = url; downloadLink.download = 'mindmap.svg'; document.body.appendChild(downloadLink); downloadLink.click(); document.body.removeChild(downloadLink); };
+saveJpg = (svgElement) => { const svgString = new XMLSerializer().serializeToString(svgElement); const svgData = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgString))); const img = new Image(); img.src = svgData; img.onload = function() { const canvas = document.createElement('canvas'); canvas.width = svgElement.getAttribute('width'); canvas.height = svgElement.getAttribute('height'); const ctx = canvas.getContext('2d'); ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, canvas.width, canvas.height); ctx.drawImage(img, 0, 0); canvas.toBlob(function(blob) { const url = URL.createObjectURL(blob); const downloadLink = document.createElement('a'); downloadLink.href = url; downloadLink.download = 'mindmap.jpg'; document.body.appendChild(downloadLink); downloadLink.click(); document.body.removeChild(downloadLink); }, 'image/jpeg', 1.0); }; img.onerror = function() { displayErrorMessage('JPGの生成に失敗しました。'); }; };
+</script>
+
+</html>
+</body>
+</html>

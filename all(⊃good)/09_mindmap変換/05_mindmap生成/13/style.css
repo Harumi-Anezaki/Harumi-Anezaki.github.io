@@ -1,0 +1,141 @@
+/* リセット */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* フォントと背景 */
+body {
+    font-family: 'Montserrat', sans-serif;
+    background-color: #ffffff;
+    color: #ffffff;
+    overflow: hidden;
+}
+
+#app {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+/* ヘッダー */
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #1a1a1a;
+    padding: 10px 20px;
+    z-index: 1000;
+}
+
+.logo {
+    font-size: 24px;
+    font-weight: 600;
+    color: #00d4ff;
+}
+
+.logo span {
+    color: #ff00ff;
+}
+
+nav ul {
+    list-style: none;
+    display: flex;
+}
+
+nav ul li {
+    margin-left: 20px;
+}
+
+nav ul li a {
+    color: #ffffff;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.3s;
+}
+
+nav ul li a:hover {
+    color: #00d4ff;
+}
+
+/* メインコンテンツ */
+main {
+    flex-grow: 1;
+    position: relative;
+    cursor: grab;
+}
+
+/* マインドマップコンテナ */
+#mindmap-container {
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+/* ノードのスタイル */
+.node {
+    position: absolute;
+    min-width: 100px;
+    padding: 15px 20px;
+    background-color: rgba(26, 26, 26, 0.9);
+    border: 2px solid #00d4ff;
+    border-radius: 10px;
+    cursor: pointer;
+    user-select: none;
+    color: #ffffff;
+    text-align: center;
+    font-weight: 500;
+    transition: transform 0.2s;
+}
+
+.node:hover {
+    transform: scale(1.05);
+}
+
+/* コネクタのスタイル */
+.connector {
+    position: absolute;
+    width: 2px;
+    background-color: #00d4ff;
+    transform-origin: top left;
+}
+
+/* コンテキストメニュー */
+.context-menu {
+    position: absolute;
+    background-color: #1a1a1a;
+    border: 1px solid #00d4ff;
+    border-radius: 5px;
+    z-index: 1000;
+}
+
+.context-menu ul {
+    list-style: none;
+}
+
+.context-menu ul li {
+    padding: 10px 20px;
+    cursor: pointer;
+    color: #ffffff;
+    transition: background-color 0.3s;
+}
+
+.context-menu ul li:hover {
+    background-color: #00d4ff;
+}
+
+/* スクロールバーのカスタマイズ */
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #333333;
+    border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #555555;
+}
