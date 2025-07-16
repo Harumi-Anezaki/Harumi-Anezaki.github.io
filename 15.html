@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>15</title>
+</head>
+<body>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>いつでも一緒アプリ（安定版）</title>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <style>
+        body { font-family: sans-serif; padding: 20px; line-height: 1.6; }
+        h1, h2 { border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        #status { font-weight: bold; }
+        #status.connecting { color: #007bff; }
+        #status.connected { color: #28a745; }
+        #status.error { color: #dc3545; }
+        .video-container { display: flex; flex-wrap: wrap; gap: 20px; margin-top: 20px; }
+        video { background-color: #000; border: 1px solid #ddd; }
+    </style>
+</head>
+<body>
+
+    <h1 id="title">役割を読み込み中...</h1>
+    <p>状態: <span id="status" class="connecting">待機中...</span></p>
+
+    <div class="video-container">
+        <div id="my-video-wrapper">
+            <h2>あなたのカメラ（配信映像）</h2>
+            <video id="my-video" width="480" height="360" autoplay muted></video>
+        </div>
+        <div id="partner-video-wrapper">
+            <h2>相手の映像（受信映像）</h2>
+            <video id="partner-video" width="480" height="360" autoplay></video>
+        </div>
+    </div>
+
+    <script>
+// --- 設定項目 ---
+// ★★★ 必ずユニークな文字列に変更してください ★★★
+// 例: const KARESHI_ID = 'my-home-pet-camera-2023';
+const KARESHI_ID = 'change-this-to-a-unique-kareshi-id-12345';
+// 例: const KANOJO_ID = 'my-personal-viewer-2023';
+const KANOJO_ID = 'change-this-to-a-unique-kanojo-id-67890';
+// --- 設定はここまで ---
+
+const myVideo = document.getElementById('my-video');
+const partnerVideo = document.getElementById('partner-video');
+const statusSpan = document.getElementById('status');
+const titleH1 = document.getElementById('title');
+const myVideoWrapper = document.getElementById('my-video-wrapper');
+const partnerVideoWrapper = document.getElementById('partner-video-wrapper');
+
+const urlParams = new URLSearchParams(window.location.search);
+const myRole = urlParams.get('role');
+
+if (!myRole || (myRole !== 'kareshi' && myRole !== 'kanojo')) {
+    document.body.innerHTML = `<h1>エラー</h1><p>URLの末尾に <strong>?role=kareshi</strong> (配信側) または <strong>?role=kanojo</strong> (視聴側) をつけてアクセスしてください。</p>`;
+    throw new Error("役割が指定されていません。");
+}
+
+const myId = (myRole === 'kareshi') ? KARESHI_ID : KANOJO_ID;
+const partnerId = (myRole === 'kareshi') ? KANOJO_ID : KARESHI_ID;
+let localStream = null; // 自分の映像ストリームを保持する変数
+
+// UI初期設定
+if (myRole === 'kareshi') {
+    titleH1.textContent = "配信モード（ペットカメラ側）";
+    partnerVideoWrapper.style.display = 'none'; // 相手の映像は不要
+} else {
+    titleH1.textContent = "視聴モード（見守る側）";
+    myVideoWrapper.style.display = 'none'; // 自分の映像は不要
+}
+
+// PeerJSオブジェクトの初期化
+const peer = new Peer(myId, { host: '0.peerjs.com', port: 443, secure: true, debug: 2 });
+
+peer.on('open', (id) => {
+    statusSpan.textContent = `接続準備完了 (ID: ${id})。`;
+    if (myRole === 'kareshi') {
+        // 彼氏側（配信側）：ページを開いたらすぐにカメラを起動して待機
+        startMyCamera();
+        statusSpan.textContent += ' 視聴者が来るのを待っています...';
+    } else {
+        // 彼女側（視聴側）：準備ができたら、彼氏に映像をリクエストする
+        statusSpan.textContent += ' 相手の映像をリクエストします...';
+        requestVideo();
+    }
+});
+
+// 【彼氏側（配信側）の処理】視聴リクエスト（Call）が来たら、自分の映像を渡して応答する
+peer.on('call', (call) => {
+    statusSpan.textContent = "視聴リクエストを受信！映像を送信します...";
+    statusSpan.className = 'connected';
+    
+    // 自分のカメラストリームを相手に送る
+    call.answer(localStream);
+
+    // 相手が接続を切ったら
+    call.on('close', () => {
+        statusSpan.textContent = "視聴者が接続を切りました。待機状態に戻ります...";
+        statusSpan.className = 'connecting';
+    });
+});
+
+// 【彼女側（視聴側）の処理】彼氏からの映像ストリームが届いたら、ビデオに表示する
+function setupCallEvents(call) {
+    call.on('stream', (stream) => {
+        statusSpan.textContent = "接続完了！";
+        statusSpan.className = 'connected';
+        partnerVideo.srcObject = stream;
+        partnerVideo.play().catch(e => console.error("Video play failed:", e));
+    });
+
+    call.on('close', () => {
+        statusSpan.textContent = "相手が接続を切断しました。";
+        statusSpan.className = 'error';
+    });
+
+    call.on('error', (err) => {
+        console.error('Call Error:', err);
+        statusSpan.textContent = `通話エラー: ${err.message}`;
+        statusSpan.className = 'error';
+    });
+}
+
+// 彼氏側（配信側）：自分のカメラを起動する関数
+async function startMyCamera() {
+    try {
+        localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        myVideo.srcObject = localStream;
+        await myVideo.play();
+    } catch (err) {
+        console.error('Failed to get local stream', err);
+        statusSpan.textContent = "カメラの起動に失敗しました。ブラウザのカメラアクセスを許可してください。";
+        statusSpan.className = 'error';
+    }
+}
+
+// 彼女側（視聴側）：彼氏に映像をリクエスト（Call）する関数
+function requestVideo() {
+    // ★★★ 修正点 ★★★
+    // Peer.js v1.xでは、call時に何らかのMediaStreamオブジェクトを渡す必要がある。
+    // 映像を送らない場合でも、空のストリームを作成して渡すことでエラーを回避する。
+    const dummyStream = new MediaStream();
+    const call = peer.call(partnerId, dummyStream); 
+
+    // peer.callが失敗するとcallがundefinedになる可能性があるため、チェックを追加
+    if (call) {
+        setupCallEvents(call);
+    } else {
+        console.error("peer.callに失敗しました。相手のIDが正しいか、ネットワーク状態を確認してください。");
+        statusSpan.textContent = "相手への発信に失敗しました。";
+        statusSpan.className = 'error';
+    }
+}
+
+peer.on('error', (err) => {
+    console.error('PeerJS Error:', err);
+    // 「peer unavailable」エラーは、視聴側がリクエストした時に配信側がオフラインの場合に発生する
+    if (err.type === 'peer-unavailable') {
+        statusSpan.textContent = "相手がオンラインではありません。後でもう一度試してください。";
+    } else {
+        statusSpan.textContent = `エラー: ${err.message}`;
+    }
+    statusSpan.className = 'error';
+});
+    </script>
+</body>
+</html>
+</body>
+</html>
