@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>06_受信</title>
+</head>
+<body>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>映像受信</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.2/peer.min.js"></script>
+    <style>
+        :root { --bg-color: #f4f4f9; --text-color: #333; --primary-color: #ff69b4; --border-color: #ddd; } body { font-family: 'Noto Sans JP', sans-serif; background-color: var(--bg-color); color: var(--text-color); display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 10px; box-sizing: border-box; } .container { width: 100%; max-width: 900px; text-align: center; } h1 { font-size: 2rem; color: var(--primary-color); margin-bottom: 5px; } p { color: #888; margin-top: 0; } video { width: 100%; height: auto; border-radius: 16px; background: #000; border: 3px solid var(--border-color); box-shadow: 0 5px 20px rgba(0,0,0,0.1); margin-top: 15px; } #status { margin-top: 15px; font-weight: bold; font-size: 1rem; color: #555; min-height: 1.2em; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>I'm always watching you</h1>
+        <p>あなたのこと、いつでも見てるよ</p>
+        <video id="their-video" autoplay playsinline></video>
+        <div id="status">彼の映像を探しています...</div>
+    </div>
+    <script>
+        const TARGET_PEER_ID = 'aaa'; 
+        const theirVideo = document.getElementById('their-video');
+        const statusDiv = document.getElementById('status');
+
+        // ★★★ こちらもサーバー設定を削除 ★★★
+        const peer = new Peer();
+
+        function connectToPeer() { statusDiv.textContent = '彼の映像を探しています...'; const call = peer.call(TARGET_PEER_ID, null); if (!call) { statusDiv.textContent = '準備中です。少し待って再試行します...'; setTimeout(connectToPeer, 3000); return; } call.on('stream', (stream) => { statusDiv.textContent = '接続成功！'; theirVideo.srcObject = stream; theirVideo.play(); }); call.on('close', () => { handleDisconnect(); }); call.on('error', () => { handleDisconnect(); }); }
+        function handleDisconnect() { statusDiv.textContent = '彼が配信を停止しました。5秒後に再確認します。'; theirVideo.srcObject = null; setTimeout(connectToPeer, 5000); }
+        peer.on('open', (id) => { connectToPeer(); });
+        peer.on('error', (err) => { console.error('PeerJSエラー:', err); if (err.type === 'peer-unavailable') { handleDisconnect(); } else { statusDiv.textContent = '接続エラーが発生しました。ページを再読み込みします。'; setTimeout(() => location.reload(), 5000); } });
+    </script>
+</body>
+</html>
+</body>
+</html>
