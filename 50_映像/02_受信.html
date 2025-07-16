@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>02</title>
+</head>
+<body>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>映像受信（彼女用）</title>
+    <!-- PeerJSライブラリを読み込み -->
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peer.min.js"></script>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding: 20px; }
+        video { border: 2px solid #ccc; width: 90%; max-width: 800px; background: #000; }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; }
+        #status { margin-top: 15px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>映像受信（彼女用）</h1>
+    <p>いつでも彼の様子を見ることができます。</p>
+
+    <!-- 彼氏の映像を表示する場所 -->
+    <video id="their-video" autoplay></video>
+
+    <div>
+        <button id="receive-btn">受信開始</button>
+    </div>
+    <div id="status">待機中...</div>
+
+    <script>
+        // ★★★ 彼氏側で設定したのと同じユニークIDを入力してください ★★★
+        const TARGET_PEER_ID = 'aaa';
+
+        const theirVideo = document.getElementById('their-video');
+        const receiveBtn = document.getElementById('receive-btn');
+        const statusDiv = document.getElementById('status');
+
+        // Peerオブジェクトを生成（IDは自動で割り振られる）
+        const peer = new Peer();
+
+        // 「受信開始」ボタンが押されたときの処理
+        receiveBtn.addEventListener('click', () => {
+            statusDiv.textContent = '彼の映像を探しています...';
+            receiveBtn.disabled = true; // ボタンを無効化
+
+            // 彼氏のIDに接続を要求
+            const call = peer.call(TARGET_PEER_ID, null); // 自分の映像は送らないのでnull
+
+            if (!call) {
+                // PeerJSがまだ初期化中の場合など
+                setTimeout(() => {
+                    statusDiv.textContent = 'まだ準備中です。もう一度試しています...';
+                    receiveBtn.click();
+                }, 3000);
+                return;
+            }
+
+            // 彼氏から映像ストリームが送られてきたら呼ばれる
+            call.on('stream', (stream) => {
+                statusDiv.textContent = '接続成功！彼の映像を表示します。';
+                theirVideo.srcObject = stream;
+            });
+
+            // 彼氏が接続を切ったときに呼ばれる
+            call.on('close', () => {
+                statusDiv.textContent = '彼が配信を停止しました。';
+                theirVideo.srcObject = null;
+                receiveBtn.disabled = false; // ボタンを再度有効化
+            });
+
+            // 接続に失敗したときのタイムアウト処理
+            const timeout = setTimeout(() => {
+                statusDiv.textContent = '現在、彼は映像を垂れ流しにしていないようです。';
+                receiveBtn.disabled = false; // ボタンを再度有効化
+            }, 10000); // 10秒待っても応答がなければタイムアウト
+
+            call.on('open', () => {
+                clearTimeout(timeout); // 接続できたらタイムアウトを解除
+            });
+        });
+
+        // エラー処理
+        peer.on('error', (err) => {
+            console.error('PeerJSエラー:', err);
+            // 彼氏のIDが見つからない場合のエラーをハンドリング
+            if (err.type === 'peer-unavailable') {
+                statusDiv.textContent = '現在、彼は映像を垂れ流しにしていないようです。';
+                receiveBtn.disabled = false;
+            } else {
+                statusDiv.textContent = `エラーが発生しました: ${err.type}`;
+            }
+        });
+
+    </script>
+</body>
+</html>
+</body>
+</html>

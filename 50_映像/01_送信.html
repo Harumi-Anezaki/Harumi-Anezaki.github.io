@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>01</title>
+</head>
+<body>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>映像送信（彼氏用）</title>
+    <!-- PeerJSライブラリを読み込み -->
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peer.min.js"></script>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding: 20px; }
+        video { border: 2px solid #ccc; width: 80%; max-width: 640px; background: #000; }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; }
+        #status { margin-top: 15px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>映像送信（彼氏用）</h1>
+    <p>あなたのカメラ映像を彼女に届けます。</p>
+
+    <!-- 自分の映像を表示する場所 -->
+    <video id="my-video" autoplay muted></video>
+
+    <div>
+        <button id="start-btn">送信開始</button>
+    </div>
+    <div id="status">待機中...</div>
+
+    <script>
+        // ★★★ 二人だけのユニークなIDを設定してください ★★★
+        // 例: 'my-lovely-girlfriend-2025' のような、他の人と被らない文字列
+        const PEER_ID = 'aaa';
+
+        const myVideo = document.getElementById('my-video');
+        const startBtn = document.getElementById('start-btn');
+        const statusDiv = document.getElementById('status');
+        let myStream;
+
+        // Peerオブジェクトを生成
+        const peer = new Peer(PEER_ID);
+
+        // Peerサーバーに接続できたら呼ばれる
+        peer.on('open', (id) => {
+            statusDiv.textContent = `接続準備OK (あなたのID: ${id})`;
+        });
+
+        // 「送信開始」ボタンが押されたときの処理
+        startBtn.addEventListener('click', async () => {
+            try {
+                // カメラ映像を取得（音声は不要なのでfalse）
+                myStream = await navigator.mediaDevices.getUserMedia({
+                    video: true,
+                    audio: false
+                });
+                // 自分のビデオに映像を表示
+                myVideo.srcObject = myStream;
+                statusDiv.textContent = '映像を垂れ流し中... 彼女からの接続を待っています。';
+                startBtn.disabled = true; // ボタンを無効化
+            } catch (err) {
+                console.error('カメラの取得に失敗しました:', err);
+                statusDiv.textContent = 'エラー: カメラを起動できませんでした。';
+            }
+        });
+
+        // 彼女側から接続要求が来たときに呼ばれる
+        peer.on('call', (call) => {
+            // 自分の映像ストリームを渡して応答する
+            call.answer(myStream);
+            statusDiv.textContent = '彼女が映像を見ています！';
+
+            // 彼女が接続を切ったときの処理
+            call.on('close', () => {
+                statusDiv.textContent = '彼女の接続が切れました。再度接続を待っています。';
+            });
+        });
+
+        // エラー処理
+        peer.on('error', (err) => {
+            console.error('PeerJSエラー:', err);
+            statusDiv.textContent = `エラーが発生しました: ${err.type}`;
+        });
+    </script>
+</body>
+</html>
+</body>
+</html>
