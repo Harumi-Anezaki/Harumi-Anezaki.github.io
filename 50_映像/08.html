@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>08</title>
+</head>
+<body>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>いつでも一緒アプリ</title>
+    <!-- Peer.jsライブラリを読み込み -->
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        h1, h2 { border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        input[type="text"] { padding: 8px; width: 250px; }
+        button { padding: 8px 15px; margin-left: 10px; cursor: pointer; }
+        #my-id-container { background-color: #f0f0f0; padding: 10px; display: inline-block; }
+        .video-container { display: flex; gap: 20px; margin-top: 20px; }
+        video { background-color: #000; }
+    </style>
+</head>
+<body>
+
+    <h1>いつでも一緒アプリ</h1>
+
+    <div id="my-id-container">
+        あなたのPeer ID: <strong id="my-id">接続中...</strong>
+    </div>
+    <p>送信側（彼氏）はこのIDをコピーして受信側（彼女）に教えてください。</p>
+
+    <hr>
+
+    <h2>操作</h2>
+    <input type="text" id="partner-id" placeholder="相手のPeer IDを入力">
+    <button id="send-button">送信開始</button>
+    <button id="receive-button">受信開始</button>
+
+    <hr>
+
+    <div class="video-container">
+        <div>
+            <h2>あなたのカメラ</h2>
+            <video id="my-video" width="480" height="360" autoplay muted></video>
+        </div>
+        <div>
+            <h2>相手の映像</h2>
+            <video id="partner-video" width="480" height="360" autoplay></video>
+        </div>
+    </div>
+
+    <script>
+        const myVideo = document.getElementById('my-video');
+        const partnerVideo = document.getElementById('partner-video');
+        const myIdSpan = document.getElementById('my-id');
+        const partnerIdInput = document.getElementById('partner-id');
+        const sendButton = document.getElementById('send-button');
+        const receiveButton = document.getElementById('receive-button');
+
+        // Peerオブジェクトを初期化します。
+        // APIキーは空でもPeerJSのフリーサーバーを利用できます。
+        const peer = new Peer({
+            key: '', // APIキーは不要
+            debug: 3
+        });
+
+        let localStream;
+
+        // Peerサーバーに接続が完了すると'open'イベントが発火します
+        peer.on('open', (id) => {
+            myIdSpan.textContent = id;
+        });
+
+        // ■■■ 送信側の処理 ■■■
+        sendButton.addEventListener('click', async () => {
+            try {
+                // 自分のカメラ映像（音声なし）を取得します
+                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                myVideo.srcObject = localStream;
+                myVideo.play();
+
+                // UIの制御
+                sendButton.disabled = true;
+                receiveButton.disabled = true;
+                alert('映像の送信準備ができました。相手からの接続を待っています...');
+
+            } catch (err) {
+                console.error('カメラの取得に失敗しました:', err);
+                alert('カメラの取得に失敗しました。ブラウザの権限を確認してください。');
+            }
+        });
+
+        // 'call'イベントは、相手から着信があったときに発火します
+        peer.on('call', (call) => {
+            // 自分の映像ストリームを相手に送り返します
+            call.answer(localStream);
+
+            // 相手のストリームは不要なので、ここでは何もしません
+            call.on('stream', (stream) => {
+                // 通常はここで相手の映像を表示しますが、送信側なので不要です
+            });
+        });
+
+
+        // ■■■ 受信側の処理 ■■■
+        receiveButton.addEventListener('click', () => {
+            const partnerId = partnerIdInput.value;
+            if (!partnerId) {
+                alert('相手のPeer IDを入力してください。');
+                return;
+            }
+
+            try {
+                // 相手のIDに対して、自分のストリーム情報なしで発信します
+                const call = peer.call(partnerId, null);
+
+                // 相手が応答し、映像ストリームを送ってきたら'stream'イベントが発火します
+                call.on('stream', (stream) => {
+                    // 相手の映像をvideo要素に設定して再生します
+                    partnerVideo.srcObject = stream;
+                    partnerVideo.play();
+                });
+                
+                // UIの制御
+                sendButton.disabled = true;
+                receiveButton.disabled = true;
+
+            } catch(err) {
+                console.error('発信に失敗しました:', err);
+                alert('発信に失敗しました。IDが正しいか確認してください。');
+            }
+        });
+        
+        // エラーハンドリング
+        peer.on('error', (err) => {
+            console.error(err);
+            alert(`エラーが発生しました: ${err.message}`);
+        });
+
+    </script>
+</body>
+</html>
+</body>
+</html>
