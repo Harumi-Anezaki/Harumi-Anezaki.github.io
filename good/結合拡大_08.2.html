@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>07(グリッド)(隙間なし)</title>
+    <title>結合･拡大</title>
 </head>
 <body>
 <!DOCTYPE html>
@@ -75,7 +75,13 @@
                 <path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
             </svg>
         </label>
-        
+        <!-- 自己ダウンロードボタン (セカンダリ) -->
+        <button id="downloadBtn" title="このページをダウンロード"
+                class="w-12 h-12 flex items-center justify-center bg-gradient-to-br from-gray-500 to-gray-600 text-white rounded-full shadow-lg transform transition-all duration-200 ease-in-out hover:scale-110 hover:shadow-xl active:scale-100">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 8.25H7.5a2.25 2.25 0 00-2.25 2.25v9a2.25 2.25 0 002.25 2.25h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25H15M9 12l3 3m0 0l3-3m-3 3V2.25" />
+            </svg>
+        </button>        
         <!-- リセットボタン (セカンダリ) - 修正版 -->
         <button id="resetBtn" title="リセット"
                 class="w-12 h-12 flex items-center justify-center bg-gradient-to-br from-gray-500 to-gray-600 text-white rounded-full shadow-lg transform transition-all duration-200 ease-in-out hover:scale-110 hover:shadow-xl active:scale-100">
@@ -167,6 +173,7 @@
                 const zoomInBtn = document.getElementById('zoomInBtn');
                 const zoomOutBtn = document.getElementById('zoomOutBtn');
                 const resetBtn = document.getElementById('resetBtn');
+		const downloadBtn = document.getElementById('downloadBtn');
 
                 let scale = 1, translateX = 0, translateY = 0, isPanning = false, startX = 0, startY = 0;
 
@@ -224,6 +231,29 @@
                 const stopPanning = () => { isPanning = false; container.style.cursor = 'default'; };
                 container.addEventListener('pointerup', stopPanning);
                 container.addEventListener('pointerleave', stopPanning);
+
+                // 自己ダウンロード機能
+                downloadBtn.addEventListener('click', () => {
+                    // 現在のDOMからHTML文字列を生成
+                    let htmlText = "<!DOCTYPE html>" + document.documentElement.outerHTML;
+
+                    // --- 表示崩れの原因となる、読み込まれたコンテンツ内のスクリプトを削除 ---
+                    // 1. svg-pan-zoom.js ライブラリ本体 (コメントを目印に)
+                    htmlText = htmlText.replace(/<script>\s*\/\/ svg-pan-zoom[\s\S]*?<\/script>/g, '');
+                    // 2. jQueryライブラリの読み込み
+                    htmlText = htmlText.replace(/<script src="http:\/\/code\.jquery\.com\/jquery-1\.11\.1\.min\.js"><\/script>/g, '');
+                    // 3. svg-pan-zoom の初期化スクリプト (window.onloadとsvgPanZoom('#svg-element'を目印に)
+                    htmlText = htmlText.replace(/<script>\s*window\.onload = function\(\) { var panZoom[\s\S]*?<\/script>/g, '');
+
+                    // HTMLのコードの文字列をBlobにし、aタグに紐づけてダウンロードさせる
+                    const blob = new Blob([htmlText], {type:"text/html"});
+                    const link = document.createElement("a");
+                    link.href = URL.createObjectURL(blob);
+                    // ファイル名を "Download.html" に固定
+                    link.download = "Download.html";
+                    link.click();
+                    URL.revokeObjectURL(link.href);
+                });
             })();
 
 
