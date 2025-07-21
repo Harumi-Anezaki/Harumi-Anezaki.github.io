@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>08(保持)(削除ボタン)(サイドバー開閉)(スライド)</title>
+</head>
+<body>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>04(保持)(削除ボタン)(サイドバー開閉)</title>
+</head>
+<body>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>永続HTMLビューア</title>
+    <style>
+        /* --- ページのスタイル (CSS) --- */
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f4f7f9;
+            color: #333;
+            overflow: hidden; /* アプリ全体のスクロールを禁止 */
+        }
+
+        .app-container {
+            display: flex;
+            height: 100vh;
+        }
+
+        #sidebar {
+            width: 250px;
+            background-color: #ffffff;
+            border-right: 1px solid #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.05);
+            flex-shrink: 0; /* サイドバーが縮まないようにする */
+            transition: width 0.3s ease-in-out, padding 0.3s ease-in-out, border 0.3s ease-in-out;
+            position: relative;
+        }
+        /* サイドバーが閉じた状態のスタイル */
+        #sidebar.closed {
+            width: 0;
+            padding-left: 0;
+            padding-right: 0;
+            border-right-width: 0;
+            overflow: hidden;
+        }
+
+        #sidebar h2 {
+            margin: 0 0 15px 0;
+            font-size: 1.2em;
+            color: #1a253c;
+            white-space: nowrap; /* 閉じるアニメーション中に改行させない */
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px; /* スライドショーコントロールとの間隔 */
+            white-space: nowrap;
+        }
+
+        .button-group .btn, .slideshow-controls .btn {
+            flex: 1;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            text-align: center;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.2s;
+        }
+
+        #file-input-label { background-color: #007bff; color: white; }
+        #file-input-label:hover { background-color: #0056b3; }
+        #delete-all-btn { background-color: #6c757d; color: white; }
+        #delete-all-btn:hover { background-color: #5a6268; }
+        #file-input { display: none; }
+
+        /* --- スライドショーコントロールのスタイル --- */
+        .slideshow-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 20px;
+            white-space: nowrap;
+        }
+        #slideshow-interval {
+            width: 60px;
+            padding: 9px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            text-align: center;
+            font-size: 1em;
+        }
+        #slideshow-interval:disabled {
+            background-color: #e9ecef;
+            cursor: not-allowed;
+        }
+        .slideshow-controls label {
+            font-size: 0.9em;
+            color: #555;
+        }
+        #slideshow-toggle-btn {
+            background-color: #28a745;
+            color: white;
+        }
+        #slideshow-toggle-btn:hover { background-color: #218838; }
+        #slideshow-toggle-btn.running {
+            background-color: #dc3545; /* 実行中は赤色に */
+        }
+        #slideshow-toggle-btn.running:hover { background-color: #c82333; }
+
+
+        #file-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+
+        #file-list li {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            border-radius: 5px;
+            transition: background-color 0.2s;
+        }
+        #file-list li:hover { background-color: #e9ecef; }
+
+        #file-list li a {
+            flex-grow: 1;
+            padding: 10px 15px;
+            text-decoration: none;
+            color: #007bff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        #file-list li a.active {
+            background-color: #007bff;
+            color: white;
+            font-weight: bold;
+            border-top-left-radius: 5px;
+            border-bottom-left-radius: 5px;
+        }
+        #file-list li:has(a.active) { background-color: transparent; }
+
+        .delete-btn {
+            background: none; border: none; cursor: pointer; color: #dc3545;
+            padding: 10px; font-size: 1.1em; opacity: 0.6; transition: opacity 0.2s;
+        }
+        .delete-btn:hover { opacity: 1; }
+
+        #main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative; /* トグルボタンとナビゲーションボタンの位置基準 */
+        }
+
+        /* サイドバートグルボタン */
+        #sidebar-toggle-btn {
+            position: absolute;
+            top: 20px;
+            left: -15px; /* ボタンの半分だけメインコンテンツ側にはみ出す */
+            z-index: 1000;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 1px solid #d0d0d0;
+            background-color: white;
+            color: #555;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4em;
+            line-height: 1;
+            padding: 0;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+            transition: transform 0.2s ease, background-color 0.2s ease;
+        }
+        #sidebar-toggle-btn:hover {
+            background-color: #f0f0f0;
+            transform: scale(1.1);
+        }
+
+        /* --- ナビゲーションボタンのスタイル --- */
+        .nav-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 900;
+            width: 40px;
+            height: 60px;
+            background-color: rgba(0, 0, 0, 0.3);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 2em;
+            font-weight: bold;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.3s, background-color 0.2s;
+            display: none; /* 初期状態は非表示 */
+            pointer-events: none; /* Opacity 0 の時にクリックできないように */
+        }
+        #main-content:hover .nav-btn {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .nav-btn:hover {
+            background-color: rgba(0, 0, 0, 0.6);
+        }
+        #prev-btn { left: 15px; }
+        #next-btn { right: 15px; }
+
+
+        #content-frame { width: 100%; height: 100%; border: none; }
+        #placeholder {
+            display: flex; align-items: center; justify-content: center;
+            height: 100%; text-align: center; color: #888; font-size: 1.5em;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- 左側のサイドバー -->
+        <nav id="sidebar">
+            <h2>ファイル一覧</h2>
+            <div class="button-group">
+                <label for="file-input" id="file-input-label" class="btn">追加</label>
+                <button id="delete-all-btn" class="btn">削除</button>
+            </div>
+            <input type="file" id="file-input" accept=".html, .htm" multiple>
+
+            <!-- スライドショーコントロール -->
+            <div class="slideshow-controls">
+                <input type="number" id="slideshow-interval" value="1" min="0.1" step="0.1" title="読み込み完了後の待ち時間">
+                <label for="slideshow-interval">秒</label>
+                <button id="slideshow-toggle-btn" class="btn">開始</button>
+            </div>
+
+            <ul id="file-list"></ul>
+        </nav>
+
+        <!-- 右側のコンテンツ表示エリア -->
+        <main id="main-content">
+            <!-- サイドバートグルボタン -->
+            <button id="sidebar-toggle-btn" title="サイドバーを閉じる (Ctrl + \)"></button>
+
+            <div id="placeholder">
+                <p>←でHTMLファイルを追加し、<br>ファイル名をクリックするとここに表示されます。</p>
+            </div>
+
+            <!-- ナビゲーションボタン -->
+            <button id="prev-btn" class="nav-btn" title="前のファイル">‹</button>
+            <button id="next-btn" class="nav-btn" title="次のファイル">›</button>
+
+            <iframe id="content-frame" name="contentFrame" title="アップロードされたHTMLコンテンツ"></iframe>
+        </main>
+    </div>
+
+    <script>
+    // --- DOM要素の取得 ---
+    const sidebar = document.getElementById('sidebar');
+    const toggleBtn = document.getElementById('sidebar-toggle-btn');
+    const fileInput = document.getElementById('file-input');
+    const fileList = document.getElementById('file-list');
+    const contentFrame = document.getElementById('content-frame');
+    const placeholder = document.getElementById('placeholder');
+    const deleteAllBtn = document.getElementById('delete-all-btn');
+    // 新しく追加した要素
+    const prevBtn = document.getElementById('prev-btn');
+    const nextBtn = document.getElementById('next-btn');
+    const slideshowIntervalInput = document.getElementById('slideshow-interval');
+    const slideshowToggleBtn = document.getElementById('slideshow-toggle-btn');
+
+
+    // --- IndexedDBの設定 ---
+    const DB_NAME = 'htmlViewerDB';
+    const DB_VERSION = 1;
+    const STORE_NAME = 'htmlFiles';
+    let db;
+    const fileUrlMap = new Map();
+
+    // --- スライドショーの状態管理 ---
+    let slideshowTimer = null;
+    let isSlideshowRunning = false;
+    let isSlideshowPaused = false;
+    let slideshowStartTime;
+    let slideshowRemainingTime;
+
+    // --- サイドバー開閉機能 ---
+    function toggleSidebar(force) {
+        const isClosed = sidebar.classList.toggle('closed', force);
+        localStorage.setItem('sidebarClosed', isClosed);
+        if (isClosed) {
+            toggleBtn.innerHTML = '»';
+            toggleBtn.title = 'サイドバーを開く (Ctrl + \\)';
+        } else {
+            toggleBtn.innerHTML = '«';
+            toggleBtn.title = 'サイドバーを閉じる (Ctrl + \\)';
+        }
+    }
+
+    // --- IndexedDB関連の関数群 ---
+    function initDB() {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open(DB_NAME, DB_VERSION);
+            request.onupgradeneeded = (event) => {
+                const db = event.target.result;
+                if (!db.objectStoreNames.contains(STORE_NAME)) {
+                    db.createObjectStore(STORE_NAME, { keyPath: 'name' });
+                }
+            };
+            request.onsuccess = (event) => { db = event.target.result; resolve(db); };
+            request.onerror = (event) => { reject(event.target.error); };
+        });
+    }
+    function saveFileToDB(file) {
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction([STORE_NAME], 'readwrite');
+            const store = transaction.objectStore(STORE_NAME);
+            const request = store.put(file);
+            request.onsuccess = () => resolve();
+            request.onerror = (event) => reject(event.target.error);
+        });
+    }
+    function deleteFileFromDB(fileName) {
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction([STORE_NAME], 'readwrite');
+            const store = transaction.objectStore(STORE_NAME);
+            const request = store.delete(fileName);
+            request.onsuccess = () => resolve();
+            request.onerror = (event) => reject(event.target.error);
+        });
+    }
+    function clearAllFilesFromDB() {
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction([STORE_NAME], 'readwrite');
+            const store = transaction.objectStore(STORE_NAME);
+            const request = store.clear();
+            request.onsuccess = () => resolve();
+            request.onerror = (event) => reject(event.target.error);
+        });
+    }
+    function loadFilesFromDB() {
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction([STORE_NAME], 'readonly');
+            const store = transaction.objectStore(STORE_NAME);
+            const request = store.getAll();
+            request.onsuccess = (event) => resolve(event.target.result);
+            request.onerror = (event) => reject(event.target.error);
+        });
+    }
+
+    // --- UI更新関連の関数群 ---
+    function updateFileListUI(files) {
+        fileList.innerHTML = '';
+        revokeAllObjectURLs();
+        if (files.length === 0) {
+            showPlaceholder();
+            return;
+        }
+        files.forEach(file => {
+            const listItem = createFileListItem(file);
+            fileList.appendChild(listItem);
+        });
+    }
+    function createFileListItem(file) {
+        const fileURL = URL.createObjectURL(file);
+        fileUrlMap.set(file.name, fileURL);
+        const listItem = document.createElement('li');
+        const link = document.createElement('a');
+        link.href = '#';
+        link.textContent = file.name;
+        link.dataset.fileName = file.name;
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (isSlideshowRunning) {
+                clearTimeout(slideshowTimer); // 手動で切り替えたらタイマーリセット
+            }
+            showContent(file.name);
+        });
+        const deleteBtn = document.createElement('button');
+        deleteBtn.textContent = '×';
+        deleteBtn.className = 'delete-btn';
+        deleteBtn.title = 'このファイルを削除';
+        deleteBtn.addEventListener('click', async () => {
+            if (confirm(`'${file.name}' を削除しますか？`)) {
+                const wasCurrentFile = contentFrame.dataset.currentFile === file.name;
+                await deleteFileFromDB(file.name);
+                listItem.remove();
+                revokeObjectURL(file.name);
+                if (wasCurrentFile) {
+                    if (fileList.children.length > 0) {
+                        fileList.querySelector('a').click(); // 次のファイルを表示
+                    } else {
+                        showPlaceholder();
+                    }
+                }
+                if (fileList.children.length === 0) {
+                    stopSlideshow();
+                }
+            }
+        });
+        listItem.appendChild(link);
+        listItem.appendChild(deleteBtn);
+        return listItem;
+    }
+    function showContent(fileName) {
+        const fileURL = fileUrlMap.get(fileName);
+        if (!fileURL) return;
+        placeholder.style.display = 'none';
+        contentFrame.style.display = 'block';
+        prevBtn.style.display = 'block';
+        nextBtn.style.display = 'block';
+        contentFrame.src = fileURL;
+        contentFrame.dataset.currentFile = fileName;
+        updateActiveLink(fileName);
+    }
+    function showPlaceholder() {
+        contentFrame.style.display = 'none';
+        contentFrame.src = 'about:blank';
+        contentFrame.dataset.currentFile = '';
+        placeholder.style.display = 'flex';
+        prevBtn.style.display = 'none';
+        nextBtn.style.display = 'none';
+        updateActiveLink(null);
+        stopSlideshow(); // ファイルがなくなったらスライドショーも停止
+    }
+    function updateActiveLink(activeFileName) {
+        document.querySelectorAll('#file-list a').forEach(a => {
+            if (a.dataset.fileName === activeFileName) {
+                a.classList.add('active');
+            } else {
+                a.classList.remove('active');
+            }
+        });
+    }
+    function revokeAllObjectURLs() {
+        for (const url of fileUrlMap.values()) {
+            URL.revokeObjectURL(url);
+        }
+        fileUrlMap.clear();
+    }
+    function revokeObjectURL(fileName) {
+        if (fileUrlMap.has(fileName)) {
+            URL.revokeObjectURL(fileUrlMap.get(fileName));
+            fileUrlMap.delete(fileName);
+        }
+    }
+
+    // --- ナビゲーション & スライドショー関連関数 ---
+    function getCurrentFileIndex() {
+        const currentFileName = contentFrame.dataset.currentFile;
+        if (!currentFileName) return -1;
+        const links = Array.from(fileList.querySelectorAll('a'));
+        return links.findIndex(a => a.dataset.fileName === currentFileName);
+    }
+
+    function showFileByIndex(index) {
+        const links = fileList.querySelectorAll('a');
+        if (index >= 0 && index < links.length) {
+            links[index].click();
+        }
+    }
+
+    function showNextFile() {
+        if (fileList.children.length === 0) return;
+        let currentIndex = getCurrentFileIndex();
+        const nextIndex = (currentIndex + 1) % fileList.children.length;
+        showFileByIndex(nextIndex);
+    }
+
+    function showPrevFile() {
+        if (fileList.children.length === 0) return;
+        let currentIndex = getCurrentFileIndex();
+        const prevIndex = (currentIndex - 1 + fileList.children.length) % fileList.children.length;
+        showFileByIndex(prevIndex);
+    }
+
+    function startSlideshow() {
+        if (fileList.children.length === 0) {
+            alert('スライドショーを開始するファイルがありません。');
+            return;
+        }
+        isSlideshowRunning = true;
+        isSlideshowPaused = false;
+        slideshowToggleBtn.textContent = '停止';
+        slideshowToggleBtn.classList.add('running');
+        slideshowIntervalInput.disabled = true;
+
+        if (getCurrentFileIndex() === -1) {
+            showFileByIndex(0); // 最初のファイルから開始
+        } else {
+            // 現在のファイルからタイマーを開始
+            startSlideshowTimer(parseFloat(slideshowIntervalInput.value) * 1000);
+        }
+    }
+
+    function stopSlideshow() {
+        clearTimeout(slideshowTimer);
+        slideshowTimer = null;
+        isSlideshowRunning = false;
+        isSlideshowPaused = false;
+        slideshowToggleBtn.textContent = '開始';
+        slideshowToggleBtn.classList.remove('running');
+        slideshowIntervalInput.disabled = false;
+    }
+
+    function toggleSlideshow() {
+        if (isSlideshowRunning) {
+            stopSlideshow();
+        } else {
+            startSlideshow();
+        }
+    }
+
+    function startSlideshowTimer(duration) {
+        clearTimeout(slideshowTimer);
+        slideshowStartTime = Date.now();
+        slideshowRemainingTime = duration;
+        slideshowTimer = setTimeout(showNextFile, duration);
+    }
+
+    function togglePauseSlideshow() {
+        if (!isSlideshowRunning) return;
+
+        isSlideshowPaused = !isSlideshowPaused;
+        if (isSlideshowPaused) {
+            clearTimeout(slideshowTimer);
+            const elapsedTime = Date.now() - slideshowStartTime;
+            slideshowRemainingTime -= elapsedTime;
+            slideshowToggleBtn.textContent = '再開';
+        } else {
+            slideshowToggleBtn.textContent = '停止';
+            if (slideshowRemainingTime > 0) {
+                startSlideshowTimer(slideshowRemainingTime);
+            } else {
+                showNextFile(); // ポーズ中に時間が過ぎていたら即座に次へ
+            }
+        }
+    }
+
+    // --- メイン処理とイベントリスナー ---
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        const isSidebarClosed = localStorage.getItem('sidebarClosed') === 'true';
+        toggleSidebar(isSidebarClosed);
+        showPlaceholder();
+        try {
+            await initDB();
+            const files = await loadFilesFromDB();
+            updateFileListUI(files);
+        } catch (error) {
+            console.error('アプリケーションの初期化に失敗しました:', error);
+            alert('データベースの読み込みに失敗しました。プライベートモードでは動作しない可能性があります。');
+        }
+    });
+
+    toggleBtn.addEventListener('click', () => toggleSidebar());
+
+    document.addEventListener('keydown', (e) => {
+        if (e.ctrlKey && e.key === '\\') {
+            e.preventDefault();
+            toggleSidebar();
+        }
+        if (e.code === 'Space' && !e.target.matches('input, button')) {
+            if (isSlideshowRunning) {
+                e.preventDefault();
+                togglePauseSlideshow();
+            }
+        }
+    });
+
+    fileInput.addEventListener('change', async (event) => {
+        const files = event.target.files;
+        if (files.length === 0) return;
+        for (const file of files) {
+            if (file.type === 'text/html') {
+                try {
+                    await saveFileToDB(file);
+                    const existingItem = fileList.querySelector(`a[data-file-name="${file.name}"]`);
+                    const newListItem = createFileListItem(file);
+                    if (existingItem) {
+                        existingItem.parentElement.replaceWith(newListItem);
+                    } else {
+                        fileList.appendChild(newListItem);
+                    }
+                } catch (error) {
+                    console.error(`'${file.name}' の保存に失敗しました:`, error);
+                    alert(`'${file.name}' の保存に失敗しました。`);
+                }
+            }
+        }
+        event.target.value = '';
+        if (fileList.firstChild && placeholder.style.display !== 'none') {
+             fileList.firstChild.querySelector('a').click();
+        }
+    });
+
+    deleteAllBtn.addEventListener('click', async () => {
+        if (fileList.children.length === 0) {
+            alert('削除するファイルがありません。');
+            return;
+        }
+        if (confirm('保存されているすべてのファイルを削除しますか？この操作は元に戻せません。')) {
+            try {
+                await clearAllFilesFromDB();
+                fileList.innerHTML = '';
+                revokeAllObjectURLs();
+                showPlaceholder(); // これによりスライドショーも停止される
+                alert('すべてのファイルが削除されました。');
+            } catch (error) {
+                console.error('全ファイルの削除に失敗しました:', error);
+                alert('ファイルの削除中にエラーが発生しました。');
+            }
+        }
+    });
+
+    // ナビゲーションとスライドショーのイベントリスナー
+    prevBtn.addEventListener('click', showPrevFile);
+    nextBtn.addEventListener('click', showNextFile);
+    slideshowToggleBtn.addEventListener('click', toggleSlideshow);
+
+    // iframeの読み込みが完了したらスライドショーのタイマーを開始する
+    contentFrame.addEventListener('load', () => {
+        if (isSlideshowRunning && !isSlideshowPaused) {
+            const interval = parseFloat(slideshowIntervalInput.value) * 1000;
+            if (!isNaN(interval) && interval > 0) {
+                startSlideshowTimer(interval);
+            }
+        }
+    });
+
+    window.addEventListener('beforeunload', revokeAllObjectURLs);
+
+    </script>
+
+</body>
+</html>
+</body>
+</html>
+</body>
+</html>
