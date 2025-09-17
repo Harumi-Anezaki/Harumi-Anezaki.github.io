@@ -126,9 +126,37 @@
                     <input id="file-upload" type="file" accept=".html, .htm" multiple>
                 </div>
                 <div class="flex items-center justify-center pt-2 gap-x-6 gap-y-4 flex-wrap">
-                    <label for="remove-scripts-checkbox" class="flex items-center cursor-pointer"><div class="relative"><input id="remove-scripts-checkbox" type="checkbox" class="sr-only peer"><div class="w-10 h-6 bg-gray-700 rounded-full shadow-inner peer-checked:bg-cyan-500 transition-all duration-300"></div><div class="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-all duration-300 peer-checked:translate-x-full"></div></div><span class="ml-3 text-sm font-medium text-gray-300">スクリプトを削除する</span></label>
-                    <label for="grid-merge-checkbox" class="flex items-center cursor-pointer"><div class="relative"><input id="grid-merge-checkbox" type="checkbox" class="sr-only peer"><div class="w-10 h-6 bg-gray-700 rounded-full shadow-inner peer-checked:bg-cyan-500 transition-all duration-300"></div><div class="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-all duration-300 peer-checked:translate-x-full"></div></div><span class="ml-3 text-sm font-medium text-gray-300">グリッド状に結合する</span></label>
-                </div>
+                   <label for="remove-scripts-checkbox" class="flex items-center cursor-pointer">
+			<div class="relative">
+				<input id="remove-scripts-checkbox" type="checkbox" class="sr-only peer" checked>
+				<div class="w-10 h-6 bg-gray-700 rounded-full shadow-inner peer-checked:bg-cyan-500 transition-all duration-300">
+				</div>
+				<div class="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-all duration-300 peer-checked:translate-x-full">
+				</div>
+			</div>
+			<span class="ml-3 text-sm font-medium text-gray-300">スクリプトを削除する</span>
+		   </label>
+                   <label for="grid-merge-checkbox" class="flex items-center cursor-pointer">
+			<div class="relative">
+				<input id="grid-merge-checkbox" type="checkbox" class="sr-only peer" checked>
+				<div class="w-10 h-6 bg-gray-700 rounded-full shadow-inner peer-checked:bg-cyan-500 transition-all duration-300">
+				</div>
+				<div class="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-all duration-300 peer-checked:translate-x-full">
+				</div>
+			</div>
+			<span class="ml-3 text-sm font-medium text-gray-300">グリッド状に結合する</span>
+		   </label>
+		   <label for="add-viewer-checkbox" class="flex items-center cursor-pointer">
+			<div class="relative">
+				<input id="add-viewer-checkbox" type="checkbox" class="sr-only peer" checked>
+				<div class="w-10 h-6 bg-gray-700 rounded-full shadow-inner peer-checked:bg-cyan-500 transition-all duration-300">
+				</div>
+				<div class="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-all duration-300 peer-checked:translate-x-full">
+				</div>
+			</div>
+			<span class="ml-3 text-sm font-medium text-gray-300">拡大機能付加</span>
+		    </label>
+               	 </div>
                 <div class="flex justify-center !mt-8">
                      <button id="merge-button" class="w-full sm:w-auto inline-flex items-center justify-center px-8 py-3.5 border border-transparent text-base font-bold rounded-lg shadow-lg text-white bg-cyan-600 hover:bg-cyan-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-cyan-500 transition-all duration-300 transform hover:scale-105 disabled:bg-gray-600 disabled:cursor-not-allowed disabled:transform-none" disabled>
                         <svg class="w-5 h-5 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
@@ -263,6 +291,7 @@
                 const mergeButton = document.getElementById('merge-button');
                 const removeScriptsCheckbox = document.getElementById('remove-scripts-checkbox');
                 const gridMergeCheckbox = document.getElementById('grid-merge-checkbox');
+		const addViewerCheckbox = document.getElementById('add-viewer-checkbox');
                 const fileListContainer = document.getElementById('file-list-container');
                 const fileList = document.getElementById('file-list');
                 const messageBox = document.getElementById('message-box');
@@ -317,6 +346,7 @@
                     
                     const shouldRemoveScripts = removeScriptsCheckbox.checked;
                     const shouldUseGrid = gridMergeCheckbox.checked;
+                    const shouldAddViewer = addViewerCheckbox.checked; // 追加
 
                     const fileReadPromises = htmlFiles.map(file => new Promise((resolve, reject) => {
                         const reader = new FileReader();
@@ -387,9 +417,43 @@
                             finalContent = filesContent.map(content => shouldRemoveScripts ? content.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '') : content).join('\n\n<!-- File Separator -->\n\n');
                         }
 
-                        downloadFile(finalContent, 'merged.html', 'text/html');
-                        let successMessage = `${htmlFiles.length}個のファイルを${shouldUseGrid ? 'グリッド状に' : ''}結合し、ダウンロードを開始しました。` + (shouldRemoveScripts ? ' (スクリプト削除済み)' : '');
-                        showMessage(successMessage, 'success');
+                        // --- ここからが変更箇所 ---
+                        let downloadHandled = false;
+                        if (shouldAddViewer) {
+                            // 拡大機能付きでダウンロード
+                            let appTemplateHtml = "<!DOCTYPE html>" + document.documentElement.outerHTML;
+                            
+                            // ★★★ 修正点: ダウンロード前にモーダルを強制的に非表示にする ★★★
+                            appTemplateHtml = appTemplateHtml.replace(
+                                /(<div id="merger-modal"[^>]*class=")/,
+                                '$1hidden '
+                            );
+
+                            const finalHtmlWithViewer = appTemplateHtml.replace(
+                                /(<div id="contentWrapper">)[\s\S]*?(<\/div>)/,
+                                `$1${finalContent}$2`
+                            );
+
+                            downloadHandled = await downloadFile(finalHtmlWithViewer, 'merged_with_viewer.html', 'text/html');
+                        } else {
+                            // 従来通り、結合したコンテンツのみダウンロード
+                            downloadHandled = await downloadFile(finalContent, 'merged.html', 'text/html');
+                        }
+
+                        // ユーザーがキャンセルしなかった場合のみメッセージを表示
+                        if (downloadHandled) {
+                            const options = [];
+                            if (shouldAddViewer) options.push('拡大機能付き');
+                            if (shouldRemoveScripts) options.push('スクリプト削除済み');
+                            
+                            const actionText = 'showSaveFilePicker' in window ? '保存しました' : 'ダウンロードを開始しました';
+                            let successMessage = `${htmlFiles.length}個のファイルを${shouldUseGrid ? 'グリッド状に' : ''}結合し、${actionText}。`;
+                            if (options.length > 0) {
+                                successMessage += ` (${options.join(', ')})`;
+                            }
+                            showMessage(successMessage, 'success');
+                        }
+                        // --- 変更箇所ここまで ---
 
                     } catch (error) { 
                         showMessage('ファイルの結合中にエラーが発生しました。', 'error');
@@ -400,12 +464,40 @@
                     }
                 });
 
-                function downloadFile(content, fileName, contentType) {
-                    const a = document.createElement('a');
-                    a.href = URL.createObjectURL(new Blob([content], { type: contentType }));
-                    a.download = fileName;
-                    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-                    URL.revokeObjectURL(a.href);
+                async function downloadFile(content, fileName, contentType) {
+                    // File System Access APIがサポートされているかチェック
+                    if ('showSaveFilePicker' in window) {
+                        try {
+                            const handle = await window.showSaveFilePicker({
+                                suggestedName: fileName,
+                                types: [{
+                                    description: 'HTML File',
+                                    accept: { 'text/html': ['.html', '.htm'] },
+                                }],
+                            });
+                            const writable = await handle.createWritable();
+                            await writable.write(new Blob([content], { type: contentType }));
+                            await writable.close();
+                            return true; // 成功
+                        } catch (err) {
+                            // ユーザーがダイアログをキャンセルした場合はエラーではない
+                            if (err.name !== 'AbortError') {
+                                console.error('File System Access API error:', err);
+                                showMessage('ファイルの保存に失敗しました。', 'error');
+                            }
+                            return false; // キャンセルまたはエラー
+                        }
+                    } else {
+                        // フォールバック: 従来のダウンロード方法
+                        const a = document.createElement('a');
+                        a.href = URL.createObjectURL(new Blob([content], { type: contentType }));
+                        a.download = fileName;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(a.href);
+                        return true; // ダウンロードが開始された
+                    }
                 }
             })();
         });
