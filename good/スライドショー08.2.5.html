@@ -3,22 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>スライドショー</title>
-</head>
-<body>
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>04(保持)(削除ボタン)(サイドバー開閉)</title>
-</head>
-<body>
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>永続HTMLビューア</title>
     <style>
         /* --- ページのスタイル (CSS) --- */
@@ -237,6 +221,30 @@
             display: flex; align-items: center; justify-content: center;
             height: 100%; text-align: center; color: #888; font-size: 1.5em;
         }
+
+        /* --- 再読み込みボタンのスタイル --- */
+        #reload-permission-btn {
+            display: block;
+            width: calc(100% - 20px);
+            margin: 10px;
+            padding: 12px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-align: center;
+            font-size: 0.9em;
+        }
+        #reload-permission-btn:hover {
+            background-color: #0056b3;
+        }
+        #reload-permission-btn small {
+            display: block;
+            font-weight: normal;
+            opacity: 0.8;
+            margin-top: 4px;
+        }
     </style>
 </head>
 <body>
@@ -245,12 +253,10 @@
         <!-- 左側のサイドバー -->
         <nav id="sidebar">
             <h2>ファイル一覧</h2>
-            <div class="button-group">
-                <label for="file-input" id="file-input-label" class="btn">追加</label>
-                <button id="delete-all-btn" class="btn">削除</button>
+		<div class="button-group">
+                <button id="select-folder-btn" class="btn">フォルダ選択</button>
+                <button id="delete-all-btn" class="btn">フォルダ解除</button>
             </div>
-            <input type="file" id="file-input" accept=".html, .htm" multiple>
-
             <!-- スライドショーコントロール -->
             <div class="slideshow-controls">
                 <input type="number" id="slideshow-interval" value="1" min="0.1" step="0.1" title="読み込み完了後の待ち時間">
@@ -282,7 +288,7 @@
     // --- DOM要素の取得 ---
     const sidebar = document.getElementById('sidebar');
     const toggleBtn = document.getElementById('sidebar-toggle-btn');
-    const fileInput = document.getElementById('file-input');
+    const selectFolderBtn = document.getElementById('select-folder-btn'); 
     const fileList = document.getElementById('file-list');
     const contentFrame = document.getElementById('content-frame');
     const placeholder = document.getElementById('placeholder');
@@ -295,11 +301,13 @@
 
 
     // --- IndexedDBの設定 ---
-    const DB_NAME = 'htmlViewerDB';
+    const DB_NAME = 'htmlViewerDB_FolderAccess';
     const DB_VERSION = 1;
-    const STORE_NAME = 'htmlFiles';
+    const STORE_NAME = 'directoryHandles';
     let db;
     const fileUrlMap = new Map();
+    const fileHandleMap = new Map(); 
+    let directoryHandle = null; 
 
     // --- スライドショーの状態管理 ---
     let slideshowTimer = null;
@@ -321,121 +329,112 @@
         }
     }
 
-    // --- IndexedDB関連の関数群 ---
+     // --- IndexedDB関連の関数群 ---
     function initDB() {
         return new Promise((resolve, reject) => {
             const request = indexedDB.open(DB_NAME, DB_VERSION);
             request.onupgradeneeded = (event) => {
                 const db = event.target.result;
                 if (!db.objectStoreNames.contains(STORE_NAME)) {
-                    db.createObjectStore(STORE_NAME, { keyPath: 'name' });
+                    // キーパスは不要
+                    db.createObjectStore(STORE_NAME);
                 }
             };
             request.onsuccess = (event) => { db = event.target.result; resolve(db); };
             request.onerror = (event) => { reject(event.target.error); };
         });
     }
-    function saveFileToDB(file) {
+    function saveHandleToDB(handle) {
         return new Promise((resolve, reject) => {
             const transaction = db.transaction([STORE_NAME], 'readwrite');
             const store = transaction.objectStore(STORE_NAME);
-            const request = store.put(file);
+            // 'currentHandle' という固定キーでハンドルを保存
+            const request = store.put(handle, 'currentHandle');
             request.onsuccess = () => resolve();
             request.onerror = (event) => reject(event.target.error);
         });
     }
-    function deleteFileFromDB(fileName) {
-        return new Promise((resolve, reject) => {
-            const transaction = db.transaction([STORE_NAME], 'readwrite');
-            const store = transaction.objectStore(STORE_NAME);
-            const request = store.delete(fileName);
-            request.onsuccess = () => resolve();
-            request.onerror = (event) => reject(event.target.error);
-        });
-    }
-    function clearAllFilesFromDB() {
-        return new Promise((resolve, reject) => {
-            const transaction = db.transaction([STORE_NAME], 'readwrite');
-            const store = transaction.objectStore(STORE_NAME);
-            const request = store.clear();
-            request.onsuccess = () => resolve();
-            request.onerror = (event) => reject(event.target.error);
-        });
-    }
-    function loadFilesFromDB() {
+    function getHandleFromDB() {
         return new Promise((resolve, reject) => {
             const transaction = db.transaction([STORE_NAME], 'readonly');
             const store = transaction.objectStore(STORE_NAME);
-            const request = store.getAll();
+            const request = store.get('currentHandle');
             request.onsuccess = (event) => resolve(event.target.result);
+            request.onerror = (event) => reject(event.target.error);
+        });
+    }
+    function deleteHandleFromDB() {
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction([STORE_NAME], 'readwrite');
+            const store = transaction.objectStore(STORE_NAME);
+            const request = store.delete('currentHandle');
+            request.onsuccess = () => resolve();
             request.onerror = (event) => reject(event.target.error);
         });
     }
 
     // --- UI更新関連の関数群 ---
-    function updateFileListUI(files) {
+    function updateFileListUI(fileHandles) {
         fileList.innerHTML = '';
         revokeAllObjectURLs();
-        if (files.length === 0) {
+        fileHandleMap.clear(); // ハンドルマップもクリア
+
+        if (fileHandles.length === 0) {
             showPlaceholder();
             return;
         }
-        files.forEach(file => {
-            const listItem = createFileListItem(file);
+        // ファイル名でソート
+        fileHandles.sort((a, b) => a.name.localeCompare(b.name));
+
+        fileHandles.forEach(handle => {
+            fileHandleMap.set(handle.name, handle); // マップに登録
+            const listItem = createFileListItem(handle);
             fileList.appendChild(listItem);
         });
     }
-    function createFileListItem(file) {
-        const fileURL = URL.createObjectURL(file);
-        fileUrlMap.set(file.name, fileURL);
+    function createFileListItem(fileHandle) {
+        // この時点ではBlob URLを生成しない
         const listItem = document.createElement('li');
         const link = document.createElement('a');
         link.href = '#';
-        link.textContent = file.name;
-        link.dataset.fileName = file.name;
+        link.textContent = fileHandle.name;
+        link.dataset.fileName = fileHandle.name;
         link.addEventListener('click', (e) => {
             e.preventDefault();
             if (isSlideshowRunning) {
-                clearTimeout(slideshowTimer); // 手動で切り替えたらタイマーリセット
+                clearTimeout(slideshowTimer);
             }
-            showContent(file.name);
+            showContent(fileHandle.name);
         });
-        const deleteBtn = document.createElement('button');
-        deleteBtn.textContent = '×';
-        deleteBtn.className = 'delete-btn';
-        deleteBtn.title = 'このファイルを削除';
-        deleteBtn.addEventListener('click', async () => {
-            if (confirm(`'${file.name}' を削除しますか？`)) {
-                const wasCurrentFile = contentFrame.dataset.currentFile === file.name;
-                await deleteFileFromDB(file.name);
-                listItem.remove();
-                revokeObjectURL(file.name);
-                if (wasCurrentFile) {
-                    if (fileList.children.length > 0) {
-                        fileList.querySelector('a').click(); // 次のファイルを表示
-                    } else {
-                        showPlaceholder();
-                    }
-                }
-                if (fileList.children.length === 0) {
-                    stopSlideshow();
-                }
-            }
-        });
+        // 個別削除ボタンはフォルダ単位の管理では不要なため削除
         listItem.appendChild(link);
-        listItem.appendChild(deleteBtn);
         return listItem;
     }
-    function showContent(fileName) {
-        const fileURL = fileUrlMap.get(fileName);
-        if (!fileURL) return;
-        placeholder.style.display = 'none';
-        contentFrame.style.display = 'block';
-        prevBtn.style.display = 'block';
-        nextBtn.style.display = 'block';
-        contentFrame.src = fileURL;
-        contentFrame.dataset.currentFile = fileName;
-        updateActiveLink(fileName);
+    async function showContent(fileName) {
+        const handle = fileHandleMap.get(fileName);
+        if (!handle) return;
+
+        try {
+            const file = await handle.getFile();
+            // 表示直前にBlob URLを生成
+            const fileURL = URL.createObjectURL(file);
+            // 古いURLがあれば解放
+            if (fileUrlMap.has(fileName)) {
+                URL.revokeObjectURL(fileUrlMap.get(fileName));
+            }
+            fileUrlMap.set(fileName, fileURL);
+
+            placeholder.style.display = 'none';
+            contentFrame.style.display = 'block';
+            prevBtn.style.display = 'block';
+            nextBtn.style.display = 'block';
+            contentFrame.src = fileURL;
+            contentFrame.dataset.currentFile = fileName;
+            updateActiveLink(fileName);
+        } catch (error) {
+            console.error(`'${fileName}'の読み込みに失敗しました:`, error);
+            alert(`'${fileName}'へのアクセスが拒否されたか、ファイルが存在しません。`);
+        }
     }
     function showPlaceholder() {
         contentFrame.style.display = 'none';
@@ -468,6 +467,26 @@
             fileUrlMap.delete(fileName);
         }
     }
+
+    // --- 再読み込みUI制御関数 ---
+    function showReloadPermissionUI(handle, onReload) {
+        fileList.innerHTML = ''; // リストをクリア
+        const listItem = document.createElement('li');
+        const reloadBtn = document.createElement('button');
+        reloadBtn.id = 'reload-permission-btn';
+        reloadBtn.innerHTML = `フォルダ「<b>${handle.name}</b>」を再読み込み<small>クリックしてアクセスを許可</small>`;
+        
+        reloadBtn.addEventListener('click', async () => {
+            // ボタンを無効化して多重クリックを防ぐ
+            reloadBtn.disabled = true;
+            reloadBtn.textContent = '許可を確認中...';
+            await onReload();
+        }, { once: true }); // イベントは一度だけ実行
+
+        listItem.appendChild(reloadBtn);
+        fileList.appendChild(listItem);
+    }
+
 
     // --- ナビゲーション & スライドショー関連関数 ---
     function getCurrentFileIndex() {
@@ -561,6 +580,90 @@
         }
     }
 
+// --- File System Access API 関連関数 ---
+
+    async function verifyPermission(handle) {
+        const options = { mode: 'read' };
+        if (await handle.queryPermission(options) === 'granted') {
+            return true;
+        }
+        if (await handle.requestPermission(options) === 'granted') {
+            return true;
+        }
+        return false;
+    }
+
+    async function loadFilesFromHandle(handle) {
+        const fileHandles = [];
+        for await (const entry of handle.values()) {
+            if (entry.kind === 'file' && (entry.name.endsWith('.html') || entry.name.endsWith('.htm'))) {
+                fileHandles.push(entry);
+            }
+        }
+        updateFileListUI(fileHandles);
+        if (fileHandles.length > 0) {
+            showContent(fileHandles[0].name); // 最初のファイルを表示
+        }
+    }
+
+    async function selectFolder() {
+        try {
+            const handle = await window.showDirectoryPicker();
+            directoryHandle = handle;
+            await saveHandleToDB(handle);
+            await loadFilesFromHandle(handle);
+        } catch (error) {
+            // ユーザーがダイアログをキャンセルした場合など
+            console.log('フォルダ選択がキャンセルされました:', error);
+        }
+    }
+
+
+    // --- File System Access API 関連関数 ---
+
+    async function verifyPermission(handle) {
+        const options = { mode: 'read' };
+        // 既に許可されているか確認
+        if (await handle.queryPermission(options) === 'granted') {
+            return true;
+        }
+        // 許可をリクエスト
+        if (await handle.requestPermission(options) === 'granted') {
+            return true;
+        }
+        // 許可されなかった場合
+        return false;
+    }
+
+    async function loadFilesFromHandle(handle) {
+        const fileHandles = [];
+        // フォルダ内のエントリを非同期でループ処理
+        for await (const entry of handle.values()) {
+            // ファイルであり、拡張子が .html または .htm の場合のみ追加
+            if (entry.kind === 'file' && (entry.name.endsWith('.html') || entry.name.endsWith('.htm'))) {
+                fileHandles.push(entry);
+            }
+        }
+        updateFileListUI(fileHandles); // UIを更新
+        if (fileHandles.length > 0) {
+            // 最初のファイルが選択された状態で表示
+            showContent(fileHandles[0].name);
+        }
+    }
+
+    async function selectFolder() {
+        try {
+            // フォルダ選択ダイアログを表示
+            const handle = await window.showDirectoryPicker();
+            directoryHandle = handle; // グローバル変数にハンドルを保持
+            await saveHandleToDB(handle); // IndexedDBにハンドルを保存
+            await loadFilesFromHandle(handle); // フォルダ内のファイルを読み込んで表示
+        } catch (error) {
+            // ユーザーがダイアログをキャンセルした場合のエラーは無視
+            console.log('フォルダ選択がキャンセルされました:', error);
+        }
+    }
+
     // --- メイン処理とイベントリスナー ---
 
     document.addEventListener('DOMContentLoaded', async () => {
@@ -569,11 +672,31 @@
         showPlaceholder();
         try {
             await initDB();
-            const files = await loadFilesFromDB();
-            updateFileListUI(files);
+            const handle = await getHandleFromDB();
+
+            if (handle) {
+                // まず権限があるか静かに確認
+                if (await handle.queryPermission({ mode: 'read' }) === 'granted') {
+                    // 権限が既にある場合はそのまま読み込む
+                    directoryHandle = handle;
+                    await loadFilesFromHandle(handle);
+                } else {
+                    // 権限がない場合は、クリックで再許可を求めるUIを表示
+                    showReloadPermissionUI(handle, async () => {
+                        if (await verifyPermission(handle)) {
+                            directoryHandle = handle;
+                            await loadFilesFromHandle(handle);
+                        } else {
+                            // 許可されなかった場合は、ボタンを再度有効にしてメッセージを戻す
+                            alert('フォルダへのアクセスが許可されませんでした。');
+                            showReloadPermissionUI(handle, arguments.callee); // 同じコールバックで再試行可能にする
+                        }
+                    });
+                }
+            }
         } catch (error) {
             console.error('アプリケーションの初期化に失敗しました:', error);
-            alert('データベースの読み込みに失敗しました。プライベートモードでは動作しない可能性があります。');
+            alert('データベースの読み込みに失敗しました。');
         }
     });
 
@@ -592,47 +715,25 @@
         }
     });
 
-    fileInput.addEventListener('change', async (event) => {
-        const files = event.target.files;
-        if (files.length === 0) return;
-        for (const file of files) {
-            if (file.type === 'text/html') {
-                try {
-                    await saveFileToDB(file);
-                    const existingItem = fileList.querySelector(`a[data-file-name="${file.name}"]`);
-                    const newListItem = createFileListItem(file);
-                    if (existingItem) {
-                        existingItem.parentElement.replaceWith(newListItem);
-                    } else {
-                        fileList.appendChild(newListItem);
-                    }
-                } catch (error) {
-                    console.error(`'${file.name}' の保存に失敗しました:`, error);
-                    alert(`'${file.name}' の保存に失敗しました。`);
-                }
-            }
-        }
-        event.target.value = '';
-        if (fileList.firstChild && placeholder.style.display !== 'none') {
-             fileList.firstChild.querySelector('a').click();
-        }
-    });
+    selectFolderBtn.addEventListener('click', selectFolder);
 
-    deleteAllBtn.addEventListener('click', async () => {
-        if (fileList.children.length === 0) {
-            alert('削除するファイルがありません。');
+     deleteAllBtn.addEventListener('click', async () => {
+        if (!directoryHandle) {
+            alert('解除するフォルダが選択されていません。');
             return;
         }
-        if (confirm('保存されているすべてのファイルを削除しますか？この操作は元に戻せません。')) {
+        if (confirm('選択されているフォルダの関連付けを解除しますか？')) {
             try {
-                await clearAllFilesFromDB();
-                fileList.innerHTML = '';
-                revokeAllObjectURLs();
-                showPlaceholder(); // これによりスライドショーも停止される
-                alert('すべてのファイルが削除されました。');
+                await deleteHandleFromDB(); // DBからハンドルを削除
+                directoryHandle = null; // グローバル変数をリセット
+                fileList.innerHTML = ''; // UIリストをクリア
+                revokeAllObjectURLs(); // メモリ解放
+                fileHandleMap.clear(); // ハンドルマップをクリア
+                showPlaceholder(); // 初期画面に戻す
+                alert('フォルダの関連付けが解除されました。');
             } catch (error) {
-                console.error('全ファイルの削除に失敗しました:', error);
-                alert('ファイルの削除中にエラーが発生しました。');
+                console.error('フォルダ解除に失敗しました:', error);
+                alert('フォルダの解除中にエラーが発生しました。');
             }
         }
     });
@@ -656,9 +757,5 @@
 
     </script>
 
-</body>
-</html>
-</body>
-</html>
 </body>
 </html>
