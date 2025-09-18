@@ -173,6 +173,18 @@
     </div>
 
 
+    <!-- === Drag & Drop Overlay === -->
+    <div id="drag-overlay" class="hidden fixed inset-0 bg-sky-900/80 backdrop-blur-md flex items-center justify-center z-[9999] border-8 border-dashed border-sky-400 pointer-events-none transition-opacity duration-300">
+        <div class="text-center text-white drop-shadow-lg">
+            <svg class="mx-auto h-24 w-24 text-sky-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 13.5l3 3m0 0l3-3m-3 3v-6m1.06-4.19l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" />
+            </svg>
+            <h2 class="text-4xl font-bold mt-4">ここにHTMLファイルをドロップ</h2>
+            <p class="text-xl mt-2">オプション全ONで自動的に結合します</p>
+        </div>
+    </div>
+
+
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             // === グローバルなDOM要素（モーダル制御用） ===
@@ -285,17 +297,19 @@
             })();
 
 
-            // --- HTML File Merger ロジック ---
+              // --- HTML File Merger ロジック ---
             (() => {
                 const fileUpload = document.getElementById('file-upload');
                 const mergeButton = document.getElementById('merge-button');
                 const removeScriptsCheckbox = document.getElementById('remove-scripts-checkbox');
                 const gridMergeCheckbox = document.getElementById('grid-merge-checkbox');
-		const addViewerCheckbox = document.getElementById('add-viewer-checkbox');
+                const addViewerCheckbox = document.getElementById('add-viewer-checkbox');
                 const fileListContainer = document.getElementById('file-list-container');
                 const fileList = document.getElementById('file-list');
                 const messageBox = document.getElementById('message-box');
+                const dragOverlay = document.getElementById('drag-overlay');
                 const fileListEntryTemplate = (fileName) => `<li class="flex items-center text-gray-300 bg-gray-800/60 p-2.5 rounded-md text-sm border-l-4 border-gray-600"><svg class="w-5 h-5 mr-3 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm.293 8.293a1 1 0 011.414 0L8 13.586l2.293-2.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg><span class="truncate">${fileName}</span></li>`;
+                const initialAppTemplate = "<!DOCTYPE html>" + document.documentElement.outerHTML;
                 let selectedFiles = [];
 
                 function showMessage(message, type = 'info') {
@@ -316,37 +330,51 @@
                     selectedFiles = Array.from(event.target.files);
                     messageBox.classList.add('hidden');
                     const htmlFiles = selectedFiles.filter(file => file.type.match('text/html'));
-                    
                     if (htmlFiles.length > 0) {
                         fileList.innerHTML = htmlFiles.map(file => fileListEntryTemplate(file.name)).join('');
                         fileListContainer.classList.remove('hidden');
-                    } else { 
-                        fileListContainer.classList.add('hidden'); 
+                    } else {
+                        fileListContainer.classList.add('hidden');
                     }
-                    
                     updateMergeButtonState();
-                    
                     if (selectedFiles.length > 0 && selectedFiles.length !== htmlFiles.length) {
                         showMessage('HTML以外のファイルは無視されます。', 'info');
                     }
                 });
-                
+
                 gridMergeCheckbox.addEventListener('change', updateMergeButtonState);
 
+                // 結合ボタンのクリックイベント
                 mergeButton.addEventListener('click', async () => {
                     const htmlFiles = selectedFiles.filter(file => file.type.match('text/html'));
-                    const minFiles = gridMergeCheckbox.checked ? 1 : 2;
+                    const options = {
+                        shouldRemoveScripts: removeScriptsCheckbox.checked,
+                        shouldUseGrid: gridMergeCheckbox.checked,
+                        shouldAddViewer: addViewerCheckbox.checked,
+                        isDragDrop: false
+                    };
+                    await performMerge(htmlFiles, options);
+                });
+
+                // --- 結合処理のコア関数 ---
+                async function performMerge(htmlFiles, options) {
+                    const { shouldRemoveScripts, shouldUseGrid, shouldAddViewer, isDragDrop } = options;
+
+                    if (isDragDrop) {
+                        openModal();
+                        fileList.innerHTML = htmlFiles.map(file => fileListEntryTemplate(file.name)).join('');
+                        fileListContainer.classList.remove('hidden');
+                    }
+
+                    const minFiles = shouldUseGrid ? 1 : 2;
                     if (htmlFiles.length < minFiles) {
-                         showMessage(`結合するには、${minFiles}つ以上のHTMLファイルを選択してください。`, 'error');
-                         return;
+                        showMessage(`結合するには、${minFiles}つ以上のHTMLファイルを選択してください。`, 'error');
+                        if (isDragDrop) setTimeout(closeModal, 2000);
+                        return;
                     }
 
                     mergeButton.disabled = true;
                     mergeButton.innerHTML = `<svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>結合中...`;
-                    
-                    const shouldRemoveScripts = removeScriptsCheckbox.checked;
-                    const shouldUseGrid = gridMergeCheckbox.checked;
-                    const shouldAddViewer = addViewerCheckbox.checked; // 追加
 
                     const fileReadPromises = htmlFiles.map(file => new Promise((resolve, reject) => {
                         const reader = new FileReader();
@@ -360,11 +388,9 @@
                         let finalContent = '';
 
                         if (shouldUseGrid) {
-                            // --- グリッド結合ロジック (隙間対策済み) ---
                             const n = Math.ceil(Math.sqrt(filesContent.length));
                             let fileIndex = 0;
                             let tableRows = '';
-
                             for (let i = 0; i < n; i++) {
                                 let tableCells = '';
                                 for (let j = 0; j < n; j++) {
@@ -376,91 +402,89 @@
                                         }
                                         const bodyMatch = content.match(/<body[^>]*>([\s\S]*)<\/body>/i);
                                         cellContent = bodyMatch ? bodyMatch[1] : content;
-                                        
-                                        // 原因2: 高さ5pxのスペーサー用divを正規表現で削除
                                         cellContent = cellContent.replace(/<div style="height:5px(?:;)?"><\/div>/g, '');
-
                                         fileIndex++;
                                     }
                                     tableCells += `<td style="vertical-align: top;">${cellContent}</td>`;
                                 }
                                 tableRows += `<tr>${tableCells}</tr>`;
                             }
-                            
-                            finalContent = `<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <title>Merged Grid Content</title>
-    <style>
-        body { margin: 0; }
-        table { border-collapse: collapse; }
-        td { padding: 0; }
-        
-        /* 原因1: セル内の子孫divが持つmarginを強制的に無効化 */
-        td div { margin: 0 !important; }
-        
-        /* 原因3: SVGがインライン要素として扱われるのを防ぎ、隙間をなくす */
-        td svg { display: block; }
-    </style>
-</head>
-<body>
-    <table border="0" cellspacing="0" cellpadding="0">
-        <tbody>
-            ${tableRows}
-        </tbody>
-    </table>
-</body>
-</html>`;
+                            finalContent = `<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><title>Merged Grid Content</title><style>body{margin:0}table{border-collapse:collapse}td{padding:0}td div{margin:0!important}td svg{display:block}</style></head><body><table border="0" cellspacing="0" cellpadding="0"><tbody>${tableRows}</tbody></table></body></html>`;
                         } else {
-                            // --- 従来の単純結合ロジック ---
                             finalContent = filesContent.map(content => shouldRemoveScripts ? content.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '') : content).join('\n\n<!-- File Separator -->\n\n');
                         }
 
-                        // --- ここからが変更箇所 ---
                         let downloadHandled = false;
                         if (shouldAddViewer) {
-                            // 拡大機能付きでダウンロード
-                            let appTemplateHtml = "<!DOCTYPE html>" + document.documentElement.outerHTML;
-                            
-                            // ★★★ 修正点: ダウンロード前にモーダルを強制的に非表示にする ★★★
-                            appTemplateHtml = appTemplateHtml.replace(
-                                /(<div id="merger-modal"[^>]*class=")/,
-                                '$1hidden '
-                            );
-
-                            const finalHtmlWithViewer = appTemplateHtml.replace(
-                                /(<div id="contentWrapper">)[\s\S]*?(<\/div>)/,
-                                `$1${finalContent}$2`
-                            );
-
+                            let appTemplateHtml = initialAppTemplate;
+                            appTemplateHtml = appTemplateHtml.replace(/(<div id="merger-modal"[^>]*class=")/, '$1hidden ');
+                            const finalHtmlWithViewer = appTemplateHtml.replace(/(<div id="contentWrapper">)[\s\S]*?(<\/div>)/, `$1${finalContent}$2`);
                             downloadHandled = await downloadFile(finalHtmlWithViewer, 'merged_with_viewer.html', 'text/html');
                         } else {
-                            // 従来通り、結合したコンテンツのみダウンロード
                             downloadHandled = await downloadFile(finalContent, 'merged.html', 'text/html');
                         }
 
-                        // ユーザーがキャンセルしなかった場合のみメッセージを表示
                         if (downloadHandled) {
-                            const options = [];
-                            if (shouldAddViewer) options.push('拡大機能付き');
-                            if (shouldRemoveScripts) options.push('スクリプト削除済み');
-                            
+                            const opts = [];
+                            if (shouldAddViewer) opts.push('拡大機能付き');
+                            if (shouldRemoveScripts) opts.push('スクリプト削除済み');
                             const actionText = 'showSaveFilePicker' in window ? '保存しました' : 'ダウンロードを開始しました';
                             let successMessage = `${htmlFiles.length}個のファイルを${shouldUseGrid ? 'グリッド状に' : ''}結合し、${actionText}。`;
-                            if (options.length > 0) {
-                                successMessage += ` (${options.join(', ')})`;
-                            }
+                            if (opts.length > 0) successMessage += ` (${opts.join(', ')})`;
                             showMessage(successMessage, 'success');
+                            if (isDragDrop) setTimeout(closeModal, 2000);
                         }
-                        // --- 変更箇所ここまで ---
-
-                    } catch (error) { 
+                    } catch (error) {
                         showMessage('ファイルの結合中にエラーが発生しました。', 'error');
                         console.error(error);
+                        if (isDragDrop) setTimeout(closeModal, 3000);
                     } finally {
-                        updateMergeButtonState();
+                        if (!isDragDrop) {
+                            updateMergeButtonState();
+                        }
                         mergeButton.innerHTML = `<svg class="w-5 h-5 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>結合してダウンロード`;
+                    }
+                }
+
+                // --- ドラッグ＆ドロップ機能 ---
+                let dragCounter = 0;
+                document.body.addEventListener('dragenter', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dragCounter++;
+                    if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
+                        dragOverlay.classList.remove('hidden');
+                    }
+                });
+                document.body.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                });
+                document.body.addEventListener('dragleave', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dragCounter--;
+                    if (dragCounter === 0) {
+                        dragOverlay.classList.add('hidden');
+                    }
+                });
+                document.body.addEventListener('drop', async (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dragCounter = 0;
+                    dragOverlay.classList.add('hidden');
+
+                    const files = Array.from(e.dataTransfer.files);
+                    const htmlFiles = files.filter(file => file.type.match('text/html') || file.name.endsWith('.html') || file.name.endsWith('.htm'));
+
+                    if (htmlFiles.length > 0) {
+                        const fixedOptions = {
+                            shouldRemoveScripts: true,
+                            shouldUseGrid: true,
+                            shouldAddViewer: true,
+                            isDragDrop: true
+                        };
+                        await performMerge(htmlFiles, fixedOptions);
                     }
                 });
 
