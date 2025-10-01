@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>18 - P2P配信 (デバッグモード)</title>
+    <title>ssssss</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -309,7 +309,20 @@
                 console.log("🎉🎉🎉 ontrackイベントが発火しました！相手のストリームを受信しました:", event.streams[0]);
                 if (remoteVideo.srcObject !== event.streams[0]) {
                     remoteVideo.srcObject = event.streams[0];
-                    console.log("リモートビデオにストリームを設定しました。映像が表示されるはずです。");
+                    console.log("リモートビデオにストリームを設定しました。再生を試みます...");
+
+                    // --- ここからが追加・変更部分 ---
+                    const playPromise = remoteVideo.play();
+                    if (playPromise !== undefined) {
+                        playPromise.then(_ => {
+                            console.log("✅ ビデオの再生が正常に開始されました。");
+                        }).catch(error => {
+                            console.error("💥 ビデオの再生に失敗しました:", error);
+                            // エラーメッセージをユーザーに表示することも可能
+                            alert("相手の映像の再生に失敗しました。コンソールを確認してください。エラー: " + error.name);
+                        });
+                    }
+                    // --- ここまで ---
                 }
             };
 
