@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>18</title>
+</head>
+<body>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>半自動 P2P配信</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+        .container {
+            width: 100%;
+            max-width: 700px;
+            background-color: #fff;
+            padding: 25px 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        h1, h2 {
+            text-align: center;
+            color: #1a1a1a;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+        video {
+            width: 100%;
+            background-color: #000;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            aspect-ratio: 16 / 9;
+        }
+        .hidden {
+            display: none;
+        }
+        .step {
+            background-color: #f9f9f9;
+            border: 1px solid #e0e0e0;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+        }
+        .step h3 {
+            margin-top: 0;
+            color: #007bff;
+        }
+        .step p {
+            margin-bottom: 15px;
+        }
+        textarea, input[type="text"] {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 0.9em;
+        }
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        button {
+            display: block;
+            width: 100%;
+            padding: 12px 20px;
+            border: none;
+            background-color: #007bff;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: bold;
+            margin-top: 10px;
+            transition: background-color 0.2s;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .info-box {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .info-box input {
+            flex-grow: 1;
+        }
+        .info-box button {
+            width: auto;
+            flex-shrink: 0;
+            font-size: 0.9em;
+            padding: 10px 15px;
+        }
+        .status {
+            text-align: center;
+            padding: 15px;
+            background-color: #e9f7ef;
+            color: #146c43;
+            border: 1px solid #a3cfbb;
+            border-radius: 5px;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+        .video-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .video-container h2 {
+            font-size: 1.2em;
+            margin-top: 0;
+            border-bottom: none;
+            padding-bottom: 5px;
+            margin-bottom: 10px;
+        }
+        #hangup-button {
+            background-color: #dc3545;
+        }
+        #hangup-button:hover {
+            background-color: #c82333;
+        }
+    </style>
+</head>
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Firebase P2P映像配信</h1>
+
+        <div class="video-container">
+            <div>
+                <h2>あなたの映像</h2>
+                <video id="local-video" autoplay muted playsinline></video>
+            </div>
+            <div>
+                <h2>相手の映像</h2>
+                <video id="remote-video" autoplay playsinline></video>
+            </div>
+        </div>
+
+        <div id="control-panel" class="step">
+            <h3>ステップ1: 合言葉を決める</h3>
+            <p>接続したい相手と共通の合言葉（部屋の名前）を入力してください。</p>
+            <input type="text" id="room-id" placeholder="例: my-secret-room123">
+            <button id="join-button">接続する</button>
+            <button id="hangup-button" class="hidden">切断する</button>
+        </div>
+
+        <div id="status-panel" class="status hidden"></div>
+    </div>
+
+    <script type="module">
+        // Firebase SDKのインポート
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+        import { getDatabase, ref, onValue, set, push, onChildAdded, remove, goOffline } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-database.js";
+
+        // Firebase設定
+        const firebaseConfig = {
+            apiKey: "AIzaSyCQCOE2iqnLrI1nBA1wbIZGKtVJFthnxvE",
+            authDomain: "realtime-43515.firebaseapp.com",
+            databaseURL: "https://realtime-43515-default-rtdb.firebaseio.com",
+            projectId: "realtime-43515",
+            storageBucket: "realtime-43515.firebasestorage.app",
+            messagingSenderId: "402584292541",
+            appId: "1:402584292541:web:715d4c639a8edbb3c03bd4",
+            measurementId: "G-SFKYQSLH2K"
+        };
+
+        // Firebaseの初期化
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // グローバル変数
+        const pcConfig = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+        let pc;
+        let localStream;
+        let roomId;
+        let dbRef;
+
+        // DOM要素
+        const localVideo = document.getElementById('local-video');
+        const remoteVideo = document.getElementById('remote-video');
+        const roomIdInput = document.getElementById('room-id');
+        const joinButton = document.getElementById('join-button');
+        const hangupButton = document.getElementById('hangup-button');
+        const statusPanel = document.getElementById('status-panel');
+
+        // 接続ボタンの処理
+        joinButton.onclick = async () => {
+            roomId = roomIdInput.value;
+            if (!roomId) {
+                alert('合言葉（部屋の名前）を入力してください。');
+                return;
+            }
+
+            joinButton.disabled = true;
+            roomIdInput.disabled = true;
+            updateStatus('カメラを起動中...');
+
+            try {
+                // カメラとマイクを起動
+                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                localVideo.srcObject = localStream;
+
+                dbRef = ref(db, `rooms/${roomId}`);
+                
+                // 部屋の存在をチェック
+                onValue(dbRef, async (snapshot) => {
+                    const roomExists = snapshot.exists() && snapshot.val().offer;
+                    if (!roomExists) {
+                        // 部屋が存在しない場合、自分がOfferを作成する側（配信者）
+                        updateStatus('相手の接続を待っています...');
+                        await createOffer();
+                    } else {
+                        // 部屋が存在する場合、自分がAnswerを作成する側（視聴者）
+                        updateStatus('相手に接続しています...');
+                        await createAnswer(snapshot.val().offer);
+                    }
+                }, { onlyOnce: true }); // 一度だけ実行
+
+            } catch (e) {
+                alert('カメラの起動または接続に失敗しました。');
+                console.error(e);
+                resetState();
+            }
+        };
+
+        // Offerを作成する処理 (先に入室した側)
+        async function createOffer() {
+            setupPeerConnection('offerer');
+            const offer = await pc.createOffer();
+            await pc.setLocalDescription(offer);
+            await set(ref(db, `rooms/${roomId}/offer`), { sdp: offer.sdp, type: offer.type });
+
+            // Answerを待機
+            onValue(ref(db, `rooms/${roomId}/answer`), (snapshot) => {
+                if (snapshot.exists()) {
+                    pc.setRemoteDescription(new RTCSessionDescription(snapshot.val()));
+                }
+            }, { onlyOnce: true });
+
+            listenForIceCandidates('answerer');
+        }
+
+        // Answerを作成する処理 (後から入室した側)
+        async function createAnswer(offerData) {
+            setupPeerConnection('answerer');
+            await pc.setRemoteDescription(new RTCSessionDescription(offerData));
+            const answer = await pc.createAnswer();
+            await pc.setLocalDescription(answer);
+            await set(ref(db, `rooms/${roomId}/answer`), { sdp: answer.sdp, type: answer.type });
+
+            listenForIceCandidates('offerer');
+        }
+
+        // RTCPeerConnectionの共通設定
+        function setupPeerConnection(role) {
+            pc = new RTCPeerConnection(pcConfig);
+
+            // ローカルのストリームをPeerConnectionに追加
+            localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+
+            // リモートのストリームを受信したときの処理
+            pc.ontrack = (event) => {
+                if (remoteVideo.srcObject !== event.streams[0]) {
+                    remoteVideo.srcObject = event.streams[0];
+                }
+            };
+
+            // ICE Candidateが見つかったときの処理
+            pc.onicecandidate = (event) => {
+                if (event.candidate) {
+                    const candidateRef = push(ref(db, `rooms/${roomId}/iceCandidates/${role}`));
+                    set(candidateRef, event.candidate.toJSON());
+                }
+            };
+
+            // 接続状態の監視
+            pc.onconnectionstatechange = () => {
+                if (pc.connectionState === 'connected') {
+                    updateStatus('接続が確立しました！');
+                    hangupButton.classList.remove('hidden');
+                }
+            };
+        }
+
+        // 相手のICE Candidateを監視
+        function listenForIceCandidates(opponentRole) {
+            const candidatesRef = ref(db, `rooms/${roomId}/iceCandidates/${opponentRole}`);
+            onChildAdded(candidatesRef, (snapshot) => {
+                if (snapshot.exists()) {
+                    pc.addIceCandidate(new RTCIceCandidate(snapshot.val()));
+                }
+            });
+        }
+
+        // 切断処理
+        hangupButton.onclick = async () => {
+            if (pc) {
+                pc.close();
+            }
+            if (dbRef) {
+                await remove(dbRef); // データベースからルーム情報を削除
+            }
+            resetState();
+        };
+        
+        // ページを離れるときに切断処理を実行
+        window.addEventListener('beforeunload', async () => {
+            if (dbRef) {
+                await remove(dbRef);
+                goOffline(db);
+            }
+        });
+
+        // 状態をリセットする関数
+        function resetState() {
+            if (pc) {
+                pc.close();
+                pc = null;
+            }
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+                localStream = null;
+            }
+            localVideo.srcObject = null;
+            remoteVideo.srcObject = null;
+            joinButton.disabled = false;
+            roomIdInput.disabled = false;
+            hangupButton.classList.add('hidden');
+            statusPanel.classList.add('hidden');
+            dbRef = null;
+        }
+
+        // ステータス表示を更新する関数
+        function updateStatus(message) {
+            statusPanel.textContent = message;
+            statusPanel.classList.remove('hidden');
+        }
+    </script>
+
+</body>
+</html>
+</body>
+</html>
