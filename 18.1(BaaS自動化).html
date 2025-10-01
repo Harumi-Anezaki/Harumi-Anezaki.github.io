@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title> (デバッグモード)</title>
+    <title>18 - P2P配信 (デバッグモード)</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -155,7 +155,6 @@
         // --- デバッグ用設定 ---
         console.log("--- P2P配信 デバッグモード開始 ---");
 
-        // 前提条件チェック: getUserMediaが利用可能か (HTTPS環境か)
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
             console.error("💥致命的エラー: navigator.mediaDevices.getUserMedia がサポートされていません。");
             alert("カメラ機能がお使いのブラウザでサポートされていないか、ページが安全な接続(HTTPS)で読み込まれていません。");
@@ -187,6 +186,7 @@
         let localStream;
         let roomId;
         let dbRef;
+        let iceCandidateQueue = []; // ★★★ 競合状態対策：ICE Candidateを一時保存するキュー
 
         // DOM要素
         const localVideo = document.getElementById('local-video');
@@ -212,7 +212,6 @@
             updateStatus('カメラを起動中...');
 
             try {
-                console.log("カメラとマイクの取得を試みます (getUserMedia)...");
                 localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
                 console.log("✅ カメラとマイクの取得に成功しました:", localStream);
                 localVideo.srcObject = localStream;
@@ -220,24 +219,16 @@
                 dbRef = ref(db, `rooms/${roomId}`);
                 console.log(`Firebaseデータベースの参照を作成しました: rooms/${roomId}`);
                 
-                console.log("部屋の存在をチェックします...");
                 onValue(dbRef, async (snapshot) => {
-                    console.log("Firebaseから部屋のデータを取得しました。snapshot.exists():", snapshot.exists());
                     const roomExists = snapshot.exists() && snapshot.val().offer;
-                    
                     if (!roomExists) {
-                        console.log("部屋は存在しないか、offerがありません。自分がOffererになります。");
-                        updateStatus('相手の接続を待っています...');
                         await createOffer();
                     } else {
-                        console.log("部屋が存在します。自分がAnswererになります。");
-                        updateStatus('相手に接続しています...');
                         await createAnswer(snapshot.val().offer);
                     }
                 }, { onlyOnce: true });
 
             } catch (e) {
-                alert('カメラの起動または接続に失敗しました。コンソールを確認してください。');
                 console.error("💥 接続処理中に致命的なエラーが発生しました:", e);
                 resetState();
             }
@@ -247,28 +238,30 @@
         async function createOffer() {
             try {
                 console.log("--- createOffer() 関数を開始 ---");
+                updateStatus('相手の接続を待っています...');
                 setupPeerConnection('offerer');
-                console.log("Offerの作成を開始します (pc.createOffer)...");
+                
                 const offer = await pc.createOffer();
-                console.log("✅ Offerの作成に成功しました。");
                 await pc.setLocalDescription(offer);
                 console.log("LocalDescriptionにOfferを設定しました。");
+                
                 await set(ref(db, `rooms/${roomId}/offer`), { sdp: offer.sdp, type: offer.type });
                 console.log("FirebaseにOfferを書き込みました。");
 
-                console.log("Answerを待機します...");
                 onValue(ref(db, `rooms/${roomId}/answer`), async (snapshot) => {
-                    if (snapshot.exists() && pc.signalingState !== 'stable') {
+                    if (snapshot.exists() && !pc.currentRemoteDescription) {
                         console.log("✅ Firebase上でAnswerを発見しました！");
-                        await pc.setRemoteDescription(new RTCSessionDescription(snapshot.val()));
+                        const answer = new RTCSessionDescription(snapshot.val());
+                        await pc.setRemoteDescription(answer);
                         console.log("RemoteDescriptionにAnswerを設定しました。");
+                        // ★★★ キューに溜まっていたICE Candidateを処理
+                        await processIceCandidateQueue();
                     }
                 }, { onlyOnce: true });
 
                 listenForIceCandidates('answerer');
             } catch (e) {
                 console.error("💥 createOffer() 処理中にエラーが発生しました:", e);
-                resetState();
             }
         }
 
@@ -276,168 +269,106 @@
         async function createAnswer(offerData) {
             try {
                 console.log("--- createAnswer() 関数を開始 ---");
+                updateStatus('相手に接続しています...');
                 setupPeerConnection('answerer');
-                console.log("RemoteDescriptionにOfferを設定します...");
-                await pc.setRemoteDescription(new RTCSessionDescription(offerData));
-                console.log("✅ RemoteDescriptionにOfferを設定しました。");
-                console.log("Answerの作成を開始します (pc.createAnswer)...");
+                
+                const offer = new RTCSessionDescription(offerData);
+                await pc.setRemoteDescription(offer);
+                console.log("RemoteDescriptionにOfferを設定しました。");
+                // ★★★ キューに溜まっていたICE Candidateを処理
+                await processIceCandidateQueue();
+
                 const answer = await pc.createAnswer();
-                console.log("✅ Answerの作成に成功しました。");
                 await pc.setLocalDescription(answer);
                 console.log("LocalDescriptionにAnswerを設定しました。");
+                
                 await set(ref(db, `rooms/${roomId}/answer`), { sdp: answer.sdp, type: answer.type });
                 console.log("FirebaseにAnswerを書き込みました。");
 
                 listenForIceCandidates('offerer');
             } catch (e) {
                 console.error("💥 createAnswer() 処理中にエラーが発生しました:", e);
-                resetState();
             }
         }
 
         // RTCPeerConnectionの共通設定
         function setupPeerConnection(role) {
-            console.log(`setupPeerConnection() を実行します。役割: ${role}`);
+            iceCandidateQueue = []; // 新しい接続のたびにキューをリセット
             pc = new RTCPeerConnection(pcConfig);
-            console.log("RTCPeerConnectionオブジェクトを作成しました:", pc);
+            console.log(`setupPeerConnection() を実行します。役割: ${role}`);
 
             localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
-            console.log("ローカルストリームのトラックをPeerConnectionに追加しました。");
 
-            // --- 詳細なイベントリスナーを追加 ---
             pc.ontrack = (event) => {
                 console.log("🎉🎉🎉 ontrackイベントが発火しました！ストリームを受信:", event.streams[0]);
-                
-                // 既に同じストリームが設定されている場合は何もしない
-                if (remoteVideo.srcObject === event.streams[0]) {
-                    console.log("既に同じストリームが設定されているため、処理をスキップします。");
-                    return;
-                }
-
-                remoteVideo.srcObject = event.streams[0];
-                console.log("リモートビデオにストリームを設定しました。");
-
-                // ビデオが再生可能になったら再生を試みるイベントリスナーを追加
-                // これにより、タイミングの問題を確実に回避する
-                remoteVideo.oncanplay = () => {
-                    console.log("oncanplayイベントが発火。ビデオが再生可能になりました。");
-                    const playPromise = remoteVideo.play();
-                    if (playPromise !== undefined) {
-                        playPromise.then(_ => {
+                if (remoteVideo.srcObject !== event.streams[0]) {
+                    remoteVideo.srcObject = event.streams[0];
+                    console.log("リモートビデオにストリームを設定しました。");
+                    remoteVideo.oncanplay = () => {
+                        remoteVideo.play().then(() => {
                             console.log("✅ ビデオの再生が正常に開始されました。");
-                        }).catch(error => {
-                            console.error("💥 ビデオの再生に失敗しました:", error);
-                            alert("相手の映像の再生に失敗しました。エラー: " + error.name);
-                        });
-                    }
-                };
-
-                // まれにoncanplayが発火しない場合があるため、フォールバックとして直接playも試みる
-                // こちらは失敗してもイベントリスナーが後で処理してくれる
-                remoteVideo.play().catch(e => {
-                    console.warn("直接のplay()呼び出しは失敗しました（想定内の可能性あり）:", e.name);
-                });
+                        }).catch(e => console.error("💥 ビデオの再生に失敗しました:", e));
+                    };
+                }
             };
 
             pc.onicecandidate = (event) => {
                 if (event.candidate) {
-                    console.log(`[ICE] Candidateが見つかりました。Firebaseに送信します:`, event.candidate.type, event.candidate.address);
                     const candidateRef = push(ref(db, `rooms/${roomId}/iceCandidates/${role}`));
                     set(candidateRef, event.candidate.toJSON());
-                } else {
-                    console.log("[ICE] Candidateの収集が完了しました。");
                 }
-            };
-
-            pc.oniceconnectionstatechange = () => {
-                console.log(`[ICE Connection State] 状態変化: ${pc.iceConnectionState}`);
-            };
-
-            pc.onicegatheringstatechange = () => {
-                console.log(`[ICE Gathering State] 状態変化: ${pc.iceGatheringState}`);
-            };
-
-            pc.onsignalingstatechange = () => {
-                console.log(`[Signaling State] 状態変化: ${pc.signalingState}`);
             };
 
             pc.onconnectionstatechange = () => {
                 console.log(`💡💡💡 [Connection State] 状態変化: ${pc.connectionState}`);
-                switch(pc.connectionState) {
-                    case "new":
-                        updateStatus("接続を初期化中...");
-                        break;
-                    case "connecting":
-                        updateStatus("接続中...");
-                        break;
-                    case "connected":
-                        updateStatus("接続が確立しました！");
-                        hangupButton.classList.remove('hidden');
-                        break;
-                    case "disconnected":
-                        updateStatus("相手との接続が切れました。");
-                        resetState();
-                        break;
-                    case "closed":
-                        updateStatus("接続が終了しました。");
-                        resetState();
-                        break;
-                    case "failed":
-                        updateStatus("接続に失敗しました。");
-                        resetState();
-                        break;
+                if (pc.connectionState === 'connected') {
+                    updateStatus('接続が確立しました！');
+                    hangupButton.classList.remove('hidden');
                 }
             };
         }
 
         // 相手のICE Candidateを監視
         function listenForIceCandidates(opponentRole) {
-            console.log(`相手 (${opponentRole}) のICE Candidateの監視を開始します...`);
             const candidatesRef = ref(db, `rooms/${roomId}/iceCandidates/${opponentRole}`);
             onChildAdded(candidatesRef, (snapshot) => {
                 if (snapshot.exists()) {
                     const candidate = snapshot.val();
-                    console.log(`✅ 相手のICE Candidateを受信しました。PeerConnectionに追加します:`, candidate);
-                    pc.addIceCandidate(new RTCIceCandidate(candidate))
-                      .catch(e => console.error("💥 addIceCandidateのエラー:", e));
+                    // ★★★ remoteDescriptionが設定されるまでキューに追加
+                    if (pc.remoteDescription) {
+                        pc.addIceCandidate(new RTCIceCandidate(candidate)).catch(e => console.error("addIceCandidateエラー:", e));
+                    } else {
+                        console.log("RemoteDescriptionが未設定のため、ICE Candidateをキューに追加します。");
+                        iceCandidateQueue.push(candidate);
+                    }
                 }
             });
         }
 
-        // 切断処理
+        // ★★★ キューに溜まったICE Candidateを処理する関数
+        async function processIceCandidateQueue() {
+            while(iceCandidateQueue.length > 0) {
+                const candidate = iceCandidateQueue.shift();
+                console.log("キューからICE Candidateを処理します:", candidate);
+                await pc.addIceCandidate(new RTCIceCandidate(candidate));
+            }
+        }
+
+        // (以下、hangupButton.onclick, resetState, updateStatus は変更なし)
         hangupButton.onclick = async () => {
-            console.log("--- 切断ボタンがクリックされました ---");
-            if (pc) {
-                pc.close();
-            }
-            if (dbRef) {
-                await remove(dbRef);
-                console.log("Firebaseからルーム情報を削除しました。");
-            }
+            if (pc) pc.close();
+            if (dbRef) await remove(dbRef);
             resetState();
         };
-        
-        // ページを離れるときに切断処理を実行
         window.addEventListener('beforeunload', async () => {
-            console.log("--- ページが閉じられようとしています。クリーンアップ処理を実行します ---");
             if (dbRef) {
                 await remove(dbRef);
                 goOffline(db);
-                console.log("Firebaseからルーム情報を削除し、オフラインにしました。");
             }
         });
-
-        // 状態をリセットする関数
         function resetState() {
-            console.log("--- 状態をリセットします ---");
-            if (pc) {
-                pc.close();
-                pc = null;
-            }
-            if (localStream) {
-                localStream.getTracks().forEach(track => track.stop());
-                localStream = null;
-            }
+            if (pc) { pc.close(); pc = null; }
+            if (localStream) { localStream.getTracks().forEach(track => track.stop()); localStream = null; }
             localVideo.srcObject = null;
             remoteVideo.srcObject = null;
             joinButton.disabled = false;
@@ -445,12 +376,9 @@
             hangupButton.classList.add('hidden');
             statusPanel.classList.add('hidden');
             dbRef = null;
-            console.log("リセット完了。");
+            iceCandidateQueue = [];
         }
-
-        // ステータス表示を更新する関数
         function updateStatus(message) {
-            console.log(`[Status Update] ${message}`);
             statusPanel.textContent = message;
             statusPanel.classList.remove('hidden');
         }
