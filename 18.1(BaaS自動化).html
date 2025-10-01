@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ssssss</title>
+    <title> (デバッグモード)</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -306,24 +306,37 @@
 
             // --- 詳細なイベントリスナーを追加 ---
             pc.ontrack = (event) => {
-                console.log("🎉🎉🎉 ontrackイベントが発火しました！相手のストリームを受信しました:", event.streams[0]);
-                if (remoteVideo.srcObject !== event.streams[0]) {
-                    remoteVideo.srcObject = event.streams[0];
-                    console.log("リモートビデオにストリームを設定しました。再生を試みます...");
+                console.log("🎉🎉🎉 ontrackイベントが発火しました！ストリームを受信:", event.streams[0]);
+                
+                // 既に同じストリームが設定されている場合は何もしない
+                if (remoteVideo.srcObject === event.streams[0]) {
+                    console.log("既に同じストリームが設定されているため、処理をスキップします。");
+                    return;
+                }
 
-                    // --- ここからが追加・変更部分 ---
+                remoteVideo.srcObject = event.streams[0];
+                console.log("リモートビデオにストリームを設定しました。");
+
+                // ビデオが再生可能になったら再生を試みるイベントリスナーを追加
+                // これにより、タイミングの問題を確実に回避する
+                remoteVideo.oncanplay = () => {
+                    console.log("oncanplayイベントが発火。ビデオが再生可能になりました。");
                     const playPromise = remoteVideo.play();
                     if (playPromise !== undefined) {
                         playPromise.then(_ => {
                             console.log("✅ ビデオの再生が正常に開始されました。");
                         }).catch(error => {
                             console.error("💥 ビデオの再生に失敗しました:", error);
-                            // エラーメッセージをユーザーに表示することも可能
-                            alert("相手の映像の再生に失敗しました。コンソールを確認してください。エラー: " + error.name);
+                            alert("相手の映像の再生に失敗しました。エラー: " + error.name);
                         });
                     }
-                    // --- ここまで ---
-                }
+                };
+
+                // まれにoncanplayが発火しない場合があるため、フォールバックとして直接playも試みる
+                // こちらは失敗してもイベントリスナーが後で処理してくれる
+                remoteVideo.play().catch(e => {
+                    console.warn("直接のplay()呼び出しは失敗しました（想定内の可能性あり）:", e.name);
+                });
             };
 
             pc.onicecandidate = (event) => {
