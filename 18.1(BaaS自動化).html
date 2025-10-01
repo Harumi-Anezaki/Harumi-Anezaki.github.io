@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>18 - P2P配信 (デバッグモード)</title>
+    <title>turn</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -181,7 +181,27 @@
         console.log("Firebase初期化完了:", db);
 
         // グローバル変数
-        const pcConfig = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+        // ★★★ TURNサーバーを追加してNAT越えの問題を解決する ★★★
+        const pcConfig = { 
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { 
+                    urls: "turn:openrelay.metered.ca:80",
+                    username: "openrelayproject",
+                    credential: "openrelayproject",
+                },
+                {
+                    urls: "turn:openrelay.metered.ca:443",
+                    username: "openrelayproject",
+                    credential: "openrelayproject",
+                },
+                {
+                    urls: "turn:openrelay.metered.ca:443?transport=tcp",
+                    username: "openrelayproject",
+                    credential: "openrelayproject",
+                }
+            ] 
+        };
         let pc;
         let localStream;
         let roomId;
