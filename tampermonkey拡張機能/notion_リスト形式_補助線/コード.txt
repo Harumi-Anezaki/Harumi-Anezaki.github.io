@@ -2,7 +2,7 @@
 // @name         Notion Tree
 // @namespace    http://tampermonkey.net/
 // @version      1.0
-// @description  Notionリストブロックのツリー線描画ロジックを詳細にデバッグし、コンソールに表形式で出力します。バグの原因究明に特化しています。
+// @description  Notionリストブロックのツリー線描画ロジックをデバッグし、コンソールに表形式で出力します。デバッグ版ですが機能するので､デバッグ機能は保持したままにします｡
 // @match        https://www.notion.so/*
 // @grant        GM_addStyle
 // @run-at       document-start
@@ -13,10 +13,10 @@
 
     // --- 設定項目 ---
     const TARGET_HEIGHT_THRESHOLD = 50; // 判定に使用する高さの閾値
-    const DEBOUNCE_DELAY = 1000;        // デバッグ用に更新間隔を少し長めに設定
-
+    const DEBOUNCE_DELAY = 1000;        // 更新間隔
+    
     // =================================================================
-    // ステップ1: 元のCSSを注入 (実際の表示とログを比較するため)
+    // ステップ1: CSSを注入
     // =================================================================
     const css = `
         /* --- レイヤー1: ベースとなるツリー線 (拡張機能Bベース) --- */
