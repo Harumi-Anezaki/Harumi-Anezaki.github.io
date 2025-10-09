@@ -1,0 +1,223 @@
+// ==UserScript==
+// @name         Notion Tree
+// @namespace    http://tampermonkey.net/
+// @version      1.0
+// @description  Notionリストブロックのツリー線描画ロジックを詳細にデバッグし、コンソールに表形式で出力します。バグの原因究明に特化しています。
+// @match        https://www.notion.so/*
+// @grant        GM_addStyle
+// @run-at       document-start
+// ==/UserScript==
+
+(function() {
+    'use strict';
+
+    // --- 設定項目 ---
+    const TARGET_HEIGHT_THRESHOLD = 50; // 判定に使用する高さの閾値
+    const DEBOUNCE_DELAY = 1000;        // デバッグ用に更新間隔を少し長めに設定
+
+    // =================================================================
+    // ステップ1: 元のCSSを注入 (実際の表示とログを比較するため)
+    // =================================================================
+    const css = `
+        /* --- レイヤー1: ベースとなるツリー線 (拡張機能Bベース) --- */
+        .notion-bulleted_list-block,
+        .notion-numbered_list-block,
+        .notion-to_do-block,
+        .notion-toggle-block {
+            position: relative;
+            background-image: var(--conditional-line-image);
+            background-repeat: no-repeat;
+            background-position: 13.8px var(--conditional-line-top, 15px);
+            background-size: 1px var(--conditional-line-height, 0);
+        }
+        div[data-block-id] :is(.notion-bulleted_list-block, .notion-numbered_list-block, .notion-to_do-block, .notion-toggle-block)::before,
+        div[data-block-id] :is(.notion-bulleted_list-block, .notion-numbered_list-block, .notion-to_do-block, .notion-toggle-block)::after {
+            content: ''; position: absolute; background-color: #dcdcdc; z-index: 0; pointer-events: none;
+        }
+        div[data-block-id] :is(.notion-bulleted_list-block, .notion-numbered_list-block, .notion-to_do-block, .notion-toggle-block)::before {
+            top: 15px; left: -14px; width: 14px; height: 1px;
+        }
+        div[data-block-id] :is(.notion-bulleted_list-block, .notion-numbered_list-block, .notion-to_do-block, .notion-toggle-block)::after {
+            top: 0; bottom: 0; left: -14px; width: 1px;
+        }
+        div[data-block-id] :is(.notion-bulleted_list-block, .notion-numbered_list-block, .notion-to_do-block, .notion-toggle-block):last-of-type::after {
+            height: 15px;
+        }
+        :is(.notion-bulleted_list-block, .notion-numbered_list-block, .notion-to_do-block, .notion-toggle-block) :is(.notion-bulleted_list-block:not(:has(div > div > .notion-selectable)), .notion-numbered_list-block:not(:has(div > div > .notion-selectable)), .notion-to_do-block:not(:has(div > div > .notion-selectable)), .notion-toggle-block[aria-expanded="true"]:not(:has(div > div > .notion-selectable)))::before,
+        :is(.notion-bulleted_list-block, .notion-numbered_list-block, .notion-to_do-block, .notion-toggle-block) :is(.notion-bulleted_list-block:not(:has(div > div > .notion-selectable)), .notion-numbered_list-block:not(:has(div > div > .notion-selectable)), .notion-to_do-block:not(:has(div > div > .notion-selectable)), .notion-toggle-block[aria-expanded="true"]:not(:has(div > div > .notion-selectable)))::after {
+            display: none;
+        }
+        body.dark div[data-block-id] :is(.notion-bulleted_list-block, .notion-numbered_list-block, .notion-to_do-block, .notion-toggle-block)::before,
+        body.dark div[data-block-id] :is(.notion-bulleted_list-block, .notion-numbered_list-block, .notion-to_do-block, .notion-toggle-block)::after {
+            background-color: #4a4a4a;
+        }
+    `;
+    GM_addStyle(css);
+
+    // =================================================================
+    // ステップ2: デバッグ用ロジックの実装
+    // =================================================================
+
+    const targetSelectors = [
+        '.notion-bulleted_list-block',
+        '.notion-numbered_list-block',
+        '.notion-to_do-block',
+        '.notion-toggle-block'
+    ].join(', ');
+
+    // --- デバッグ用ヘルパー関数群 ---
+
+    /** ブロックから表示テキストを抽出し、改行を '\n' で表現 */
+    function getTextFromBlock(block) {
+        const contentEditable = block.querySelector('[contenteditable="true"]');
+        if (!contentEditable) return '(テキスト要素なし)';
+        return contentEditable.innerText.replace(/\n/g, '\\n').trim() || '(空)';
+    }
+
+    /** ブロックのインデントレベルを計算 */
+    function getIndentLevel(block) {
+        let level = 0;
+        let current = block;
+        while (current) {
+            current = current.parentElement.closest(targetSelectors);
+            if (current) level++;
+        }
+        return level;
+    }
+
+    /** ブロックが末端ノード（子を持たない）かどうかを判定 */
+    function isLeafNode(block) {
+        const childBlocks = block.querySelectorAll(`:scope > div > div > [data-block-id]`);
+        for (const child of childBlocks) {
+            if (child.querySelector('.notion-selectable')) return false;
+        }
+        return true;
+    }
+
+    /** 拡張機能B（静的線）の表示状態をJSでシミュレート */
+    function simulateCssTreeLine(block, isLeaf) {
+        const parentBlock = block.parentElement.closest(`div[data-block-id]`);
+        if (!parentBlock) return '非表示 (ルート)';
+        if (isLeaf) return '非表示 (CSS:hasで末端判定)';
+
+        let nextSibling = block.nextElementSibling;
+        let isLastOfType = true;
+        while (nextSibling) {
+            if (nextSibling.matches(targetSelectors)) {
+                isLastOfType = false;
+                break;
+            }
+            nextSibling = nextSibling.nextElementSibling;
+        }
+        return isLastOfType ? '表示 (└)' : '表示 (├)';
+    }
+
+    /**
+     * 全ブロックをスキャンし、デバッグ情報をコンソールに出力するメイン関数
+     */
+    function runDebuggerAndApplyStyles() {
+        console.clear();
+        console.log(`%c[Notion Tree Debugger] ${new Date().toLocaleTimeString()} - 解析開始`, 'color: #fff; background-color: #007acc; padding: 2px 5px; border-radius: 3px;');
+
+        const allTargetBlocks = document.querySelectorAll(targetSelectors);
+        const debugData = [];
+
+        allTargetBlocks.forEach(block => {
+            // --- 1. 基本情報の収集 ---
+            const blockId = block.dataset.blockId || 'IDなし';
+            const indent = getIndentLevel(block);
+            const text = ' '.repeat(indent * 2) + `[${indent}] ` + getTextFromBlock(block);
+
+            // --- 2. 高さ関連の計算（バグの最有力容疑箇所） ---
+            const parentHeight = block.offsetHeight;
+            const childBlocks = block.querySelectorAll(`:scope > div ${targetSelectors}`);
+            let childrenHeight = 0;
+            childBlocks.forEach(child => {
+                if (child.parentElement.closest(targetSelectors) === block) {
+                    childrenHeight += child.offsetHeight;
+                }
+            });
+            const nodeOnlyHeight = parentHeight - childrenHeight;
+
+            // --- 3. 判定ロジックの実行 ---
+            const isLeaf = isLeafNode(block);
+            const heightConditionMet = nodeOnlyHeight >= TARGET_HEIGHT_THRESHOLD;
+            const parentConditionMet = !isLeaf;
+
+            // --- 4. 拡張機能A' (動的線) の状態判定 ---
+            const layer2ShouldDisplay = heightConditionMet && parentConditionMet;
+            const layer2Status = layer2ShouldDisplay ? '✅ 表示' : '❌ 非表示';
+            const layer2Reason = `高さ条件(${Math.round(nodeOnlyHeight)}px >= ${TARGET_HEIGHT_THRESHOLD}px) -> ${heightConditionMet} | 親ノード条件(!isLeaf) -> ${parentConditionMet}`;
+
+            // --- 5. 拡張機能B (静的線) の状態判定 ---
+            const layer1Status = simulateCssTreeLine(block, isLeaf);
+
+            // --- 6. データをテーブル用に整形 ---
+            debugData.push({
+                'ノード内テキスト': `${text} (${blockId.slice(-6)})`,
+                '全高': parentHeight,
+                '子合計高': childrenHeight,
+                'ノード単体高': Math.round(nodeOnlyHeight),
+                'isLeafNode()': isLeaf,
+                '動的線(A\')': layer2Status,
+                '動的線 判定理由': layer2Reason,
+                '静的線(B)': layer1Status,
+            });
+
+// --- 7. 実際のスタイル適用（元の機能も維持） ---
+            const isDarkMode = document.body.classList.contains('dark');
+            const lineColor = isDarkMode ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)';
+            if (layer2ShouldDisplay) {
+                const lineHeight = Math.max(0, nodeOnlyHeight - 17);
+                block.style.setProperty('--conditional-line-image', `linear-gradient(to bottom, ${lineColor}, ${lineColor})`);
+                block.style.setProperty('--conditional-line-height', `${lineHeight}px`);
+                block.style.setProperty('--conditional-line-top', '15px');
+            } else {
+                // 【修正】プロパティを削除するのではなく、'none'をセットして継承を明示的に断ち切る
+                block.style.setProperty('--conditional-line-image', 'none');
+            }
+        });
+
+        // --- 8. コンソールに表形式で出力 ---
+        if (debugData.length > 0) {
+            console.table(debugData);
+        } else {
+            console.log('デバッグ対象のリストブロックが見つかりませんでした。');
+        }
+    }
+
+    function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
+
+    const debouncedRun = debounce(runDebuggerAndApplyStyles, DEBOUNCE_DELAY);
+
+    // =================================================================
+    // ステップ3: DOMの変更を監視し、デバッガーを起動
+    // =================================================================
+    const initObserver = new MutationObserver((mutations, obs) => {
+        const notionScroller = document.querySelector('.notion-frame .notion-scroller');
+        if (notionScroller) {
+            console.log('Notion Tree Debugger: 監視を開始します。');
+            runDebuggerAndApplyStyles(); // 初期実行
+            const mainObserver = new MutationObserver(() => debouncedRun());
+            mainObserver.observe(notionScroller, {
+                childList: true, subtree: true, attributes: true, characterData: true
+            });
+            const themeObserver = new MutationObserver(() => debouncedRun());
+            themeObserver.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+            obs.disconnect();
+        }
+    });
+
+    initObserver.observe(document.documentElement, { childList: true, subtree: true });
+
+})();
